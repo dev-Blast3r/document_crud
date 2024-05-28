@@ -9,7 +9,8 @@ const routes = [
     { path: '/', component: Home, meta: { requiresAuth: true } },
     { path: '/login', component: Login },
     { path: '/crear', component: CrearDocumento, name: 'crearDocumento' },
-    { path: '/:id/editar', component: EditarDocumento, name: 'editarDocumento' },
+    { path: '/editar/:id', component: EditarDocumento, name: 'EditarDocumento' },
+    // { path: '/documentos', component: EditarDocumento, name: 'editarDocumento' },
 
 ];
 

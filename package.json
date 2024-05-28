@@ -22,8 +22,12 @@
         "vue-loader": "^16.8.3"
     },
     "dependencies": {
+        "@vee-validate/i18n": "^4.12.8",
+        "@vee-validate/rules": "^4.12.8",
         "@vue/compiler-sfc": "^3.4.27",
+        "vee-validate": "^4.12.8",
         "vue": "^3.4.27",
-        "vue-router": "^4.0.13"
+        "vue-router": "^4.0.13",
+        "yup": "^0.32.11"
     }
 }

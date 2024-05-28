@@ -51,16 +51,24 @@ export default {
     },
     methods: {
         obtenerDocumento() {
-            axios.get(`/api/documentos/${this.$route.params.id}`)
-                .then(response => {
-                    this.documento = response.data;
-                })
-                .catch(error => {
-                    console.error(error);
-                });
+            axios.get(`/api/documentos/${this.$route.params.id}`, {
+                headers: {
+                    Authorization: 'Bearer ' + localStorage.getItem('token')
+                }
+            })
+            .then(response => {
+                this.documento = response.data;
+            })
+            .catch(error => {
+                console.error(error);
+            });
         },
         obtenerTipos() {
-            axios.get('/api/tipos')
+            axios.get('/api/tipos', {
+                headers: {
+                    Authorization: 'Bearer ' + localStorage.getItem('token')
+                    }
+                })
                 .then(response => {
                     this.tipos = response.data;
                 })
@@ -69,7 +77,11 @@ export default {
                 });
         },
         obtenerProcesos() {
-            axios.get('/api/procesos')
+            axios.get('/api/procesos', {
+                headers: {
+                    Authorization: 'Bearer ' + localStorage.getItem('token')
+                    }
+                })
                 .then(response => {
                     this.procesos = response.data;
                 })
@@ -78,7 +90,11 @@ export default {
                 });
         },
         actualizarDocumento() {
-            axios.put(`/api/documentos/${this.$route.params.id}`, this.documento)
+            axios.put(`/api/documentos/${this.$route.params.id}`, this.documento,{
+                headers: {
+                    Authorization: 'Bearer ' + localStorage.getItem('token')
+                }
+            })
                 .then(() => {
                     this.$router.push('/');
                 })

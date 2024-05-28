@@ -41,6 +41,7 @@ export default {
             axios.get('/api/documentos')
                 .then(response => {
                     this.documentos = response.data;
+                    console.log('respi', responde.data);
                 })
                 .catch(error => {
                     console.error(error);

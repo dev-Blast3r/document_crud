@@ -19,10 +19,10 @@ use App\Http\Controllers\ProcesoController;
 
 
 Route::post('login', [AuthController::class, 'login']);
-Route::post('logout', [AuthController::class, 'logout']);
 
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware('auth:api')->group(function () {
     Route::apiResource('documentos', DocumentoController::class);
     Route::apiResource('procesos', ProcesoController::class);
     Route::apiResource('tipos', TipoController::class);
+    Route::post('logout', [AuthController::class, 'logout']);
 });

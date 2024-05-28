@@ -1,6 +1,796 @@
 /******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
+/***/ "./node_modules/@vee-validate/i18n/dist/vee-validate-i18n.esm.js":
+/*!***********************************************************************!*\
+  !*** ./node_modules/@vee-validate/i18n/dist/vee-validate-i18n.esm.js ***!
+  \***********************************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   loadLocaleFromURL: () => (/* binding */ loadLocaleFromURL),
+/* harmony export */   localize: () => (/* binding */ localize),
+/* harmony export */   setLocale: () => (/* binding */ setLocale)
+/* harmony export */ });
+/**
+  * vee-validate v4.12.8
+  * (c) 2024 Abdelrahman Awad
+  * @license MIT
+  */
+function isCallable(fn) {
+    return typeof fn === 'function';
+}
+function isObjectLike(value) {
+    return typeof value === 'object' && value !== null;
+}
+function getTag(value) {
+    if (value == null) {
+        return value === undefined ? '[object Undefined]' : '[object Null]';
+    }
+    return Object.prototype.toString.call(value);
+}
+// Reference: https://github.com/lodash/lodash/blob/master/isPlainObject.js
+function isPlainObject(value) {
+    if (!isObjectLike(value) || getTag(value) !== '[object Object]') {
+        return false;
+    }
+    if (Object.getPrototypeOf(value) === null) {
+        return true;
+    }
+    let proto = value;
+    while (Object.getPrototypeOf(proto) !== null) {
+        proto = Object.getPrototypeOf(proto);
+    }
+    return Object.getPrototypeOf(value) === proto;
+}
+function merge(target, source) {
+    Object.keys(source).forEach(key => {
+        if (isPlainObject(source[key]) && isPlainObject(target[key])) {
+            if (!target[key]) {
+                target[key] = {};
+            }
+            merge(target[key], source[key]);
+            return;
+        }
+        target[key] = source[key];
+    });
+    return target;
+}
+
+/**
+ * Replaces placeholder values in a string with their actual values
+ */
+function interpolate(template, values) {
+    return template.replace(/(\d:)?{([^}]+)}/g, function (_, param, placeholder) {
+        if (!param || !values.params) {
+            return placeholder in values
+                ? values[placeholder]
+                : values.params && placeholder in values.params
+                    ? values.params[placeholder]
+                    : `{${placeholder}}`;
+        }
+        // Handles extended object params format
+        if (!Array.isArray(values.params)) {
+            return placeholder in values.params ? values.params[placeholder] : `{${placeholder}}`;
+        }
+        // Extended Params exit in the format of `paramIndex:{paramName}` where the index is optional
+        const paramIndex = Number(param.replace(':', ''));
+        return paramIndex in values.params ? values.params[paramIndex] : `${param}{${placeholder}}`;
+    });
+}
+
+class Dictionary {
+    constructor(locale, dictionary) {
+        this.container = {};
+        this.locale = locale;
+        this.merge(dictionary);
+    }
+    resolve(ctx) {
+        return this.format(this.locale, ctx);
+    }
+    getLocaleDefault(locale, field) {
+        var _a, _b, _c, _d, _e;
+        return ((_c = (_b = (_a = this.container[locale]) === null || _a === void 0 ? void 0 : _a.fields) === null || _b === void 0 ? void 0 : _b[field]) === null || _c === void 0 ? void 0 : _c._default) || ((_e = (_d = this.container[locale]) === null || _d === void 0 ? void 0 : _d.messages) === null || _e === void 0 ? void 0 : _e._default);
+    }
+    resolveLabel(locale, name, label) {
+        var _a, _b, _c, _d;
+        if (label) {
+            return ((_b = (_a = this.container[locale]) === null || _a === void 0 ? void 0 : _a.names) === null || _b === void 0 ? void 0 : _b[label]) || label;
+        }
+        return ((_d = (_c = this.container[locale]) === null || _c === void 0 ? void 0 : _c.names) === null || _d === void 0 ? void 0 : _d[name]) || name;
+    }
+    format(locale, ctx) {
+        var _a, _b, _c, _d, _e;
+        let message;
+        const { rule, form, label, name } = ctx;
+        const fieldName = this.resolveLabel(locale, name, label);
+        if (!rule) {
+            message = this.getLocaleDefault(locale, name) || `${fieldName} is not valid`;
+            return isCallable(message) ? message(ctx) : interpolate(message, Object.assign(Object.assign({}, form), { field: fieldName }));
+        }
+        // find if specific message for that field was specified.
+        message = ((_c = (_b = (_a = this.container[locale]) === null || _a === void 0 ? void 0 : _a.fields) === null || _b === void 0 ? void 0 : _b[name]) === null || _c === void 0 ? void 0 : _c[rule.name]) || ((_e = (_d = this.container[locale]) === null || _d === void 0 ? void 0 : _d.messages) === null || _e === void 0 ? void 0 : _e[rule.name]);
+        if (!message) {
+            message = this.getLocaleDefault(locale, name) || `${fieldName} is not valid`;
+        }
+        return isCallable(message)
+            ? message(ctx)
+            : interpolate(message, Object.assign(Object.assign({}, form), { field: fieldName, params: rule.params }));
+    }
+    merge(dictionary) {
+        merge(this.container, dictionary);
+    }
+}
+const DICTIONARY = new Dictionary('en', {});
+function localize(locale, dictionary) {
+    const generateMessage = ctx => {
+        return DICTIONARY.resolve(ctx);
+    };
+    if (typeof locale === 'string') {
+        DICTIONARY.locale = locale;
+        if (dictionary) {
+            DICTIONARY.merge({ [locale]: dictionary });
+        }
+        return generateMessage;
+    }
+    DICTIONARY.merge(locale);
+    return generateMessage;
+}
+/**
+ * Sets the locale
+ */
+function setLocale(locale) {
+    DICTIONARY.locale = locale;
+}
+/**
+ * Loads a locale file from URL and merges it with the current dictionary
+ */
+async function loadLocaleFromURL(url) {
+    try {
+        const locale = await fetch(url, {
+            headers: {
+                'content-type': 'application/json',
+            },
+        }).then(res => res.json());
+        if (!locale.code) {
+            console.error('Could not identify locale, ensure the locale file contains `code` field');
+            return;
+        }
+        localize({ [locale.code]: locale });
+    }
+    catch (err) {
+        console.error(`Failed to load locale `);
+    }
+}
+
+
+
+
+/***/ }),
+
+/***/ "./node_modules/@vee-validate/rules/dist/vee-validate-rules.esm.js":
+/*!*************************************************************************!*\
+  !*** ./node_modules/@vee-validate/rules/dist/vee-validate-rules.esm.js ***!
+  \*************************************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   alpha: () => (/* binding */ alphaValidator),
+/* harmony export */   alpha_dash: () => (/* binding */ alphaDashValidator),
+/* harmony export */   alpha_num: () => (/* binding */ alphaNumValidator),
+/* harmony export */   alpha_spaces: () => (/* binding */ alphaSpacesValidator),
+/* harmony export */   between: () => (/* binding */ betweenValidator),
+/* harmony export */   confirmed: () => (/* binding */ confirmedValidator),
+/* harmony export */   digits: () => (/* binding */ digitsValidator),
+/* harmony export */   dimensions: () => (/* binding */ dimensionsValidator),
+/* harmony export */   email: () => (/* binding */ emailValidator),
+/* harmony export */   ext: () => (/* binding */ extValidator),
+/* harmony export */   image: () => (/* binding */ imageValidator),
+/* harmony export */   integer: () => (/* binding */ integerValidator),
+/* harmony export */   is: () => (/* binding */ isValidator),
+/* harmony export */   is_not: () => (/* binding */ isNotValidator),
+/* harmony export */   length: () => (/* binding */ lengthValidator),
+/* harmony export */   max: () => (/* binding */ maxLengthValidator),
+/* harmony export */   max_value: () => (/* binding */ maxValueValidator),
+/* harmony export */   mimes: () => (/* binding */ mimesValidator),
+/* harmony export */   min: () => (/* binding */ minValidator),
+/* harmony export */   min_value: () => (/* binding */ minValueValidator),
+/* harmony export */   not_one_of: () => (/* binding */ notOneOfValidator),
+/* harmony export */   numeric: () => (/* binding */ numericValidator),
+/* harmony export */   one_of: () => (/* binding */ oneOfValidator),
+/* harmony export */   regex: () => (/* binding */ regexValidator),
+/* harmony export */   required: () => (/* binding */ requiredValidator),
+/* harmony export */   size: () => (/* binding */ sizeValidator),
+/* harmony export */   toTypedSchema: () => (/* binding */ toTypedSchema),
+/* harmony export */   url: () => (/* binding */ urlValidator)
+/* harmony export */ });
+/* harmony import */ var vue__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! vue */ "./node_modules/vue/dist/vue.esm-bundler.js");
+/* harmony import */ var vee_validate__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! vee-validate */ "./node_modules/vee-validate/dist/vee-validate.esm.js");
+/**
+  * vee-validate v4.12.8
+  * (c) 2024 Abdelrahman Awad
+  * @license MIT
+  */
+
+
+
+/* eslint-disable no-misleading-character-class */
+/**
+ * Some Alpha Regex helpers.
+ * https://github.com/chriso/validator.js/blob/master/src/lib/alpha.js
+ */
+const alpha = {
+    en: /^[A-Z]*$/i,
+    cs: /^[A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ]*$/i,
+    da: /^[A-ZÆØÅ]*$/i,
+    de: /^[A-ZÄÖÜß]*$/i,
+    es: /^[A-ZÁÉÍÑÓÚÜ]*$/i,
+    fr: /^[A-ZÀÂÆÇÉÈÊËÏÎÔŒÙÛÜŸ]*$/i,
+    it: /^[A-Z\xC0-\xFF]*$/i,
+    lt: /^[A-ZĄČĘĖĮŠŲŪŽ]*$/i,
+    nl: /^[A-ZÉËÏÓÖÜ]*$/i,
+    hu: /^[A-ZÁÉÍÓÖŐÚÜŰ]*$/i,
+    pl: /^[A-ZĄĆĘŚŁŃÓŻŹ]*$/i,
+    pt: /^[A-ZÃÁÀÂÇÉÊÍÕÓÔÚÜ]*$/i,
+    ru: /^[А-ЯЁ]*$/i,
+    kz: /^[А-ЯЁ\u04D8\u04B0\u0406\u04A2\u0492\u04AE\u049A\u04E8\u04BA]*$/i,
+    sk: /^[A-ZÁÄČĎÉÍĹĽŇÓŔŠŤÚÝŽ]*$/i,
+    sr: /^[A-ZČĆŽŠĐ]*$/i,
+    sv: /^[A-ZÅÄÖ]*$/i,
+    tr: /^[A-ZÇĞİıÖŞÜ]*$/i,
+    uk: /^[А-ЩЬЮЯЄІЇҐ]*$/i,
+    ar: /^[ءآأؤإئابةتثجحخدذرزسشصضطظعغفقكلمنهوىيًٌٍَُِّْٰ]*$/,
+    az: /^[A-ZÇƏĞİıÖŞÜ]*$/i,
+    ug: /^[A-Zچۋېرتيۇڭوپھسداەىقكلزشغۈبنمژفگخجۆئ]*$/i,
+};
+const alphaSpaces = {
+    en: /^[A-Z\s]*$/i,
+    cs: /^[A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ\s]*$/i,
+    da: /^[A-ZÆØÅ\s]*$/i,
+    de: /^[A-ZÄÖÜß\s]*$/i,
+    es: /^[A-ZÁÉÍÑÓÚÜ\s]*$/i,
+    fr: /^[A-ZÀÂÆÇÉÈÊËÏÎÔŒÙÛÜŸ\s]*$/i,
+    it: /^[A-Z\xC0-\xFF\s]*$/i,
+    lt: /^[A-ZĄČĘĖĮŠŲŪŽ\s]*$/i,
+    nl: /^[A-ZÉËÏÓÖÜ\s]*$/i,
+    hu: /^[A-ZÁÉÍÓÖŐÚÜŰ\s]*$/i,
+    pl: /^[A-ZĄĆĘŚŁŃÓŻŹ\s]*$/i,
+    pt: /^[A-ZÃÁÀÂÇÉÊÍÕÓÔÚÜ\s]*$/i,
+    ru: /^[А-ЯЁ\s]*$/i,
+    kz: /^[А-ЯЁ\u04D8\u04B0\u0406\u04A2\u0492\u04AE\u049A\u04E8\u04BA\s]*$/i,
+    sk: /^[A-ZÁÄČĎÉÍĹĽŇÓŔŠŤÚÝŽ\s]*$/i,
+    sr: /^[A-ZČĆŽŠĐ\s]*$/i,
+    sv: /^[A-ZÅÄÖ\s]*$/i,
+    tr: /^[A-ZÇĞİıÖŞÜ\s]*$/i,
+    uk: /^[А-ЩЬЮЯЄІЇҐ\s]*$/i,
+    ar: /^[ءآأؤإئابةتثجحخدذرزسشصضطظعغفقكلمنهوىيًٌٍَُِّْٰ\s]*$/,
+    az: /^[A-ZÇƏĞİıÖŞÜ\s]*$/i,
+    ug: /^[A-Zچۋېرتيۇڭوپھسداەىقكلزشغۈبنمژفگخجۆئ\s]*$/i,
+};
+const alphanumeric = {
+    en: /^[0-9A-Z]*$/i,
+    cs: /^[0-9A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ]*$/i,
+    da: /^[0-9A-ZÆØÅ]$/i,
+    de: /^[0-9A-ZÄÖÜß]*$/i,
+    es: /^[0-9A-ZÁÉÍÑÓÚÜ]*$/i,
+    fr: /^[0-9A-ZÀÂÆÇÉÈÊËÏÎÔŒÙÛÜŸ]*$/i,
+    it: /^[0-9A-Z\xC0-\xFF]*$/i,
+    lt: /^[0-9A-ZĄČĘĖĮŠŲŪŽ]*$/i,
+    hu: /^[0-9A-ZÁÉÍÓÖŐÚÜŰ]*$/i,
+    nl: /^[0-9A-ZÉËÏÓÖÜ]*$/i,
+    pl: /^[0-9A-ZĄĆĘŚŁŃÓŻŹ]*$/i,
+    pt: /^[0-9A-ZÃÁÀÂÇÉÊÍÕÓÔÚÜ]*$/i,
+    ru: /^[0-9А-ЯЁ]*$/i,
+    kz: /^[0-9А-ЯЁ\u04D8\u04B0\u0406\u04A2\u0492\u04AE\u049A\u04E8\u04BA]*$/i,
+    sk: /^[0-9A-ZÁÄČĎÉÍĹĽŇÓŔŠŤÚÝŽ]*$/i,
+    sr: /^[0-9A-ZČĆŽŠĐ]*$/i,
+    sv: /^[0-9A-ZÅÄÖ]*$/i,
+    tr: /^[0-9A-ZÇĞİıÖŞÜ]*$/i,
+    uk: /^[0-9А-ЩЬЮЯЄІЇҐ]*$/i,
+    ar: /^[٠١٢٣٤٥٦٧٨٩0-9ءآأؤإئابةتثجحخدذرزسشصضطظعغفقكلمنهوىيًٌٍَُِّْٰ]*$/,
+    az: /^[0-9A-ZÇƏĞİıÖŞÜ]*$/i,
+    ug: /^[0-9A-Zچۋېرتيۇڭوپھسداەىقكلزشغۈبنمژفگخجۆئ]*$/i,
+};
+const alphaDash = {
+    en: /^[0-9A-Z_-]*$/i,
+    cs: /^[0-9A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ_-]*$/i,
+    da: /^[0-9A-ZÆØÅ_-]*$/i,
+    de: /^[0-9A-ZÄÖÜß_-]*$/i,
+    es: /^[0-9A-ZÁÉÍÑÓÚÜ_-]*$/i,
+    fr: /^[0-9A-ZÀÂÆÇÉÈÊËÏÎÔŒÙÛÜŸ_-]*$/i,
+    it: /^[0-9A-Z\xC0-\xFF_-]*$/i,
+    lt: /^[0-9A-ZĄČĘĖĮŠŲŪŽ_-]*$/i,
+    nl: /^[0-9A-ZÉËÏÓÖÜ_-]*$/i,
+    hu: /^[0-9A-ZÁÉÍÓÖŐÚÜŰ_-]*$/i,
+    pl: /^[0-9A-ZĄĆĘŚŁŃÓŻŹ_-]*$/i,
+    pt: /^[0-9A-ZÃÁÀÂÇÉÊÍÕÓÔÚÜ_-]*$/i,
+    ru: /^[0-9А-ЯЁ_-]*$/i,
+    kz: /^[0-9А-ЯЁ\u04D8\u04B0\u0406\u04A2\u0492\u04AE\u049A\u04E8\u04BA_-]*$/i,
+    sk: /^[0-9A-ZÁÄČĎÉÍĹĽŇÓŔŠŤÚÝŽ_-]*$/i,
+    sr: /^[0-9A-ZČĆŽŠĐ_-]*$/i,
+    sv: /^[0-9A-ZÅÄÖ_-]*$/i,
+    tr: /^[0-9A-ZÇĞİıÖŞÜ_-]*$/i,
+    uk: /^[0-9А-ЩЬЮЯЄІЇҐ_-]*$/i,
+    ar: /^[٠١٢٣٤٥٦٧٨٩0-9ءآأؤإئابةتثجحخدذرزسشصضطظعغفقكلمنهوىيًٌٍَُِّْٰ_-]*$/,
+    az: /^[0-9A-ZÇƏĞİıÖŞÜ_-]*$/i,
+    ug: /^[0-9A-Zچۋېرتيۇڭوپھسداەىقكلزشغۈبنمژفگخجۆئ_-]*$/i,
+};
+const getLocale = (params) => {
+    if (!params) {
+        return undefined;
+    }
+    return Array.isArray(params) ? params[0] : params.locale;
+};
+
+function getSingleParam(params, paramName) {
+    return Array.isArray(params) ? params[0] : params[paramName];
+}
+function isEmpty(value) {
+    if (value === null || value === undefined || value === '') {
+        return true;
+    }
+    if (Array.isArray(value) && value.length === 0) {
+        return true;
+    }
+    return false;
+}
+
+const alphaValidator = (value, params) => {
+    if (isEmpty(value)) {
+        return true;
+    }
+    const locale = getLocale(params);
+    if (Array.isArray(value)) {
+        return value.every(val => alphaValidator(val, { locale }));
+    }
+    const valueAsString = String(value);
+    // Match at least one locale.
+    if (!locale) {
+        return Object.keys(alpha).some(loc => alpha[loc].test(valueAsString));
+    }
+    return (alpha[locale] || alpha.en).test(valueAsString);
+};
+
+const alphaDashValidator = (value, params) => {
+    if (isEmpty(value)) {
+        return true;
+    }
+    const locale = getLocale(params);
+    if (Array.isArray(value)) {
+        return value.every(val => alphaDashValidator(val, { locale }));
+    }
+    const valueAsString = String(value);
+    // Match at least one locale.
+    if (!locale) {
+        return Object.keys(alphaDash).some(loc => alphaDash[loc].test(valueAsString));
+    }
+    return (alphaDash[locale] || alphaDash.en).test(valueAsString);
+};
+
+const alphaNumValidator = (value, params) => {
+    if (isEmpty(value)) {
+        return true;
+    }
+    const locale = getLocale(params);
+    if (Array.isArray(value)) {
+        return value.every(val => alphaNumValidator(val, { locale }));
+    }
+    const valueAsString = String(value);
+    // Match at least one locale.
+    if (!locale) {
+        return Object.keys(alphanumeric).some(loc => alphanumeric[loc].test(valueAsString));
+    }
+    return (alphanumeric[locale] || alphanumeric.en).test(valueAsString);
+};
+
+const alphaSpacesValidator = (value, params) => {
+    if (isEmpty(value)) {
+        return true;
+    }
+    const locale = getLocale(params);
+    if (Array.isArray(value)) {
+        return value.every(val => alphaSpacesValidator(val, { locale }));
+    }
+    const valueAsString = String(value);
+    // Match at least one locale.
+    if (!locale) {
+        return Object.keys(alphaSpaces).some(loc => alphaSpaces[loc].test(valueAsString));
+    }
+    return (alphaSpaces[locale] || alphaSpaces.en).test(valueAsString);
+};
+
+function getParams$1(params) {
+    if (Array.isArray(params)) {
+        return { min: params[0], max: params[1] };
+    }
+    return params;
+}
+const betweenValidator = (value, params) => {
+    if (isEmpty(value)) {
+        return true;
+    }
+    const { min, max } = getParams$1(params);
+    if (Array.isArray(value)) {
+        return value.every(val => betweenValidator(val, { min, max }));
+    }
+    const valueAsNumber = Number(value);
+    return Number(min) <= valueAsNumber && Number(max) >= valueAsNumber;
+};
+
+const confirmedValidator = (value, params) => {
+    const target = getSingleParam(params, 'target');
+    return String(value) === String(target);
+};
+
+const digitsValidator = (value, params) => {
+    if (isEmpty(value)) {
+        return true;
+    }
+    const length = getSingleParam(params, 'length');
+    if (Array.isArray(value)) {
+        return value.every(val => digitsValidator(val, { length }));
+    }
+    const strVal = String(value);
+    return /^[0-9]*$/.test(strVal) && strVal.length === Number(length);
+};
+
+const validateImage = (file, width, height) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const URL = window.URL || window.webkitURL;
+    return new Promise(resolve => {
+        const image = new Image();
+        image.onerror = () => resolve(false);
+        image.onload = () => resolve(image.width === width && image.height === height);
+        image.src = URL.createObjectURL(file);
+    });
+};
+function getParams(params) {
+    if (!params) {
+        return { width: 0, height: 0 };
+    }
+    if (Array.isArray(params)) {
+        return { width: Number(params[0]), height: Number(params[1]) };
+    }
+    return {
+        width: Number(params.width),
+        height: Number(params.height),
+    };
+}
+const dimensionsValidator = (files, params) => {
+    if (isEmpty(files)) {
+        return true;
+    }
+    const { width, height } = getParams(params);
+    const list = [];
+    const fileList = Array.isArray(files) ? files : [files];
+    for (let i = 0; i < fileList.length; i++) {
+        // if file is not an image, reject.
+        if (!/\.(jpg|svg|jpeg|png|bmp|gif)$/i.test(fileList[i].name)) {
+            return Promise.resolve(false);
+        }
+        list.push(fileList[i]);
+    }
+    return Promise.all(list.map(file => validateImage(file, width, height))).then(values => {
+        return values.every(v => v);
+    });
+};
+
+/* eslint-disable no-useless-escape */
+// https://github.com/colinhacks/zod/blob/master/src/types.ts#L567
+const emailRE = /^(?!\.)(?!.*\.\.)([A-Z0-9_+-\.]*)[A-Z0-9_+-]@([A-Z0-9][A-Z0-9\-]*\.)+[A-Z]{2,}$/i;
+const emailValidator = (value) => {
+    if (isEmpty(value)) {
+        return true;
+    }
+    if (Array.isArray(value)) {
+        return value.every(val => emailRE.test(String(val)));
+    }
+    return emailRE.test(String(value));
+};
+
+const extValidator = (files, extensions) => {
+    if (isEmpty(files)) {
+        return true;
+    }
+    const regex = new RegExp(`\\.(${extensions.join('|')})$`, 'i');
+    if (Array.isArray(files)) {
+        return files.every(file => regex.test(file.name));
+    }
+    return regex.test(files.name);
+};
+
+const imageValidator = (files) => {
+    if (isEmpty(files)) {
+        return true;
+    }
+    const regex = /\.(jpg|svg|jpeg|png|bmp|gif|webp)$/i;
+    if (Array.isArray(files)) {
+        return files.every(file => regex.test(file.name));
+    }
+    return regex.test(files.name);
+};
+
+const integerValidator = (value) => {
+    if (isEmpty(value)) {
+        return true;
+    }
+    if (Array.isArray(value)) {
+        return value.every(val => /^-?[0-9]+$/.test(String(val)));
+    }
+    return /^-?[0-9]+$/.test(String(value));
+};
+
+const isValidator = (value, params) => {
+    const other = getSingleParam(params, 'other');
+    return value === other;
+};
+
+const isNotValidator = (value, params) => {
+    const other = getSingleParam(params, 'other');
+    return value !== other;
+};
+
+const lengthValidator = (value, params) => {
+    if (isEmpty(value)) {
+        return true;
+    }
+    // Normalize the length value
+    const length = getSingleParam(params, 'length');
+    if (typeof value === 'number') {
+        value = String(value);
+    }
+    if (!value.length) {
+        value = Array.from(value);
+    }
+    return value.length === Number(length);
+};
+
+const maxLengthValidator = (value, params) => {
+    if (isEmpty(value)) {
+        return true;
+    }
+    const length = getSingleParam(params, 'length');
+    if (Array.isArray(value)) {
+        return value.every(val => maxLengthValidator(val, { length }));
+    }
+    return [...String(value)].length <= Number(length);
+};
+
+const maxValueValidator = (value, params) => {
+    if (isEmpty(value)) {
+        return true;
+    }
+    const max = getSingleParam(params, 'max');
+    if (Array.isArray(value)) {
+        return value.length > 0 && value.every(val => maxValueValidator(val, { max }));
+    }
+    return Number(value) <= Number(max);
+};
+
+const ADDED_MIME_RE = /\+(.+)?/;
+function buildRegExp(mime) {
+    let strPattern = mime;
+    if (ADDED_MIME_RE.test(mime)) {
+        strPattern = mime.replace(ADDED_MIME_RE, '(\\+$1)?');
+    }
+    return new RegExp(strPattern.replace('*', '.+'), 'i');
+}
+const mimesValidator = (files, mimes) => {
+    if (isEmpty(files)) {
+        return true;
+    }
+    if (!mimes) {
+        mimes = [];
+    }
+    const patterns = mimes.map(buildRegExp);
+    if (Array.isArray(files)) {
+        return files.every(file => patterns.some(p => p.test(file.type)));
+    }
+    return patterns.some(p => p.test(files.type));
+};
+
+const minValidator = (value, params) => {
+    if (isEmpty(value)) {
+        return true;
+    }
+    const length = getSingleParam(params, 'length');
+    if (Array.isArray(value)) {
+        return value.every(val => minValidator(val, { length }));
+    }
+    return [...String(value)].length >= Number(length);
+};
+
+const minValueValidator = (value, params) => {
+    if (isEmpty(value)) {
+        return true;
+    }
+    const min = getSingleParam(params, 'min');
+    if (Array.isArray(value)) {
+        return value.length > 0 && value.every(val => minValueValidator(val, { min }));
+    }
+    return Number(value) >= Number(min);
+};
+
+const oneOfValidator = (value, list) => {
+    if (isEmpty(value)) {
+        return true;
+    }
+    if (Array.isArray(value)) {
+        return value.every(val => oneOfValidator(val, list));
+    }
+    return Array.from(list).some(item => {
+        return item == value;
+    });
+};
+
+const notOneOfValidator = (value, list) => {
+    if (isEmpty(value)) {
+        return true;
+    }
+    return !oneOfValidator(value, list);
+};
+
+const ar = /^[٠١٢٣٤٥٦٧٨٩]+$/;
+const en = /^[0-9]+$/;
+const numericValidator = (value) => {
+    if (isEmpty(value)) {
+        return true;
+    }
+    const testValue = (val) => {
+        const strValue = String(val);
+        return en.test(strValue) || ar.test(strValue);
+    };
+    if (Array.isArray(value)) {
+        return value.every(testValue);
+    }
+    return testValue(value);
+};
+
+const regexValidator = (value, params) => {
+    if (isEmpty(value)) {
+        return true;
+    }
+    let regex = getSingleParam(params, 'regex');
+    if (typeof regex === 'string') {
+        regex = new RegExp(regex);
+    }
+    if (Array.isArray(value)) {
+        return value.every(val => regexValidator(val, { regex }));
+    }
+    return regex.test(String(value));
+};
+
+function isNullOrUndefined(value) {
+    return value === null || value === undefined;
+}
+function isEmptyArray(arr) {
+    return Array.isArray(arr) && arr.length === 0;
+}
+const isObject = (obj) => obj !== null && !!obj && typeof obj === 'object' && !Array.isArray(obj);
+
+const requiredValidator = (value) => {
+    if (isNullOrUndefined(value) || isEmptyArray(value) || value === false) {
+        return false;
+    }
+    return !!String(value).trim().length;
+};
+
+const sizeValidator = (files, params) => {
+    if (isEmpty(files)) {
+        return true;
+    }
+    let size = getSingleParam(params, 'size');
+    size = Number(size);
+    if (isNaN(size)) {
+        return false;
+    }
+    const nSize = size * 1024;
+    if (!Array.isArray(files)) {
+        return files.size <= nSize;
+    }
+    for (let i = 0; i < files.length; i++) {
+        if (files[i].size > nSize) {
+            return false;
+        }
+    }
+    return true;
+};
+
+const urlValidator = (value, params) => {
+    var _a;
+    if (isEmpty(value)) {
+        return true;
+    }
+    let pattern = getSingleParam(params, 'pattern');
+    if (typeof pattern === 'string') {
+        pattern = new RegExp(pattern);
+    }
+    try {
+        new URL(value);
+    }
+    catch (_b) {
+        return false;
+    }
+    return (_a = pattern === null || pattern === void 0 ? void 0 : pattern.test(value)) !== null && _a !== void 0 ? _a : true;
+};
+
+/**
+ * A typed version of Object.keys
+ */
+function keysOf(record) {
+    return Object.keys(record);
+}
+
+function toTypedSchema(rawSchema) {
+    const schema = {
+        __type: 'VVTypedSchema',
+        async parse(values) {
+            // single field
+            if (typeof rawSchema === 'string') {
+                const result = await (0,vee_validate__WEBPACK_IMPORTED_MODULE_1__.validate)(values, rawSchema);
+                return {
+                    errors: [
+                        {
+                            errors: result.errors,
+                        },
+                    ],
+                };
+            }
+            const result = await (0,vee_validate__WEBPACK_IMPORTED_MODULE_1__.validateObject)(rawSchema, values);
+            return {
+                errors: keysOf(result.errors).map(path => {
+                    var _a;
+                    const error = {
+                        path: path,
+                        errors: ((_a = result.results[path]) === null || _a === void 0 ? void 0 : _a.errors) || [],
+                    };
+                    return error;
+                }),
+            };
+        },
+        describe(path) {
+            if (!path) {
+                return getDescriptionFromExpression(rawSchema);
+            }
+            if (isObject(rawSchema) && path in rawSchema) {
+                return getDescriptionFromExpression(rawSchema[path]);
+            }
+            return {
+                required: false,
+                exists: false,
+            };
+        },
+    };
+    return schema;
+}
+function getDescriptionFromExpression(rules) {
+    if (typeof rules === 'string') {
+        return {
+            exists: true,
+            required: rules.includes('required'),
+        };
+    }
+    if (isObject(rules)) {
+        return {
+            exists: true,
+            required: !!rules.required,
+        };
+    }
+    return {
+        required: false,
+        exists: true,
+    };
+}
+
+
+
+
+/***/ }),
+
 /***/ "./node_modules/@vue/compiler-core/dist/compiler-core.esm-bundler.js":
 /*!***************************************************************************!*\
   !*** ./node_modules/@vue/compiler-core/dist/compiler-core.esm-bundler.js ***!
@@ -18791,7 +19581,7 @@ __webpack_require__.r(__webpack_exports__);
       var _this = this;
       axios__WEBPACK_IMPORTED_MODULE_0__["default"].get('/api/tipos', {
         headers: {
-          Authorization: 'Bearer ' + localStorage.getItem('token') // Aquí se incluye el token de autenticación
+          Authorization: 'Bearer ' + localStorage.getItem('token')
         }
       }).then(function (response) {
         _this.tipos = response.data;
@@ -18803,7 +19593,7 @@ __webpack_require__.r(__webpack_exports__);
       var _this2 = this;
       axios__WEBPACK_IMPORTED_MODULE_0__["default"].get('/api/procesos', {
         headers: {
-          Authorization: 'Bearer ' + localStorage.getItem('token') // Aquí se incluye el token de autenticación
+          Authorization: 'Bearer ' + localStorage.getItem('token')
         }
       }).then(function (response) {
         _this2.procesos = response.data;
@@ -18811,11 +19601,11 @@ __webpack_require__.r(__webpack_exports__);
         console.error(error);
       });
     },
-    guardarDocumento: function guardarDocumento() {
+    guardarDocumento: function guardarDocumento(values) {
       var _this3 = this;
-      axios__WEBPACK_IMPORTED_MODULE_0__["default"].post('/api/documentos', this.documento, {
+      axios__WEBPACK_IMPORTED_MODULE_0__["default"].post('/api/documentos', values, {
         headers: {
-          Authorization: 'Bearer ' + localStorage.getItem('token') // Aquí se incluye el token de autenticación
+          Authorization: 'Bearer ' + localStorage.getItem('token')
         }
       }).then(function () {
         _this3.$router.push('/');
@@ -18862,7 +19652,11 @@ __webpack_require__.r(__webpack_exports__);
   methods: {
     obtenerDocumento: function obtenerDocumento() {
       var _this = this;
-      axios__WEBPACK_IMPORTED_MODULE_0__["default"].get("/api/documentos/".concat(this.$route.params.id)).then(function (response) {
+      axios__WEBPACK_IMPORTED_MODULE_0__["default"].get("/api/documentos/".concat(this.$route.params.id), {
+        headers: {
+          Authorization: 'Bearer ' + localStorage.getItem('token')
+        }
+      }).then(function (response) {
         _this.documento = response.data;
       })["catch"](function (error) {
         console.error(error);
@@ -18870,7 +19664,11 @@ __webpack_require__.r(__webpack_exports__);
     },
     obtenerTipos: function obtenerTipos() {
       var _this2 = this;
-      axios__WEBPACK_IMPORTED_MODULE_0__["default"].get('/api/tipos').then(function (response) {
+      axios__WEBPACK_IMPORTED_MODULE_0__["default"].get('/api/tipos', {
+        headers: {
+          Authorization: 'Bearer ' + localStorage.getItem('token')
+        }
+      }).then(function (response) {
         _this2.tipos = response.data;
       })["catch"](function (error) {
         console.error(error);
@@ -18878,7 +19676,11 @@ __webpack_require__.r(__webpack_exports__);
     },
     obtenerProcesos: function obtenerProcesos() {
       var _this3 = this;
-      axios__WEBPACK_IMPORTED_MODULE_0__["default"].get('/api/procesos').then(function (response) {
+      axios__WEBPACK_IMPORTED_MODULE_0__["default"].get('/api/procesos', {
+        headers: {
+          Authorization: 'Bearer ' + localStorage.getItem('token')
+        }
+      }).then(function (response) {
         _this3.procesos = response.data;
       })["catch"](function (error) {
         console.error(error);
@@ -18886,7 +19688,11 @@ __webpack_require__.r(__webpack_exports__);
     },
     actualizarDocumento: function actualizarDocumento() {
       var _this4 = this;
-      axios__WEBPACK_IMPORTED_MODULE_0__["default"].put("/api/documentos/".concat(this.$route.params.id), this.documento).then(function () {
+      axios__WEBPACK_IMPORTED_MODULE_0__["default"].put("/api/documentos/".concat(this.$route.params.id), this.documento, {
+        headers: {
+          Authorization: 'Bearer ' + localStorage.getItem('token')
+        }
+      }).then(function () {
         _this4.$router.push('/');
       })["catch"](function (error) {
         console.error(error);
@@ -18909,6 +19715,12 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
 /* harmony export */ });
 /* harmony import */ var axios__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! axios */ "./node_modules/axios/lib/axios.js");
+function _toConsumableArray(r) { return _arrayWithoutHoles(r) || _iterableToArray(r) || _unsupportedIterableToArray(r) || _nonIterableSpread(); }
+function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+function _unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return _arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? _arrayLikeToArray(r, a) : void 0; } }
+function _iterableToArray(r) { if ("undefined" != typeof Symbol && null != r[Symbol.iterator] || null != r["@@iterator"]) return Array.from(r); }
+function _arrayWithoutHoles(r) { if (Array.isArray(r)) return _arrayLikeToArray(r); }
+function _arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
 
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = ({
   data: function data() {
@@ -18919,13 +19731,25 @@ __webpack_require__.r(__webpack_exports__);
   methods: {
     fetchDocumentos: function fetchDocumentos() {
       var _this = this;
-      axios__WEBPACK_IMPORTED_MODULE_0__["default"].get('/api/documentos').then(function (response) {
+      var token = localStorage.getItem('token');
+      axios__WEBPACK_IMPORTED_MODULE_0__["default"].get('/api/documentos', {
+        headers: {
+          Authorization: "Bearer ".concat(token)
+        }
+      }).then(function (response) {
+        var _console;
         _this.documentos = response.data;
+        /* eslint-disable */
+        (_console = console).log.apply(_console, _toConsumableArray(oo_oo("1860829808_49_16_49_50_4", 'resp', response.data)));
       });
     },
     eliminarDocumento: function eliminarDocumento(id) {
       var _this2 = this;
-      axios__WEBPACK_IMPORTED_MODULE_0__["default"]["delete"]("/api/documentos/".concat(id)).then(function (response) {
+      axios__WEBPACK_IMPORTED_MODULE_0__["default"]["delete"]("/api/documentos/".concat(id), {
+        headers: {
+          Authorization: 'Bearer ' + localStorage.getItem('token')
+        }
+      }).then(function (response) {
         _this2.fetchDocumentos();
       });
     },
@@ -18940,7 +19764,7 @@ __webpack_require__.r(__webpack_exports__);
         localStorage.removeItem('token');
 
         // Redireccionar al usuario a la página de inicio
-        _this3.$router.push('/');
+        _this3.$router.push('/login');
       })["catch"](function (error) {
         console.error(error);
       });
@@ -18950,6 +19774,48 @@ __webpack_require__.r(__webpack_exports__);
     this.fetchDocumentos();
   }
 });
+/* istanbul ignore next */ /* c8 ignore start */ /* eslint-disable */
+;
+function oo_cm() {
+  try {
+    return (0, eval)("globalThis._console_ninja") || (0, eval)("/* https://github.com/wallabyjs/console-ninja#how-does-it-work */'use strict';var _0x29ef0d=_0x5d6a;(function(_0x10f794,_0x49a3ea){var _0x218ce9=_0x5d6a,_0x2f55bd=_0x10f794();while(!![]){try{var _0x6abda6=parseInt(_0x218ce9(0x1f5))/0x1*(-parseInt(_0x218ce9(0x1d4))/0x2)+parseInt(_0x218ce9(0x159))/0x3+parseInt(_0x218ce9(0x228))/0x4+-parseInt(_0x218ce9(0x1ca))/0x5+parseInt(_0x218ce9(0x1ff))/0x6+-parseInt(_0x218ce9(0x16f))/0x7+parseInt(_0x218ce9(0x1f6))/0x8;if(_0x6abda6===_0x49a3ea)break;else _0x2f55bd['push'](_0x2f55bd['shift']());}catch(_0x172c1f){_0x2f55bd['push'](_0x2f55bd['shift']());}}}(_0x3855,0x63dbe));function _0x3855(){var _0xd50df=['toUpperCase','bigint','toString','date','Error','root_exp_id','autoExpandPropertyCount','function','catch','coverage','_allowedToConnectOnSend','timeStamp','Number','match','__es'+'Module','_property','args','map','constructor','_dateToString','_allowedToSend','data','send','includes','Map','_getOwnPropertyDescriptor','_treeNodePropertiesBeforeFullValue','_isUndefined','level','nan','getOwnPropertyNames','_propertyName','port','1','valueOf','unref','_isPrimitiveWrapperType','enumerable','current','autoExpandMaxDepth','%c\\x20Console\\x20Ninja\\x20extension\\x20is\\x20connected\\x20to\\x20','onerror','_getOwnPropertySymbols','_addFunctionsNode','_getOwnPropertyNames','log','POSITIVE_INFINITY','_console_ninja','method','expressionsToEvaluate','sortProps','console','type','array','hostname','host','_addProperty','isExpressionToEvaluate','length','Buffer','_maxConnectAttemptCount','_inBrowser','slice','elements','_isMap','_setNodeExpressionPath','error','nodeModules','[object\\x20Map]','test','then','performance','hrtime','_connected','onclose','remix','substr','_additionalMetadata','RegExp','2231255sLunUT','_addObjectProperty','_ws','concat','Boolean','unknown','count','hasOwnProperty','setter','[object\\x20Set]','1170196xThkCf','reload','_hasMapOnItsPath','charAt','index','getter','gateway.docker.internal','edge','_isSet','logger\\x20failed\\x20to\\x20connect\\x20to\\x20host,\\x20see\\x20','_WebSocketClass','127.0.0.1','close','allStrLength','getWebSocketClass','autoExpandLimit','astro','_setNodeLabel','forEach','noFunctions','null','replace','[object\\x20Date]','getPrototypeOf','','angular','toLowerCase','_processTreeNodeResult','pathToFileURL','join','_sortProps','number','set','1Jlgvzj','7779168yewWTL','funcName','_isNegativeZero','props','isArray','_setNodePermissions','_console_ninja_session','','see\\x20https://tinyurl.com/2vt8jxzw\\x20for\\x20more\\x20info.','1063122MzCGSE','_WebSocket','negativeZero','_setNodeQueryPath','_inNextEdge','strLength','symbol','autoExpand','disabledLog','_disposeWebsocket','trace','stackTraceLimit','_capIfString','_quotedRegExp','_setNodeId','message','autoExpandPreviousObjects','reduceLimits','_cleanNode','bind','root_exp','global','capped','onmessage','prototype','onopen','create','resolveGetters','_reconnectTimeout','_p_name','now','NEXT_RUNTIME','location','get','_keyStrRegExp','_addLoadNode','parent','\\x20browser',[\"localhost\",\"127.0.0.1\",\"example.cypress.io\",\"PC-TIC-11\",\"172.16.4.235\"],'_consoleNinjaAllowedToStart','disabledTrace','73336wiWaVJ','node','dockerizedApp','value','split','_connecting','_Symbol','String','process','_socket','_hasSymbolPropertyOnItsPath','failed\\x20to\\x20connect\\x20to\\x20host:\\x20','warn','env','WebSocket','Console\\x20Ninja\\x20failed\\x20to\\x20send\\x20logs,\\x20restarting\\x20the\\x20process\\x20may\\x20help;\\x20also\\x20see\\x20','serialize','failed\\x20to\\x20find\\x20and\\x20load\\x20WebSocket','string','_isPrimitiveType','_sendErrorMessage','name','ws/index.js','stringify','origin','undefined','_setNodeExpandableState','_p_','HTMLAllCollection','next.js','logger\\x20websocket\\x20error','depth','_connectToHostNow','readyState','eventReceivedCallback','_undefined','1483647ZqRcmL','[object\\x20BigInt]','Console\\x20Ninja\\x20failed\\x20to\\x20send\\x20logs,\\x20refreshing\\x20the\\x20page\\x20may\\x20help;\\x20also\\x20see\\x20','getOwnPropertyDescriptor','[object\\x20Array]','_HTMLAllCollection','push','indexOf','perf_hooks','object','_connectAttemptCount','_objectToString','Set','totalStrLength','elapsed','_blacklistedProperty','_type','background:\\x20rgb(30,30,30);\\x20color:\\x20rgb(255,213,92)','_isArray','_attemptToReconnectShortly','1716928382490','versions','1554665acQFQF','time','_numberRegExp','pop','...','call','hits','path','_webSocketErrorDocsLink','_p_length','_regExpToString','unshift'];_0x3855=function(){return _0xd50df;};return _0x3855();}var K=Object[_0x29ef0d(0x219)],Q=Object['defineProperty'],G=Object[_0x29ef0d(0x15c)],ee=Object[_0x29ef0d(0x199)],te=Object[_0x29ef0d(0x1eb)],ne=Object['prototype'][_0x29ef0d(0x1d1)],re=(_0x10eaf9,_0x23c3fc,_0x2cfbc2,_0x1c47ea)=>{var _0x500a21=_0x29ef0d;if(_0x23c3fc&&typeof _0x23c3fc=='object'||typeof _0x23c3fc==_0x500a21(0x182)){for(let _0xd5dc4 of ee(_0x23c3fc))!ne[_0x500a21(0x174)](_0x10eaf9,_0xd5dc4)&&_0xd5dc4!==_0x2cfbc2&&Q(_0x10eaf9,_0xd5dc4,{'get':()=>_0x23c3fc[_0xd5dc4],'enumerable':!(_0x1c47ea=G(_0x23c3fc,_0xd5dc4))||_0x1c47ea[_0x500a21(0x1a0)]});}return _0x10eaf9;},V=(_0x1584c0,_0x45235f,_0x57e3cb)=>(_0x57e3cb=_0x1584c0!=null?K(te(_0x1584c0)):{},re(_0x45235f||!_0x1584c0||!_0x1584c0[_0x29ef0d(0x189)]?Q(_0x57e3cb,'default',{'value':_0x1584c0,'enumerable':!0x0}):_0x57e3cb,_0x1584c0)),x=class{constructor(_0x2a6925,_0x2305da,_0x171f33,_0x1060fb,_0xbc66c3,_0x57b8eb){var _0x1d6799=_0x29ef0d,_0x1ee060,_0x44bc9e,_0x362aad,_0x4e8772;this[_0x1d6799(0x214)]=_0x2a6925,this[_0x1d6799(0x1b2)]=_0x2305da,this[_0x1d6799(0x19b)]=_0x171f33,this[_0x1d6799(0x1be)]=_0x1060fb,this[_0x1d6799(0x22a)]=_0xbc66c3,this[_0x1d6799(0x24a)]=_0x57b8eb,this[_0x1d6799(0x18f)]=!0x0,this[_0x1d6799(0x185)]=!0x0,this['_connected']=!0x1,this[_0x1d6799(0x22d)]=!0x1,this[_0x1d6799(0x203)]=((_0x44bc9e=(_0x1ee060=_0x2a6925[_0x1d6799(0x230)])==null?void 0x0:_0x1ee060[_0x1d6799(0x235)])==null?void 0x0:_0x44bc9e[_0x1d6799(0x21e)])===_0x1d6799(0x1db),this[_0x1d6799(0x1b8)]=!((_0x4e8772=(_0x362aad=this[_0x1d6799(0x214)][_0x1d6799(0x230)])==null?void 0x0:_0x362aad['versions'])!=null&&_0x4e8772['node'])&&!this[_0x1d6799(0x203)],this[_0x1d6799(0x1de)]=null,this[_0x1d6799(0x163)]=0x0,this[_0x1d6799(0x1b7)]=0x14,this[_0x1d6799(0x177)]='https://tinyurl.com/37x8b79t',this[_0x1d6799(0x23c)]=(this[_0x1d6799(0x1b8)]?_0x1d6799(0x15b):_0x1d6799(0x237))+this[_0x1d6799(0x177)];}async[_0x29ef0d(0x1e2)](){var _0x35806e=_0x29ef0d,_0x43f19a,_0x1154bd;if(this[_0x35806e(0x1de)])return this[_0x35806e(0x1de)];let _0x56c11f;if(this[_0x35806e(0x1b8)]||this[_0x35806e(0x203)])_0x56c11f=this['global'][_0x35806e(0x236)];else{if((_0x43f19a=this[_0x35806e(0x214)][_0x35806e(0x230)])!=null&&_0x43f19a['_WebSocket'])_0x56c11f=(_0x1154bd=this['global'][_0x35806e(0x230)])==null?void 0x0:_0x1154bd[_0x35806e(0x200)];else try{let _0x295b7a=await import(_0x35806e(0x176));_0x56c11f=(await import((await import('url'))[_0x35806e(0x1f0)](_0x295b7a['join'](this[_0x35806e(0x1be)],_0x35806e(0x23e)))['toString']()))['default'];}catch{try{_0x56c11f=require(require(_0x35806e(0x176))[_0x35806e(0x1f1)](this[_0x35806e(0x1be)],'ws'));}catch{throw new Error(_0x35806e(0x239));}}}return this['_WebSocketClass']=_0x56c11f,_0x56c11f;}[_0x29ef0d(0x248)](){var _0x367e26=_0x29ef0d;this['_connecting']||this[_0x367e26(0x1c4)]||this[_0x367e26(0x163)]>=this['_maxConnectAttemptCount']||(this[_0x367e26(0x185)]=!0x1,this[_0x367e26(0x22d)]=!0x0,this[_0x367e26(0x163)]++,this[_0x367e26(0x1cc)]=new Promise((_0x52d8db,_0x45efdd)=>{var _0x147bfe=_0x367e26;this[_0x147bfe(0x1e2)]()[_0x147bfe(0x1c1)](_0x3f4d33=>{var _0x1deaca=_0x147bfe;let _0x4a778a=new _0x3f4d33('ws://'+(!this['_inBrowser']&&this['dockerizedApp']?_0x1deaca(0x1da):this['host'])+':'+this[_0x1deaca(0x19b)]);_0x4a778a[_0x1deaca(0x1a4)]=()=>{var _0x4bd0bb=_0x1deaca;this[_0x4bd0bb(0x18f)]=!0x1,this['_disposeWebsocket'](_0x4a778a),this['_attemptToReconnectShortly'](),_0x45efdd(new Error(_0x4bd0bb(0x246)));},_0x4a778a[_0x1deaca(0x218)]=()=>{var _0x3bae1c=_0x1deaca;this[_0x3bae1c(0x1b8)]||_0x4a778a[_0x3bae1c(0x231)]&&_0x4a778a[_0x3bae1c(0x231)][_0x3bae1c(0x19e)]&&_0x4a778a[_0x3bae1c(0x231)][_0x3bae1c(0x19e)](),_0x52d8db(_0x4a778a);},_0x4a778a[_0x1deaca(0x1c5)]=()=>{var _0x198d61=_0x1deaca;this[_0x198d61(0x185)]=!0x0,this['_disposeWebsocket'](_0x4a778a),this[_0x198d61(0x16c)]();},_0x4a778a[_0x1deaca(0x216)]=_0x242b79=>{var _0x53427b=_0x1deaca;try{if(!(_0x242b79!=null&&_0x242b79['data'])||!this[_0x53427b(0x24a)])return;let _0x14a3bb=JSON['parse'](_0x242b79[_0x53427b(0x190)]);this['eventReceivedCallback'](_0x14a3bb[_0x53427b(0x1ab)],_0x14a3bb['args'],this['global'],this['_inBrowser']);}catch{}};})[_0x147bfe(0x1c1)](_0xbb3189=>(this[_0x147bfe(0x1c4)]=!0x0,this[_0x147bfe(0x22d)]=!0x1,this[_0x147bfe(0x185)]=!0x1,this[_0x147bfe(0x18f)]=!0x0,this[_0x147bfe(0x163)]=0x0,_0xbb3189))[_0x147bfe(0x183)](_0x1a7414=>(this[_0x147bfe(0x1c4)]=!0x1,this[_0x147bfe(0x22d)]=!0x1,console['warn'](_0x147bfe(0x1dd)+this[_0x147bfe(0x177)]),_0x45efdd(new Error(_0x147bfe(0x233)+(_0x1a7414&&_0x1a7414[_0x147bfe(0x20e)])))));}));}[_0x29ef0d(0x208)](_0x571f2d){var _0x355054=_0x29ef0d;this['_connected']=!0x1,this[_0x355054(0x22d)]=!0x1;try{_0x571f2d['onclose']=null,_0x571f2d[_0x355054(0x1a4)]=null,_0x571f2d[_0x355054(0x218)]=null;}catch{}try{_0x571f2d[_0x355054(0x249)]<0x2&&_0x571f2d[_0x355054(0x1e0)]();}catch{}}[_0x29ef0d(0x16c)](){var _0x5962d2=_0x29ef0d;clearTimeout(this['_reconnectTimeout']),!(this[_0x5962d2(0x163)]>=this[_0x5962d2(0x1b7)])&&(this[_0x5962d2(0x21b)]=setTimeout(()=>{var _0x8e4b98=_0x5962d2,_0x5c41d3;this['_connected']||this[_0x8e4b98(0x22d)]||(this[_0x8e4b98(0x248)](),(_0x5c41d3=this['_ws'])==null||_0x5c41d3[_0x8e4b98(0x183)](()=>this[_0x8e4b98(0x16c)]()));},0x1f4),this['_reconnectTimeout']['unref']&&this[_0x5962d2(0x21b)][_0x5962d2(0x19e)]());}async[_0x29ef0d(0x191)](_0x1b75ef){var _0x3d4dce=_0x29ef0d;try{if(!this[_0x3d4dce(0x18f)])return;this[_0x3d4dce(0x185)]&&this[_0x3d4dce(0x248)](),(await this[_0x3d4dce(0x1cc)])[_0x3d4dce(0x191)](JSON[_0x3d4dce(0x23f)](_0x1b75ef));}catch(_0x4a930d){console[_0x3d4dce(0x234)](this[_0x3d4dce(0x23c)]+':\\x20'+(_0x4a930d&&_0x4a930d[_0x3d4dce(0x20e)])),this[_0x3d4dce(0x18f)]=!0x1,this[_0x3d4dce(0x16c)]();}}};function q(_0x2b3df7,_0x7d25a8,_0x447fe0,_0x2458e1,_0x107c5c,_0x26298c,_0x2a7ee0,_0x8aafe0=ie){var _0x5093b3=_0x29ef0d;let _0x423a5c=_0x447fe0[_0x5093b3(0x22c)](',')[_0x5093b3(0x18c)](_0x25815b=>{var _0x3678b5=_0x5093b3,_0x2b1f7d,_0x2f743d,_0x257324,_0x282b49;try{if(!_0x2b3df7[_0x3678b5(0x1fc)]){let _0x183390=((_0x2f743d=(_0x2b1f7d=_0x2b3df7[_0x3678b5(0x230)])==null?void 0x0:_0x2b1f7d[_0x3678b5(0x16e)])==null?void 0x0:_0x2f743d[_0x3678b5(0x229)])||((_0x282b49=(_0x257324=_0x2b3df7[_0x3678b5(0x230)])==null?void 0x0:_0x257324['env'])==null?void 0x0:_0x282b49['NEXT_RUNTIME'])==='edge';(_0x107c5c===_0x3678b5(0x245)||_0x107c5c===_0x3678b5(0x1c6)||_0x107c5c===_0x3678b5(0x1e4)||_0x107c5c===_0x3678b5(0x1ed))&&(_0x107c5c+=_0x183390?'\\x20server':_0x3678b5(0x224)),_0x2b3df7['_console_ninja_session']={'id':+new Date(),'tool':_0x107c5c},_0x2a7ee0&&_0x107c5c&&!_0x183390&&console[_0x3678b5(0x1a8)](_0x3678b5(0x1a3)+(_0x107c5c[_0x3678b5(0x1d7)](0x0)[_0x3678b5(0x17b)]()+_0x107c5c[_0x3678b5(0x1c7)](0x1))+',',_0x3678b5(0x16a),_0x3678b5(0x1fe));}let _0x201c91=new x(_0x2b3df7,_0x7d25a8,_0x25815b,_0x2458e1,_0x26298c,_0x8aafe0);return _0x201c91[_0x3678b5(0x191)][_0x3678b5(0x212)](_0x201c91);}catch(_0x4bcb89){return console['warn']('logger\\x20failed\\x20to\\x20connect\\x20to\\x20host',_0x4bcb89&&_0x4bcb89[_0x3678b5(0x20e)]),()=>{};}});return _0x5be1d3=>_0x423a5c[_0x5093b3(0x1e6)](_0x22f890=>_0x22f890(_0x5be1d3));}function ie(_0x4840f5,_0x171a0d,_0x58ca4f,_0x50d1e0){var _0x2b3701=_0x29ef0d;_0x50d1e0&&_0x4840f5===_0x2b3701(0x1d5)&&_0x58ca4f[_0x2b3701(0x21f)][_0x2b3701(0x1d5)]();}function _0x5d6a(_0x1285be,_0x1e7632){var _0x385519=_0x3855();return _0x5d6a=function(_0x5d6a9c,_0x3df8ba){_0x5d6a9c=_0x5d6a9c-0x159;var _0x2a4666=_0x385519[_0x5d6a9c];return _0x2a4666;},_0x5d6a(_0x1285be,_0x1e7632);}function b(_0x30b763){var _0x2603a6=_0x29ef0d,_0x546f20,_0x2a7083;let _0x1021dd=function(_0x33adc3,_0x368c0f){return _0x368c0f-_0x33adc3;},_0x1713db;if(_0x30b763[_0x2603a6(0x1c2)])_0x1713db=function(){var _0x260217=_0x2603a6;return _0x30b763[_0x260217(0x1c2)]['now']();};else{if(_0x30b763[_0x2603a6(0x230)]&&_0x30b763[_0x2603a6(0x230)][_0x2603a6(0x1c3)]&&((_0x2a7083=(_0x546f20=_0x30b763[_0x2603a6(0x230)])==null?void 0x0:_0x546f20['env'])==null?void 0x0:_0x2a7083[_0x2603a6(0x21e)])!==_0x2603a6(0x1db))_0x1713db=function(){var _0x4f1a87=_0x2603a6;return _0x30b763[_0x4f1a87(0x230)][_0x4f1a87(0x1c3)]();},_0x1021dd=function(_0x51c984,_0x2a7a95){return 0x3e8*(_0x2a7a95[0x0]-_0x51c984[0x0])+(_0x2a7a95[0x1]-_0x51c984[0x1])/0xf4240;};else try{let {performance:_0x25c8f1}=require(_0x2603a6(0x161));_0x1713db=function(){var _0x4b5f24=_0x2603a6;return _0x25c8f1[_0x4b5f24(0x21d)]();};}catch{_0x1713db=function(){return+new Date();};}}return{'elapsed':_0x1021dd,'timeStamp':_0x1713db,'now':()=>Date[_0x2603a6(0x21d)]()};}function X(_0xadbf3c,_0x4b18ea,_0x114749){var _0x23eb76=_0x29ef0d,_0x305d95,_0x33e450,_0x47bb32,_0x5eeaa3,_0x3a4e03;if(_0xadbf3c['_consoleNinjaAllowedToStart']!==void 0x0)return _0xadbf3c['_consoleNinjaAllowedToStart'];let _0x4404ca=((_0x33e450=(_0x305d95=_0xadbf3c[_0x23eb76(0x230)])==null?void 0x0:_0x305d95['versions'])==null?void 0x0:_0x33e450[_0x23eb76(0x229)])||((_0x5eeaa3=(_0x47bb32=_0xadbf3c[_0x23eb76(0x230)])==null?void 0x0:_0x47bb32[_0x23eb76(0x235)])==null?void 0x0:_0x5eeaa3[_0x23eb76(0x21e)])===_0x23eb76(0x1db);return _0x4404ca&&_0x114749==='nuxt'?_0xadbf3c[_0x23eb76(0x226)]=!0x1:_0xadbf3c[_0x23eb76(0x226)]=_0x4404ca||!_0x4b18ea||((_0x3a4e03=_0xadbf3c[_0x23eb76(0x21f)])==null?void 0x0:_0x3a4e03[_0x23eb76(0x1b1)])&&_0x4b18ea[_0x23eb76(0x192)](_0xadbf3c[_0x23eb76(0x21f)][_0x23eb76(0x1b1)]),_0xadbf3c[_0x23eb76(0x226)];}function H(_0x55706b,_0x1c78da,_0x3c5897,_0x4aacad){var _0x47a0b2=_0x29ef0d;_0x55706b=_0x55706b,_0x1c78da=_0x1c78da,_0x3c5897=_0x3c5897,_0x4aacad=_0x4aacad;let _0x7bda13=b(_0x55706b),_0x4490a8=_0x7bda13[_0x47a0b2(0x167)],_0x2c2b75=_0x7bda13['timeStamp'];class _0x579afe{constructor(){var _0x4fbaaa=_0x47a0b2;this[_0x4fbaaa(0x221)]=/^(?!(?:do|if|in|for|let|new|try|var|case|else|enum|eval|false|null|this|true|void|with|break|catch|class|const|super|throw|while|yield|delete|export|import|public|return|static|switch|typeof|default|extends|finally|package|private|continue|debugger|function|arguments|interface|protected|implements|instanceof)$)[_$a-zA-Z\\xA0-\\uFFFF][_$a-zA-Z0-9\\xA0-\\uFFFF]*$/,this[_0x4fbaaa(0x171)]=/^(0|[1-9][0-9]*)$/,this[_0x4fbaaa(0x20c)]=/'([^\\\\']|\\\\')*'/,this[_0x4fbaaa(0x24b)]=_0x55706b[_0x4fbaaa(0x241)],this[_0x4fbaaa(0x15e)]=_0x55706b['HTMLAllCollection'],this[_0x4fbaaa(0x194)]=Object[_0x4fbaaa(0x15c)],this[_0x4fbaaa(0x1a7)]=Object['getOwnPropertyNames'],this['_Symbol']=_0x55706b['Symbol'],this[_0x4fbaaa(0x179)]=RegExp[_0x4fbaaa(0x217)]['toString'],this[_0x4fbaaa(0x18e)]=Date[_0x4fbaaa(0x217)][_0x4fbaaa(0x17d)];}[_0x47a0b2(0x238)](_0x3b41ea,_0x355719,_0x11690b,_0x5dcf20){var _0x8f389b=_0x47a0b2,_0x552ebb=this,_0x236687=_0x11690b['autoExpand'];function _0x4900e1(_0x4ec6a2,_0x44367d,_0x15edb6){var _0xfc5eab=_0x5d6a;_0x44367d['type']='unknown',_0x44367d[_0xfc5eab(0x1bd)]=_0x4ec6a2[_0xfc5eab(0x20e)],_0x1dfe61=_0x15edb6[_0xfc5eab(0x229)][_0xfc5eab(0x1a1)],_0x15edb6[_0xfc5eab(0x229)][_0xfc5eab(0x1a1)]=_0x44367d,_0x552ebb['_treeNodePropertiesBeforeFullValue'](_0x44367d,_0x15edb6);}try{_0x11690b['level']++,_0x11690b[_0x8f389b(0x206)]&&_0x11690b[_0x8f389b(0x20f)][_0x8f389b(0x15f)](_0x355719);var _0x461263,_0x2cdc9e,_0x25e0f9,_0x4512d2,_0x436656=[],_0x2c89d6=[],_0xf40849,_0xfddba0=this[_0x8f389b(0x169)](_0x355719),_0xb334be=_0xfddba0===_0x8f389b(0x1b0),_0x402c4f=!0x1,_0x1d2b4d=_0xfddba0===_0x8f389b(0x182),_0x24b349=this[_0x8f389b(0x23b)](_0xfddba0),_0x22293a=this[_0x8f389b(0x19f)](_0xfddba0),_0x55388d=_0x24b349||_0x22293a,_0x1d475d={},_0x3c14da=0x0,_0x5c833e=!0x1,_0x1dfe61,_0x3e37e1=/^(([1-9]{1}[0-9]*)|0)$/;if(_0x11690b['depth']){if(_0xb334be){if(_0x2cdc9e=_0x355719[_0x8f389b(0x1b5)],_0x2cdc9e>_0x11690b[_0x8f389b(0x1ba)]){for(_0x25e0f9=0x0,_0x4512d2=_0x11690b[_0x8f389b(0x1ba)],_0x461263=_0x25e0f9;_0x461263<_0x4512d2;_0x461263++)_0x2c89d6[_0x8f389b(0x15f)](_0x552ebb['_addProperty'](_0x436656,_0x355719,_0xfddba0,_0x461263,_0x11690b));_0x3b41ea['cappedElements']=!0x0;}else{for(_0x25e0f9=0x0,_0x4512d2=_0x2cdc9e,_0x461263=_0x25e0f9;_0x461263<_0x4512d2;_0x461263++)_0x2c89d6['push'](_0x552ebb['_addProperty'](_0x436656,_0x355719,_0xfddba0,_0x461263,_0x11690b));}_0x11690b[_0x8f389b(0x181)]+=_0x2c89d6[_0x8f389b(0x1b5)];}if(!(_0xfddba0==='null'||_0xfddba0===_0x8f389b(0x241))&&!_0x24b349&&_0xfddba0!==_0x8f389b(0x22f)&&_0xfddba0!==_0x8f389b(0x1b6)&&_0xfddba0!==_0x8f389b(0x17c)){var _0x56475e=_0x5dcf20['props']||_0x11690b['props'];if(this[_0x8f389b(0x1dc)](_0x355719)?(_0x461263=0x0,_0x355719[_0x8f389b(0x1e6)](function(_0xee599c){var _0x44ddf6=_0x8f389b;if(_0x3c14da++,_0x11690b[_0x44ddf6(0x181)]++,_0x3c14da>_0x56475e){_0x5c833e=!0x0;return;}if(!_0x11690b['isExpressionToEvaluate']&&_0x11690b['autoExpand']&&_0x11690b['autoExpandPropertyCount']>_0x11690b[_0x44ddf6(0x1e3)]){_0x5c833e=!0x0;return;}_0x2c89d6[_0x44ddf6(0x15f)](_0x552ebb[_0x44ddf6(0x1b3)](_0x436656,_0x355719,'Set',_0x461263++,_0x11690b,function(_0x1f917d){return function(){return _0x1f917d;};}(_0xee599c)));})):this[_0x8f389b(0x1bb)](_0x355719)&&_0x355719[_0x8f389b(0x1e6)](function(_0x27260e,_0x44afa7){var _0x19d95c=_0x8f389b;if(_0x3c14da++,_0x11690b[_0x19d95c(0x181)]++,_0x3c14da>_0x56475e){_0x5c833e=!0x0;return;}if(!_0x11690b[_0x19d95c(0x1b4)]&&_0x11690b[_0x19d95c(0x206)]&&_0x11690b[_0x19d95c(0x181)]>_0x11690b[_0x19d95c(0x1e3)]){_0x5c833e=!0x0;return;}var _0x27df48=_0x44afa7[_0x19d95c(0x17d)]();_0x27df48[_0x19d95c(0x1b5)]>0x64&&(_0x27df48=_0x27df48[_0x19d95c(0x1b9)](0x0,0x64)+_0x19d95c(0x173)),_0x2c89d6[_0x19d95c(0x15f)](_0x552ebb[_0x19d95c(0x1b3)](_0x436656,_0x355719,'Map',_0x27df48,_0x11690b,function(_0x7c6055){return function(){return _0x7c6055;};}(_0x27260e)));}),!_0x402c4f){try{for(_0xf40849 in _0x355719)if(!(_0xb334be&&_0x3e37e1[_0x8f389b(0x1c0)](_0xf40849))&&!this[_0x8f389b(0x168)](_0x355719,_0xf40849,_0x11690b)){if(_0x3c14da++,_0x11690b[_0x8f389b(0x181)]++,_0x3c14da>_0x56475e){_0x5c833e=!0x0;break;}if(!_0x11690b[_0x8f389b(0x1b4)]&&_0x11690b[_0x8f389b(0x206)]&&_0x11690b[_0x8f389b(0x181)]>_0x11690b[_0x8f389b(0x1e3)]){_0x5c833e=!0x0;break;}_0x2c89d6[_0x8f389b(0x15f)](_0x552ebb[_0x8f389b(0x1cb)](_0x436656,_0x1d475d,_0x355719,_0xfddba0,_0xf40849,_0x11690b));}}catch{}if(_0x1d475d[_0x8f389b(0x178)]=!0x0,_0x1d2b4d&&(_0x1d475d[_0x8f389b(0x21c)]=!0x0),!_0x5c833e){var _0x3e4e3b=[][_0x8f389b(0x1cd)](this[_0x8f389b(0x1a7)](_0x355719))[_0x8f389b(0x1cd)](this[_0x8f389b(0x1a5)](_0x355719));for(_0x461263=0x0,_0x2cdc9e=_0x3e4e3b[_0x8f389b(0x1b5)];_0x461263<_0x2cdc9e;_0x461263++)if(_0xf40849=_0x3e4e3b[_0x461263],!(_0xb334be&&_0x3e37e1[_0x8f389b(0x1c0)](_0xf40849[_0x8f389b(0x17d)]()))&&!this[_0x8f389b(0x168)](_0x355719,_0xf40849,_0x11690b)&&!_0x1d475d[_0x8f389b(0x243)+_0xf40849[_0x8f389b(0x17d)]()]){if(_0x3c14da++,_0x11690b[_0x8f389b(0x181)]++,_0x3c14da>_0x56475e){_0x5c833e=!0x0;break;}if(!_0x11690b[_0x8f389b(0x1b4)]&&_0x11690b[_0x8f389b(0x206)]&&_0x11690b[_0x8f389b(0x181)]>_0x11690b[_0x8f389b(0x1e3)]){_0x5c833e=!0x0;break;}_0x2c89d6[_0x8f389b(0x15f)](_0x552ebb[_0x8f389b(0x1cb)](_0x436656,_0x1d475d,_0x355719,_0xfddba0,_0xf40849,_0x11690b));}}}}}if(_0x3b41ea[_0x8f389b(0x1af)]=_0xfddba0,_0x55388d?(_0x3b41ea[_0x8f389b(0x22b)]=_0x355719[_0x8f389b(0x19d)](),this[_0x8f389b(0x20b)](_0xfddba0,_0x3b41ea,_0x11690b,_0x5dcf20)):_0xfddba0===_0x8f389b(0x17e)?_0x3b41ea[_0x8f389b(0x22b)]=this[_0x8f389b(0x18e)]['call'](_0x355719):_0xfddba0===_0x8f389b(0x17c)?_0x3b41ea[_0x8f389b(0x22b)]=_0x355719['toString']():_0xfddba0===_0x8f389b(0x1c9)?_0x3b41ea[_0x8f389b(0x22b)]=this[_0x8f389b(0x179)]['call'](_0x355719):_0xfddba0===_0x8f389b(0x205)&&this[_0x8f389b(0x22e)]?_0x3b41ea['value']=this[_0x8f389b(0x22e)][_0x8f389b(0x217)][_0x8f389b(0x17d)][_0x8f389b(0x174)](_0x355719):!_0x11690b[_0x8f389b(0x247)]&&!(_0xfddba0===_0x8f389b(0x1e8)||_0xfddba0==='undefined')&&(delete _0x3b41ea[_0x8f389b(0x22b)],_0x3b41ea[_0x8f389b(0x215)]=!0x0),_0x5c833e&&(_0x3b41ea['cappedProps']=!0x0),_0x1dfe61=_0x11690b[_0x8f389b(0x229)][_0x8f389b(0x1a1)],_0x11690b[_0x8f389b(0x229)][_0x8f389b(0x1a1)]=_0x3b41ea,this[_0x8f389b(0x195)](_0x3b41ea,_0x11690b),_0x2c89d6[_0x8f389b(0x1b5)]){for(_0x461263=0x0,_0x2cdc9e=_0x2c89d6['length'];_0x461263<_0x2cdc9e;_0x461263++)_0x2c89d6[_0x461263](_0x461263);}_0x436656[_0x8f389b(0x1b5)]&&(_0x3b41ea[_0x8f389b(0x1f9)]=_0x436656);}catch(_0x23ea81){_0x4900e1(_0x23ea81,_0x3b41ea,_0x11690b);}return this['_additionalMetadata'](_0x355719,_0x3b41ea),this['_treeNodePropertiesAfterFullValue'](_0x3b41ea,_0x11690b),_0x11690b[_0x8f389b(0x229)][_0x8f389b(0x1a1)]=_0x1dfe61,_0x11690b[_0x8f389b(0x197)]--,_0x11690b[_0x8f389b(0x206)]=_0x236687,_0x11690b[_0x8f389b(0x206)]&&_0x11690b[_0x8f389b(0x20f)][_0x8f389b(0x172)](),_0x3b41ea;}[_0x47a0b2(0x1a5)](_0x1df297){return Object['getOwnPropertySymbols']?Object['getOwnPropertySymbols'](_0x1df297):[];}[_0x47a0b2(0x1dc)](_0xe328fa){var _0xc71172=_0x47a0b2;return!!(_0xe328fa&&_0x55706b['Set']&&this[_0xc71172(0x164)](_0xe328fa)===_0xc71172(0x1d3)&&_0xe328fa[_0xc71172(0x1e6)]);}['_blacklistedProperty'](_0x27c689,_0x49a238,_0x3a7a1c){var _0x47e669=_0x47a0b2;return _0x3a7a1c[_0x47e669(0x1e7)]?typeof _0x27c689[_0x49a238]==_0x47e669(0x182):!0x1;}[_0x47a0b2(0x169)](_0x28a592){var _0x47f751=_0x47a0b2,_0x180e49='';return _0x180e49=typeof _0x28a592,_0x180e49===_0x47f751(0x162)?this[_0x47f751(0x164)](_0x28a592)===_0x47f751(0x15d)?_0x180e49=_0x47f751(0x1b0):this[_0x47f751(0x164)](_0x28a592)===_0x47f751(0x1ea)?_0x180e49=_0x47f751(0x17e):this[_0x47f751(0x164)](_0x28a592)===_0x47f751(0x15a)?_0x180e49=_0x47f751(0x17c):_0x28a592===null?_0x180e49=_0x47f751(0x1e8):_0x28a592['constructor']&&(_0x180e49=_0x28a592[_0x47f751(0x18d)][_0x47f751(0x23d)]||_0x180e49):_0x180e49==='undefined'&&this[_0x47f751(0x15e)]&&_0x28a592 instanceof this[_0x47f751(0x15e)]&&(_0x180e49=_0x47f751(0x244)),_0x180e49;}[_0x47a0b2(0x164)](_0x2fcd7b){var _0x1fcd42=_0x47a0b2;return Object[_0x1fcd42(0x217)][_0x1fcd42(0x17d)][_0x1fcd42(0x174)](_0x2fcd7b);}['_isPrimitiveType'](_0x44e5b5){var _0x556962=_0x47a0b2;return _0x44e5b5==='boolean'||_0x44e5b5===_0x556962(0x23a)||_0x44e5b5===_0x556962(0x1f3);}[_0x47a0b2(0x19f)](_0x25dc08){var _0x1b66e9=_0x47a0b2;return _0x25dc08===_0x1b66e9(0x1ce)||_0x25dc08===_0x1b66e9(0x22f)||_0x25dc08===_0x1b66e9(0x187);}[_0x47a0b2(0x1b3)](_0x133410,_0xe3d199,_0x36eaca,_0x3ae903,_0x310148,_0xd2268){var _0xceeda1=this;return function(_0x39264e){var _0x3380ba=_0x5d6a,_0x9875f4=_0x310148['node'][_0x3380ba(0x1a1)],_0x104af8=_0x310148[_0x3380ba(0x229)][_0x3380ba(0x1d8)],_0x2f412a=_0x310148['node'][_0x3380ba(0x223)];_0x310148[_0x3380ba(0x229)][_0x3380ba(0x223)]=_0x9875f4,_0x310148[_0x3380ba(0x229)][_0x3380ba(0x1d8)]=typeof _0x3ae903==_0x3380ba(0x1f3)?_0x3ae903:_0x39264e,_0x133410[_0x3380ba(0x15f)](_0xceeda1['_property'](_0xe3d199,_0x36eaca,_0x3ae903,_0x310148,_0xd2268)),_0x310148[_0x3380ba(0x229)]['parent']=_0x2f412a,_0x310148[_0x3380ba(0x229)]['index']=_0x104af8;};}[_0x47a0b2(0x1cb)](_0x5d3084,_0x541edd,_0x57c233,_0xebce12,_0x414960,_0x375230,_0x53d46b){var _0x19d958=_0x47a0b2,_0x13f36a=this;return _0x541edd[_0x19d958(0x243)+_0x414960['toString']()]=!0x0,function(_0x1335af){var _0x4470b3=_0x19d958,_0x7413fe=_0x375230['node'][_0x4470b3(0x1a1)],_0x354496=_0x375230[_0x4470b3(0x229)][_0x4470b3(0x1d8)],_0x4c2dcb=_0x375230[_0x4470b3(0x229)][_0x4470b3(0x223)];_0x375230[_0x4470b3(0x229)][_0x4470b3(0x223)]=_0x7413fe,_0x375230['node'][_0x4470b3(0x1d8)]=_0x1335af,_0x5d3084[_0x4470b3(0x15f)](_0x13f36a[_0x4470b3(0x18a)](_0x57c233,_0xebce12,_0x414960,_0x375230,_0x53d46b)),_0x375230[_0x4470b3(0x229)][_0x4470b3(0x223)]=_0x4c2dcb,_0x375230[_0x4470b3(0x229)][_0x4470b3(0x1d8)]=_0x354496;};}[_0x47a0b2(0x18a)](_0x2637e2,_0x414106,_0x2368f3,_0x3dd70e,_0xb04b6f){var _0x2c00c8=_0x47a0b2,_0x1619e5=this;_0xb04b6f||(_0xb04b6f=function(_0x26680a,_0x1e7dd1){return _0x26680a[_0x1e7dd1];});var _0xa76935=_0x2368f3[_0x2c00c8(0x17d)](),_0x4452e9=_0x3dd70e['expressionsToEvaluate']||{},_0x128e56=_0x3dd70e[_0x2c00c8(0x247)],_0x367daf=_0x3dd70e['isExpressionToEvaluate'];try{var _0x32b3c4=this[_0x2c00c8(0x1bb)](_0x2637e2),_0x3f3022=_0xa76935;_0x32b3c4&&_0x3f3022[0x0]==='\\x27'&&(_0x3f3022=_0x3f3022[_0x2c00c8(0x1c7)](0x1,_0x3f3022['length']-0x2));var _0x3fe7ed=_0x3dd70e[_0x2c00c8(0x1ac)]=_0x4452e9[_0x2c00c8(0x243)+_0x3f3022];_0x3fe7ed&&(_0x3dd70e['depth']=_0x3dd70e[_0x2c00c8(0x247)]+0x1),_0x3dd70e[_0x2c00c8(0x1b4)]=!!_0x3fe7ed;var _0x50e270=typeof _0x2368f3==_0x2c00c8(0x205),_0x2570fd={'name':_0x50e270||_0x32b3c4?_0xa76935:this[_0x2c00c8(0x19a)](_0xa76935)};if(_0x50e270&&(_0x2570fd['symbol']=!0x0),!(_0x414106===_0x2c00c8(0x1b0)||_0x414106===_0x2c00c8(0x17f))){var _0x5d0ca8=this[_0x2c00c8(0x194)](_0x2637e2,_0x2368f3);if(_0x5d0ca8&&(_0x5d0ca8[_0x2c00c8(0x1f4)]&&(_0x2570fd[_0x2c00c8(0x1d2)]=!0x0),_0x5d0ca8[_0x2c00c8(0x220)]&&!_0x3fe7ed&&!_0x3dd70e[_0x2c00c8(0x21a)]))return _0x2570fd[_0x2c00c8(0x1d9)]=!0x0,this[_0x2c00c8(0x1ef)](_0x2570fd,_0x3dd70e),_0x2570fd;}var _0x23501f;try{_0x23501f=_0xb04b6f(_0x2637e2,_0x2368f3);}catch(_0x58a116){return _0x2570fd={'name':_0xa76935,'type':_0x2c00c8(0x1cf),'error':_0x58a116['message']},this[_0x2c00c8(0x1ef)](_0x2570fd,_0x3dd70e),_0x2570fd;}var _0x25e7bd=this[_0x2c00c8(0x169)](_0x23501f),_0x4d1b0a=this[_0x2c00c8(0x23b)](_0x25e7bd);if(_0x2570fd[_0x2c00c8(0x1af)]=_0x25e7bd,_0x4d1b0a)this[_0x2c00c8(0x1ef)](_0x2570fd,_0x3dd70e,_0x23501f,function(){var _0x471d69=_0x2c00c8;_0x2570fd['value']=_0x23501f['valueOf'](),!_0x3fe7ed&&_0x1619e5[_0x471d69(0x20b)](_0x25e7bd,_0x2570fd,_0x3dd70e,{});});else{var _0x590ad9=_0x3dd70e[_0x2c00c8(0x206)]&&_0x3dd70e[_0x2c00c8(0x197)]<_0x3dd70e[_0x2c00c8(0x1a2)]&&_0x3dd70e['autoExpandPreviousObjects'][_0x2c00c8(0x160)](_0x23501f)<0x0&&_0x25e7bd!=='function'&&_0x3dd70e[_0x2c00c8(0x181)]<_0x3dd70e[_0x2c00c8(0x1e3)];_0x590ad9||_0x3dd70e[_0x2c00c8(0x197)]<_0x128e56||_0x3fe7ed?(this['serialize'](_0x2570fd,_0x23501f,_0x3dd70e,_0x3fe7ed||{}),this[_0x2c00c8(0x1c8)](_0x23501f,_0x2570fd)):this[_0x2c00c8(0x1ef)](_0x2570fd,_0x3dd70e,_0x23501f,function(){var _0x1e4055=_0x2c00c8;_0x25e7bd===_0x1e4055(0x1e8)||_0x25e7bd===_0x1e4055(0x241)||(delete _0x2570fd[_0x1e4055(0x22b)],_0x2570fd['capped']=!0x0);});}return _0x2570fd;}finally{_0x3dd70e[_0x2c00c8(0x1ac)]=_0x4452e9,_0x3dd70e[_0x2c00c8(0x247)]=_0x128e56,_0x3dd70e[_0x2c00c8(0x1b4)]=_0x367daf;}}[_0x47a0b2(0x20b)](_0x4e451c,_0x23df6f,_0x406341,_0x39492b){var _0x1f7aa3=_0x47a0b2,_0x149066=_0x39492b[_0x1f7aa3(0x204)]||_0x406341[_0x1f7aa3(0x204)];if((_0x4e451c===_0x1f7aa3(0x23a)||_0x4e451c===_0x1f7aa3(0x22f))&&_0x23df6f['value']){let _0x7e7895=_0x23df6f[_0x1f7aa3(0x22b)][_0x1f7aa3(0x1b5)];_0x406341[_0x1f7aa3(0x1e1)]+=_0x7e7895,_0x406341['allStrLength']>_0x406341[_0x1f7aa3(0x166)]?(_0x23df6f[_0x1f7aa3(0x215)]='',delete _0x23df6f[_0x1f7aa3(0x22b)]):_0x7e7895>_0x149066&&(_0x23df6f[_0x1f7aa3(0x215)]=_0x23df6f[_0x1f7aa3(0x22b)][_0x1f7aa3(0x1c7)](0x0,_0x149066),delete _0x23df6f[_0x1f7aa3(0x22b)]);}}[_0x47a0b2(0x1bb)](_0x23cdcc){var _0x256062=_0x47a0b2;return!!(_0x23cdcc&&_0x55706b[_0x256062(0x193)]&&this[_0x256062(0x164)](_0x23cdcc)===_0x256062(0x1bf)&&_0x23cdcc[_0x256062(0x1e6)]);}[_0x47a0b2(0x19a)](_0x3c2079){var _0x246e5f=_0x47a0b2;if(_0x3c2079[_0x246e5f(0x188)](/^\\d+$/))return _0x3c2079;var _0x9c3b7c;try{_0x9c3b7c=JSON[_0x246e5f(0x23f)](''+_0x3c2079);}catch{_0x9c3b7c='\\x22'+this['_objectToString'](_0x3c2079)+'\\x22';}return _0x9c3b7c[_0x246e5f(0x188)](/^\"([a-zA-Z_][a-zA-Z_0-9]*)\"$/)?_0x9c3b7c=_0x9c3b7c[_0x246e5f(0x1c7)](0x1,_0x9c3b7c[_0x246e5f(0x1b5)]-0x2):_0x9c3b7c=_0x9c3b7c['replace'](/'/g,'\\x5c\\x27')[_0x246e5f(0x1e9)](/\\\\\"/g,'\\x22')[_0x246e5f(0x1e9)](/(^\"|\"$)/g,'\\x27'),_0x9c3b7c;}[_0x47a0b2(0x1ef)](_0x35bd33,_0x4d9463,_0x3fc71f,_0xddd4eb){var _0x4e6cde=_0x47a0b2;this[_0x4e6cde(0x195)](_0x35bd33,_0x4d9463),_0xddd4eb&&_0xddd4eb(),this[_0x4e6cde(0x1c8)](_0x3fc71f,_0x35bd33),this['_treeNodePropertiesAfterFullValue'](_0x35bd33,_0x4d9463);}[_0x47a0b2(0x195)](_0x4ac2ef,_0x590213){var _0x43b32a=_0x47a0b2;this[_0x43b32a(0x20d)](_0x4ac2ef,_0x590213),this[_0x43b32a(0x202)](_0x4ac2ef,_0x590213),this['_setNodeExpressionPath'](_0x4ac2ef,_0x590213),this[_0x43b32a(0x1fb)](_0x4ac2ef,_0x590213);}[_0x47a0b2(0x20d)](_0x44e2cf,_0x75d4fd){}[_0x47a0b2(0x202)](_0x205d60,_0x3b6509){}[_0x47a0b2(0x1e5)](_0x3ff3ad,_0x22b8f8){}[_0x47a0b2(0x196)](_0x36cbf9){var _0x95bfd2=_0x47a0b2;return _0x36cbf9===this[_0x95bfd2(0x24b)];}['_treeNodePropertiesAfterFullValue'](_0x5468d3,_0x5a6192){var _0x4d99f6=_0x47a0b2;this[_0x4d99f6(0x1e5)](_0x5468d3,_0x5a6192),this[_0x4d99f6(0x242)](_0x5468d3),_0x5a6192[_0x4d99f6(0x1ad)]&&this[_0x4d99f6(0x1f2)](_0x5468d3),this[_0x4d99f6(0x1a6)](_0x5468d3,_0x5a6192),this[_0x4d99f6(0x222)](_0x5468d3,_0x5a6192),this[_0x4d99f6(0x211)](_0x5468d3);}[_0x47a0b2(0x1c8)](_0x31bef7,_0xca3dfa){var _0x4bb0cb=_0x47a0b2;let _0x38ab33;try{_0x55706b['console']&&(_0x38ab33=_0x55706b[_0x4bb0cb(0x1ae)][_0x4bb0cb(0x1bd)],_0x55706b[_0x4bb0cb(0x1ae)][_0x4bb0cb(0x1bd)]=function(){}),_0x31bef7&&typeof _0x31bef7[_0x4bb0cb(0x1b5)]==_0x4bb0cb(0x1f3)&&(_0xca3dfa[_0x4bb0cb(0x1b5)]=_0x31bef7[_0x4bb0cb(0x1b5)]);}catch{}finally{_0x38ab33&&(_0x55706b[_0x4bb0cb(0x1ae)][_0x4bb0cb(0x1bd)]=_0x38ab33);}if(_0xca3dfa[_0x4bb0cb(0x1af)]===_0x4bb0cb(0x1f3)||_0xca3dfa[_0x4bb0cb(0x1af)]===_0x4bb0cb(0x187)){if(isNaN(_0xca3dfa[_0x4bb0cb(0x22b)]))_0xca3dfa[_0x4bb0cb(0x198)]=!0x0,delete _0xca3dfa['value'];else switch(_0xca3dfa['value']){case Number[_0x4bb0cb(0x1a9)]:_0xca3dfa['positiveInfinity']=!0x0,delete _0xca3dfa[_0x4bb0cb(0x22b)];break;case Number['NEGATIVE_INFINITY']:_0xca3dfa['negativeInfinity']=!0x0,delete _0xca3dfa[_0x4bb0cb(0x22b)];break;case 0x0:this[_0x4bb0cb(0x1f8)](_0xca3dfa[_0x4bb0cb(0x22b)])&&(_0xca3dfa[_0x4bb0cb(0x201)]=!0x0);break;}}else _0xca3dfa[_0x4bb0cb(0x1af)]===_0x4bb0cb(0x182)&&typeof _0x31bef7[_0x4bb0cb(0x23d)]=='string'&&_0x31bef7[_0x4bb0cb(0x23d)]&&_0xca3dfa[_0x4bb0cb(0x23d)]&&_0x31bef7[_0x4bb0cb(0x23d)]!==_0xca3dfa[_0x4bb0cb(0x23d)]&&(_0xca3dfa[_0x4bb0cb(0x1f7)]=_0x31bef7[_0x4bb0cb(0x23d)]);}[_0x47a0b2(0x1f8)](_0x53e7ab){return 0x1/_0x53e7ab===Number['NEGATIVE_INFINITY'];}[_0x47a0b2(0x1f2)](_0xc0b002){var _0xedc6a3=_0x47a0b2;!_0xc0b002['props']||!_0xc0b002[_0xedc6a3(0x1f9)]['length']||_0xc0b002[_0xedc6a3(0x1af)]===_0xedc6a3(0x1b0)||_0xc0b002[_0xedc6a3(0x1af)]===_0xedc6a3(0x193)||_0xc0b002[_0xedc6a3(0x1af)]===_0xedc6a3(0x165)||_0xc0b002[_0xedc6a3(0x1f9)]['sort'](function(_0x1708fa,_0x5f500b){var _0x160fb6=_0xedc6a3,_0x47c3f7=_0x1708fa['name'][_0x160fb6(0x1ee)](),_0x3eba78=_0x5f500b['name'][_0x160fb6(0x1ee)]();return _0x47c3f7<_0x3eba78?-0x1:_0x47c3f7>_0x3eba78?0x1:0x0;});}['_addFunctionsNode'](_0x38ed93,_0xc52bd8){var _0x5f5c32=_0x47a0b2;if(!(_0xc52bd8['noFunctions']||!_0x38ed93[_0x5f5c32(0x1f9)]||!_0x38ed93[_0x5f5c32(0x1f9)]['length'])){for(var _0x1f842a=[],_0x3c42af=[],_0x2f2dcf=0x0,_0x429b2c=_0x38ed93[_0x5f5c32(0x1f9)][_0x5f5c32(0x1b5)];_0x2f2dcf<_0x429b2c;_0x2f2dcf++){var _0x39c475=_0x38ed93[_0x5f5c32(0x1f9)][_0x2f2dcf];_0x39c475[_0x5f5c32(0x1af)]===_0x5f5c32(0x182)?_0x1f842a[_0x5f5c32(0x15f)](_0x39c475):_0x3c42af[_0x5f5c32(0x15f)](_0x39c475);}if(!(!_0x3c42af[_0x5f5c32(0x1b5)]||_0x1f842a[_0x5f5c32(0x1b5)]<=0x1)){_0x38ed93[_0x5f5c32(0x1f9)]=_0x3c42af;var _0x28a189={'functionsNode':!0x0,'props':_0x1f842a};this[_0x5f5c32(0x20d)](_0x28a189,_0xc52bd8),this[_0x5f5c32(0x1e5)](_0x28a189,_0xc52bd8),this[_0x5f5c32(0x242)](_0x28a189),this[_0x5f5c32(0x1fb)](_0x28a189,_0xc52bd8),_0x28a189['id']+='\\x20f',_0x38ed93['props'][_0x5f5c32(0x17a)](_0x28a189);}}}[_0x47a0b2(0x222)](_0x36de79,_0x4554f4){}[_0x47a0b2(0x242)](_0x48af8c){}[_0x47a0b2(0x16b)](_0x4d8ed5){var _0x2f5c0b=_0x47a0b2;return Array[_0x2f5c0b(0x1fa)](_0x4d8ed5)||typeof _0x4d8ed5=='object'&&this['_objectToString'](_0x4d8ed5)==='[object\\x20Array]';}['_setNodePermissions'](_0x2e6424,_0x2e0467){}['_cleanNode'](_0x5ec349){var _0x315d63=_0x47a0b2;delete _0x5ec349[_0x315d63(0x232)],delete _0x5ec349['_hasSetOnItsPath'],delete _0x5ec349[_0x315d63(0x1d6)];}[_0x47a0b2(0x1bc)](_0x5d5654,_0x3e7605){}}let _0x23fb49=new _0x579afe(),_0x3870df={'props':0x64,'elements':0x64,'strLength':0x400*0x32,'totalStrLength':0x400*0x32,'autoExpandLimit':0x1388,'autoExpandMaxDepth':0xa},_0x293e67={'props':0x5,'elements':0x5,'strLength':0x100,'totalStrLength':0x100*0x3,'autoExpandLimit':0x1e,'autoExpandMaxDepth':0x2};function _0x1da4fa(_0x6c245c,_0x8223f4,_0x41c6d3,_0xe75f6f,_0x5212d1,_0x4f3ab2){var _0x4b6b36=_0x47a0b2;let _0x5b0918,_0x5104a5;try{_0x5104a5=_0x2c2b75(),_0x5b0918=_0x3c5897[_0x8223f4],!_0x5b0918||_0x5104a5-_0x5b0918['ts']>0x1f4&&_0x5b0918['count']&&_0x5b0918['time']/_0x5b0918['count']<0x64?(_0x3c5897[_0x8223f4]=_0x5b0918={'count':0x0,'time':0x0,'ts':_0x5104a5},_0x3c5897[_0x4b6b36(0x175)]={}):_0x5104a5-_0x3c5897[_0x4b6b36(0x175)]['ts']>0x32&&_0x3c5897['hits'][_0x4b6b36(0x1d0)]&&_0x3c5897[_0x4b6b36(0x175)][_0x4b6b36(0x170)]/_0x3c5897[_0x4b6b36(0x175)]['count']<0x64&&(_0x3c5897[_0x4b6b36(0x175)]={});let _0x34cbe3=[],_0x406a4a=_0x5b0918[_0x4b6b36(0x210)]||_0x3c5897[_0x4b6b36(0x175)][_0x4b6b36(0x210)]?_0x293e67:_0x3870df,_0x42f538=_0x2ab881=>{var _0x20601f=_0x4b6b36;let _0x5d8074={};return _0x5d8074[_0x20601f(0x1f9)]=_0x2ab881[_0x20601f(0x1f9)],_0x5d8074[_0x20601f(0x1ba)]=_0x2ab881[_0x20601f(0x1ba)],_0x5d8074['strLength']=_0x2ab881[_0x20601f(0x204)],_0x5d8074[_0x20601f(0x166)]=_0x2ab881[_0x20601f(0x166)],_0x5d8074[_0x20601f(0x1e3)]=_0x2ab881['autoExpandLimit'],_0x5d8074[_0x20601f(0x1a2)]=_0x2ab881[_0x20601f(0x1a2)],_0x5d8074[_0x20601f(0x1ad)]=!0x1,_0x5d8074[_0x20601f(0x1e7)]=!_0x1c78da,_0x5d8074[_0x20601f(0x247)]=0x1,_0x5d8074[_0x20601f(0x197)]=0x0,_0x5d8074['expId']=_0x20601f(0x180),_0x5d8074['rootExpression']=_0x20601f(0x213),_0x5d8074['autoExpand']=!0x0,_0x5d8074[_0x20601f(0x20f)]=[],_0x5d8074[_0x20601f(0x181)]=0x0,_0x5d8074[_0x20601f(0x21a)]=!0x0,_0x5d8074[_0x20601f(0x1e1)]=0x0,_0x5d8074[_0x20601f(0x229)]={'current':void 0x0,'parent':void 0x0,'index':0x0},_0x5d8074;};for(var _0x3df8ae=0x0;_0x3df8ae<_0x5212d1[_0x4b6b36(0x1b5)];_0x3df8ae++)_0x34cbe3[_0x4b6b36(0x15f)](_0x23fb49[_0x4b6b36(0x238)]({'timeNode':_0x6c245c===_0x4b6b36(0x170)||void 0x0},_0x5212d1[_0x3df8ae],_0x42f538(_0x406a4a),{}));if(_0x6c245c==='trace'){let _0x38d794=Error[_0x4b6b36(0x20a)];try{Error['stackTraceLimit']=0x1/0x0,_0x34cbe3[_0x4b6b36(0x15f)](_0x23fb49[_0x4b6b36(0x238)]({'stackNode':!0x0},new Error()['stack'],_0x42f538(_0x406a4a),{'strLength':0x1/0x0}));}finally{Error[_0x4b6b36(0x20a)]=_0x38d794;}}return{'method':'log','version':_0x4aacad,'args':[{'ts':_0x41c6d3,'session':_0xe75f6f,'args':_0x34cbe3,'id':_0x8223f4,'context':_0x4f3ab2}]};}catch(_0x7fb702){return{'method':'log','version':_0x4aacad,'args':[{'ts':_0x41c6d3,'session':_0xe75f6f,'args':[{'type':_0x4b6b36(0x1cf),'error':_0x7fb702&&_0x7fb702[_0x4b6b36(0x20e)]}],'id':_0x8223f4,'context':_0x4f3ab2}]};}finally{try{if(_0x5b0918&&_0x5104a5){let _0x65e00f=_0x2c2b75();_0x5b0918[_0x4b6b36(0x1d0)]++,_0x5b0918[_0x4b6b36(0x170)]+=_0x4490a8(_0x5104a5,_0x65e00f),_0x5b0918['ts']=_0x65e00f,_0x3c5897['hits']['count']++,_0x3c5897['hits'][_0x4b6b36(0x170)]+=_0x4490a8(_0x5104a5,_0x65e00f),_0x3c5897[_0x4b6b36(0x175)]['ts']=_0x65e00f,(_0x5b0918[_0x4b6b36(0x1d0)]>0x32||_0x5b0918[_0x4b6b36(0x170)]>0x64)&&(_0x5b0918[_0x4b6b36(0x210)]=!0x0),(_0x3c5897[_0x4b6b36(0x175)]['count']>0x3e8||_0x3c5897[_0x4b6b36(0x175)][_0x4b6b36(0x170)]>0x12c)&&(_0x3c5897[_0x4b6b36(0x175)][_0x4b6b36(0x210)]=!0x0);}}catch{}}}return _0x1da4fa;}((_0x3be010,_0x1c6083,_0x1c7318,_0x4acc8b,_0x4a0935,_0x44dd85,_0x2fc444,_0x9060b8,_0x49911f,_0x462ba4,_0x3b3d5c)=>{var _0x11fbd2=_0x29ef0d;if(_0x3be010[_0x11fbd2(0x1aa)])return _0x3be010['_console_ninja'];if(!X(_0x3be010,_0x9060b8,_0x4a0935))return _0x3be010[_0x11fbd2(0x1aa)]={'consoleLog':()=>{},'consoleTrace':()=>{},'consoleTime':()=>{},'consoleTimeEnd':()=>{},'autoLog':()=>{},'autoLogMany':()=>{},'autoTraceMany':()=>{},'coverage':()=>{},'autoTrace':()=>{},'autoTime':()=>{},'autoTimeEnd':()=>{}},_0x3be010[_0x11fbd2(0x1aa)];let _0x50a784=b(_0x3be010),_0x40f429=_0x50a784[_0x11fbd2(0x167)],_0x36b757=_0x50a784[_0x11fbd2(0x186)],_0x43295d=_0x50a784['now'],_0x25708c={'hits':{},'ts':{}},_0x2b9c69=H(_0x3be010,_0x49911f,_0x25708c,_0x44dd85),_0x1c8945=_0x2a3a63=>{_0x25708c['ts'][_0x2a3a63]=_0x36b757();},_0x22f50a=(_0x5ddb14,_0x238007)=>{var _0x54cf06=_0x11fbd2;let _0x5a1ef7=_0x25708c['ts'][_0x238007];if(delete _0x25708c['ts'][_0x238007],_0x5a1ef7){let _0x109dbe=_0x40f429(_0x5a1ef7,_0x36b757());_0x4be584(_0x2b9c69(_0x54cf06(0x170),_0x5ddb14,_0x43295d(),_0x34c91e,[_0x109dbe],_0x238007));}},_0x385606=_0x3b7983=>{var _0x4105cb=_0x11fbd2,_0x927eed;return _0x4a0935===_0x4105cb(0x245)&&_0x3be010[_0x4105cb(0x240)]&&((_0x927eed=_0x3b7983==null?void 0x0:_0x3b7983['args'])==null?void 0x0:_0x927eed[_0x4105cb(0x1b5)])&&(_0x3b7983[_0x4105cb(0x18b)][0x0][_0x4105cb(0x240)]=_0x3be010[_0x4105cb(0x240)]),_0x3b7983;};_0x3be010[_0x11fbd2(0x1aa)]={'consoleLog':(_0x2aa544,_0x2ff27a)=>{var _0x2a9c07=_0x11fbd2;_0x3be010[_0x2a9c07(0x1ae)][_0x2a9c07(0x1a8)]['name']!==_0x2a9c07(0x207)&&_0x4be584(_0x2b9c69(_0x2a9c07(0x1a8),_0x2aa544,_0x43295d(),_0x34c91e,_0x2ff27a));},'consoleTrace':(_0x286a1f,_0x5cf0b5)=>{var _0x290f4c=_0x11fbd2;_0x3be010[_0x290f4c(0x1ae)][_0x290f4c(0x1a8)][_0x290f4c(0x23d)]!==_0x290f4c(0x227)&&_0x4be584(_0x385606(_0x2b9c69('trace',_0x286a1f,_0x43295d(),_0x34c91e,_0x5cf0b5)));},'consoleTime':_0x4f2cd8=>{_0x1c8945(_0x4f2cd8);},'consoleTimeEnd':(_0x16ebcf,_0x1ac98d)=>{_0x22f50a(_0x1ac98d,_0x16ebcf);},'autoLog':(_0x2fdc4b,_0x14c834)=>{var _0x3fd871=_0x11fbd2;_0x4be584(_0x2b9c69(_0x3fd871(0x1a8),_0x14c834,_0x43295d(),_0x34c91e,[_0x2fdc4b]));},'autoLogMany':(_0x51451c,_0x917f4e)=>{var _0x34e450=_0x11fbd2;_0x4be584(_0x2b9c69(_0x34e450(0x1a8),_0x51451c,_0x43295d(),_0x34c91e,_0x917f4e));},'autoTrace':(_0x1854e5,_0x464b23)=>{var _0x580941=_0x11fbd2;_0x4be584(_0x385606(_0x2b9c69(_0x580941(0x209),_0x464b23,_0x43295d(),_0x34c91e,[_0x1854e5])));},'autoTraceMany':(_0x1a33de,_0x14b400)=>{var _0x5134fb=_0x11fbd2;_0x4be584(_0x385606(_0x2b9c69(_0x5134fb(0x209),_0x1a33de,_0x43295d(),_0x34c91e,_0x14b400)));},'autoTime':(_0x47c325,_0x1c77d2,_0x5535e7)=>{_0x1c8945(_0x5535e7);},'autoTimeEnd':(_0x5b7f59,_0x3aad56,_0x31d876)=>{_0x22f50a(_0x3aad56,_0x31d876);},'coverage':_0x5b4371=>{var _0x56eed4=_0x11fbd2;_0x4be584({'method':_0x56eed4(0x184),'version':_0x44dd85,'args':[{'id':_0x5b4371}]});}};let _0x4be584=q(_0x3be010,_0x1c6083,_0x1c7318,_0x4acc8b,_0x4a0935,_0x462ba4,_0x3b3d5c),_0x34c91e=_0x3be010[_0x11fbd2(0x1fc)];return _0x3be010['_console_ninja'];})(globalThis,_0x29ef0d(0x1df),'65010',\"c:\\\\Users\\\\sllanos\\\\.vscode\\\\extensions\\\\wallabyjs.console-ninja-1.0.323\\\\node_modules\",'webpack','1.0.0',_0x29ef0d(0x16d),_0x29ef0d(0x225),_0x29ef0d(0x1ec),_0x29ef0d(0x1fd),_0x29ef0d(0x19c));");
+  } catch (e) {}
+}
+; /* istanbul ignore next */
+function oo_oo(i) {
+  for (var _len = arguments.length, v = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
+    v[_key - 1] = arguments[_key];
+  }
+  try {
+    oo_cm().consoleLog(i, v);
+  } catch (e) {}
+  return v;
+}
+; /* istanbul ignore next */
+function oo_tr(i) {
+  for (var _len2 = arguments.length, v = new Array(_len2 > 1 ? _len2 - 1 : 0), _key2 = 1; _key2 < _len2; _key2++) {
+    v[_key2 - 1] = arguments[_key2];
+  }
+  try {
+    oo_cm().consoleTrace(i, v);
+  } catch (e) {}
+  return v;
+}
+; /* istanbul ignore next */
+function oo_ts(v) {
+  try {
+    oo_cm().consoleTime(v);
+  } catch (e) {}
+  return v;
+}
+; /* istanbul ignore next */
+function oo_te(v, i) {
+  try {
+    oo_cm().consoleTimeEnd(v, i);
+  } catch (e) {}
+  return v;
+}
+; /*eslint unicorn/no-abusive-eslint-disable:,eslint-comments/disable-enable-pair:,eslint-comments/no-unlimited-disable:,eslint-comments/no-aggregating-enable:,eslint-comments/no-duplicate-disable:,eslint-comments/no-unused-disable:,eslint-comments/no-unused-enable:,*/
 
 /***/ }),
 
@@ -19031,46 +19897,82 @@ __webpack_require__.r(__webpack_exports__);
 var _hoisted_1 = /*#__PURE__*/(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("h1", null, "Crear Documento", -1 /* HOISTED */);
 var _hoisted_2 = /*#__PURE__*/(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("label", null, "Nombre", -1 /* HOISTED */);
 var _hoisted_3 = /*#__PURE__*/(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("label", null, "Tipo", -1 /* HOISTED */);
-var _hoisted_4 = ["value"];
-var _hoisted_5 = /*#__PURE__*/(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("label", null, "Proceso", -1 /* HOISTED */);
-var _hoisted_6 = ["value"];
-var _hoisted_7 = /*#__PURE__*/(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("label", null, "Contenido", -1 /* HOISTED */);
-var _hoisted_8 = /*#__PURE__*/(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("button", {
+var _hoisted_4 = /*#__PURE__*/(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("option", {
+  value: ""
+}, "Selecciona un tipo", -1 /* HOISTED */);
+var _hoisted_5 = ["value"];
+var _hoisted_6 = /*#__PURE__*/(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("label", null, "Proceso", -1 /* HOISTED */);
+var _hoisted_7 = /*#__PURE__*/(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("option", {
+  value: ""
+}, "Selecciona un proceso", -1 /* HOISTED */);
+var _hoisted_8 = ["value"];
+var _hoisted_9 = /*#__PURE__*/(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("label", null, "Contenido", -1 /* HOISTED */);
+var _hoisted_10 = /*#__PURE__*/(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("button", {
   type: "submit"
 }, "Guardar", -1 /* HOISTED */);
 function render(_ctx, _cache, $props, $setup, $data, $options) {
-  return (0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", null, [_hoisted_1, (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("form", {
-    onSubmit: _cache[4] || (_cache[4] = (0,vue__WEBPACK_IMPORTED_MODULE_0__.withModifiers)(function () {
-      return $options.guardarDocumento && $options.guardarDocumento.apply($options, arguments);
-    }, ["prevent"]))
-  }, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", null, [_hoisted_2, (0,vue__WEBPACK_IMPORTED_MODULE_0__.withDirectives)((0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("input", {
-    type: "text",
-    "onUpdate:modelValue": _cache[0] || (_cache[0] = function ($event) {
-      return $data.documento.DOC_NOMBRE = $event;
-    })
-  }, null, 512 /* NEED_PATCH */), [[vue__WEBPACK_IMPORTED_MODULE_0__.vModelText, $data.documento.DOC_NOMBRE]])]), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", null, [_hoisted_3, (0,vue__WEBPACK_IMPORTED_MODULE_0__.withDirectives)((0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("select", {
-    "onUpdate:modelValue": _cache[1] || (_cache[1] = function ($event) {
-      return $data.documento.DOC_ID_TIPO = $event;
-    })
-  }, [((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(true), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)(vue__WEBPACK_IMPORTED_MODULE_0__.Fragment, null, (0,vue__WEBPACK_IMPORTED_MODULE_0__.renderList)($data.tipos, function (tipo) {
-    return (0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("option", {
-      value: tipo.TIP_ID,
-      key: tipo.TIP_ID
-    }, (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)(tipo.TIP_NOMBRE), 9 /* TEXT, PROPS */, _hoisted_4);
-  }), 128 /* KEYED_FRAGMENT */))], 512 /* NEED_PATCH */), [[vue__WEBPACK_IMPORTED_MODULE_0__.vModelSelect, $data.documento.DOC_ID_TIPO]])]), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", null, [_hoisted_5, (0,vue__WEBPACK_IMPORTED_MODULE_0__.withDirectives)((0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("select", {
-    "onUpdate:modelValue": _cache[2] || (_cache[2] = function ($event) {
-      return $data.documento.DOC_ID_PROCESO = $event;
-    })
-  }, [((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(true), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)(vue__WEBPACK_IMPORTED_MODULE_0__.Fragment, null, (0,vue__WEBPACK_IMPORTED_MODULE_0__.renderList)($data.procesos, function (proceso) {
-    return (0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("option", {
-      value: proceso.PRO_ID,
-      key: proceso.PRO_ID
-    }, (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)(proceso.PRO_NOMBRE), 9 /* TEXT, PROPS */, _hoisted_6);
-  }), 128 /* KEYED_FRAGMENT */))], 512 /* NEED_PATCH */), [[vue__WEBPACK_IMPORTED_MODULE_0__.vModelSelect, $data.documento.DOC_ID_PROCESO]])]), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", null, [_hoisted_7, (0,vue__WEBPACK_IMPORTED_MODULE_0__.withDirectives)((0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("textarea", {
-    "onUpdate:modelValue": _cache[3] || (_cache[3] = function ($event) {
-      return $data.documento.DOC_CONTENIDO = $event;
-    })
-  }, null, 512 /* NEED_PATCH */), [[vue__WEBPACK_IMPORTED_MODULE_0__.vModelText, $data.documento.DOC_CONTENIDO]])]), _hoisted_8], 32 /* NEED_HYDRATION */)]);
+  var _component_VField = (0,vue__WEBPACK_IMPORTED_MODULE_0__.resolveComponent)("VField");
+  var _component_VForm = (0,vue__WEBPACK_IMPORTED_MODULE_0__.resolveComponent)("VForm");
+  return (0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", null, [_hoisted_1, (0,vue__WEBPACK_IMPORTED_MODULE_0__.createVNode)(_component_VForm, {
+    onSubmit: $options.guardarDocumento
+  }, {
+    "default": (0,vue__WEBPACK_IMPORTED_MODULE_0__.withCtx)(function () {
+      return [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", null, [_hoisted_2, (0,vue__WEBPACK_IMPORTED_MODULE_0__.createVNode)(_component_VField, {
+        name: "DOC_NOMBRE",
+        rules: "required|min:3"
+      }, {
+        "default": (0,vue__WEBPACK_IMPORTED_MODULE_0__.withCtx)(function (_ref) {
+          var field = _ref.field,
+            errors = _ref.errors;
+          return [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("input", (0,vue__WEBPACK_IMPORTED_MODULE_0__.mergeProps)({
+            type: "text"
+          }, field), null, 16 /* FULL_PROPS */), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("span", null, (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)(errors[0]), 1 /* TEXT */)];
+        }),
+        _: 1 /* STABLE */
+      })]), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", null, [_hoisted_3, (0,vue__WEBPACK_IMPORTED_MODULE_0__.createVNode)(_component_VField, {
+        name: "DOC_ID_TIPO",
+        rules: "required"
+      }, {
+        "default": (0,vue__WEBPACK_IMPORTED_MODULE_0__.withCtx)(function (_ref2) {
+          var field = _ref2.field,
+            errors = _ref2.errors;
+          return [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("select", (0,vue__WEBPACK_IMPORTED_MODULE_0__.normalizeProps)((0,vue__WEBPACK_IMPORTED_MODULE_0__.guardReactiveProps)(field)), [_hoisted_4, ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(true), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)(vue__WEBPACK_IMPORTED_MODULE_0__.Fragment, null, (0,vue__WEBPACK_IMPORTED_MODULE_0__.renderList)($data.tipos, function (tipo) {
+            return (0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("option", {
+              value: tipo.TIP_ID,
+              key: tipo.TIP_ID
+            }, (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)(tipo.TIP_NOMBRE), 9 /* TEXT, PROPS */, _hoisted_5);
+          }), 128 /* KEYED_FRAGMENT */))], 16 /* FULL_PROPS */), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("span", null, (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)(errors[0]), 1 /* TEXT */)];
+        }),
+        _: 1 /* STABLE */
+      })]), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", null, [_hoisted_6, (0,vue__WEBPACK_IMPORTED_MODULE_0__.createVNode)(_component_VField, {
+        name: "DOC_ID_PROCESO",
+        rules: "required"
+      }, {
+        "default": (0,vue__WEBPACK_IMPORTED_MODULE_0__.withCtx)(function (_ref3) {
+          var field = _ref3.field,
+            errors = _ref3.errors;
+          return [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("select", (0,vue__WEBPACK_IMPORTED_MODULE_0__.normalizeProps)((0,vue__WEBPACK_IMPORTED_MODULE_0__.guardReactiveProps)(field)), [_hoisted_7, ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(true), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)(vue__WEBPACK_IMPORTED_MODULE_0__.Fragment, null, (0,vue__WEBPACK_IMPORTED_MODULE_0__.renderList)($data.procesos, function (proceso) {
+            return (0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("option", {
+              value: proceso.PRO_ID,
+              key: proceso.PRO_ID
+            }, (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)(proceso.PRO_NOMBRE), 9 /* TEXT, PROPS */, _hoisted_8);
+          }), 128 /* KEYED_FRAGMENT */))], 16 /* FULL_PROPS */), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("span", null, (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)(errors[0]), 1 /* TEXT */)];
+        }),
+        _: 1 /* STABLE */
+      })]), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", null, [_hoisted_9, (0,vue__WEBPACK_IMPORTED_MODULE_0__.createVNode)(_component_VField, {
+        name: "DOC_CONTENIDO",
+        rules: "required|min:10"
+      }, {
+        "default": (0,vue__WEBPACK_IMPORTED_MODULE_0__.withCtx)(function (_ref4) {
+          var field = _ref4.field,
+            errors = _ref4.errors;
+          return [(0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("textarea", (0,vue__WEBPACK_IMPORTED_MODULE_0__.normalizeProps)((0,vue__WEBPACK_IMPORTED_MODULE_0__.guardReactiveProps)(field)), null, 16 /* FULL_PROPS */), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("span", null, (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)(errors[0]), 1 /* TEXT */)];
+        }),
+        _: 1 /* STABLE */
+      })]), _hoisted_10];
+    }),
+    _: 1 /* STABLE */
+  }, 8 /* PROPS */, ["onSubmit"])]);
 }
 
 /***/ }),
@@ -19233,11 +20135,40 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
 __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var vue__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! vue */ "./node_modules/vue/dist/vue.esm-bundler.js");
 /* harmony import */ var _App_vue__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./App.vue */ "./resources/js/App.vue");
+/* harmony import */ var vee_validate__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! vee-validate */ "./node_modules/vee-validate/dist/vee-validate.esm.js");
+/* harmony import */ var _vee_validate_rules__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! @vee-validate/rules */ "./node_modules/@vee-validate/rules/dist/vee-validate-rules.esm.js");
+/* harmony import */ var _vee_validate_i18n__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! @vee-validate/i18n */ "./node_modules/@vee-validate/i18n/dist/vee-validate-i18n.esm.js");
+/* harmony import */ var _vee_validate_i18n_dist_locale_es_json__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! @vee-validate/i18n/dist/locale/es.json */ "./node_modules/@vee-validate/i18n/dist/locale/es.json");
 /* harmony import */ var _router__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./router */ "./resources/js/router.js");
 
 
 
-(0,vue__WEBPACK_IMPORTED_MODULE_0__.createApp)(_App_vue__WEBPACK_IMPORTED_MODULE_1__["default"]).use(_router__WEBPACK_IMPORTED_MODULE_2__["default"]).mount('#app');
+
+
+
+ // Importar la configuración de Vue Router
+
+// Definir reglas de validación
+(0,vee_validate__WEBPACK_IMPORTED_MODULE_3__.defineRule)('required', _vee_validate_rules__WEBPACK_IMPORTED_MODULE_4__.required);
+(0,vee_validate__WEBPACK_IMPORTED_MODULE_3__.defineRule)('min', _vee_validate_rules__WEBPACK_IMPORTED_MODULE_4__.min);
+(0,vee_validate__WEBPACK_IMPORTED_MODULE_3__.defineRule)('max', _vee_validate_rules__WEBPACK_IMPORTED_MODULE_4__.max);
+
+// Configurar localización en español
+(0,vee_validate__WEBPACK_IMPORTED_MODULE_3__.configure)({
+  generateMessage: (0,_vee_validate_i18n__WEBPACK_IMPORTED_MODULE_5__.localize)({
+    es: _vee_validate_i18n_dist_locale_es_json__WEBPACK_IMPORTED_MODULE_6__
+  }),
+  validateOnInput: true
+});
+var app = (0,vue__WEBPACK_IMPORTED_MODULE_0__.createApp)(_App_vue__WEBPACK_IMPORTED_MODULE_1__["default"]);
+
+// Registrar componentes globalmente
+app.component('VForm', vee_validate__WEBPACK_IMPORTED_MODULE_3__.Form);
+app.component('VField', vee_validate__WEBPACK_IMPORTED_MODULE_3__.Field);
+app.component('ErrorMessage', vee_validate__WEBPACK_IMPORTED_MODULE_3__.ErrorMessage);
+app.use(_router__WEBPACK_IMPORTED_MODULE_2__["default"]); // Usar Vue Router
+
+app.mount('#app');
 
 /***/ }),
 
@@ -19252,7 +20183,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
 /* harmony export */ });
-/* harmony import */ var vue_router__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! vue-router */ "./node_modules/vue-router/dist/vue-router.esm-bundler.js");
+/* harmony import */ var vue_router__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! vue-router */ "./node_modules/vue-router/dist/vue-router.mjs");
 /* harmony import */ var _components_Home_vue__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./components/Home.vue */ "./resources/js/components/Home.vue");
 /* harmony import */ var _components_Login_vue__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./components/Login.vue */ "./resources/js/components/Login.vue");
 /* harmony import */ var _components_CrearDocumento_vue__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./components/CrearDocumento.vue */ "./resources/js/components/CrearDocumento.vue");
@@ -19277,10 +20208,12 @@ var routes = [{
   component: _components_CrearDocumento_vue__WEBPACK_IMPORTED_MODULE_2__["default"],
   name: 'crearDocumento'
 }, {
-  path: '/:id/editar',
+  path: '/editar/:id',
   component: _components_EditarDocumento_vue__WEBPACK_IMPORTED_MODULE_3__["default"],
-  name: 'editarDocumento'
-}];
+  name: 'EditarDocumento'
+}
+// { path: '/documentos', component: EditarDocumento, name: 'editarDocumento' },
+];
 var router = (0,vue_router__WEBPACK_IMPORTED_MODULE_4__.createRouter)({
   history: (0,vue_router__WEBPACK_IMPORTED_MODULE_4__.createWebHistory)(),
   routes: routes
@@ -21795,6 +22728,3940 @@ module.exports = function (list, options) {
 
 /***/ }),
 
+/***/ "./node_modules/vee-validate/dist/vee-validate.esm.js":
+/*!************************************************************!*\
+  !*** ./node_modules/vee-validate/dist/vee-validate.esm.js ***!
+  \************************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   ErrorMessage: () => (/* binding */ ErrorMessage),
+/* harmony export */   Field: () => (/* binding */ Field),
+/* harmony export */   FieldArray: () => (/* binding */ FieldArray),
+/* harmony export */   FieldContextKey: () => (/* binding */ FieldContextKey),
+/* harmony export */   Form: () => (/* binding */ Form),
+/* harmony export */   FormContextKey: () => (/* binding */ FormContextKey),
+/* harmony export */   IS_ABSENT: () => (/* binding */ IS_ABSENT),
+/* harmony export */   cleanupNonNestedPath: () => (/* binding */ cleanupNonNestedPath),
+/* harmony export */   configure: () => (/* binding */ configure),
+/* harmony export */   defineRule: () => (/* binding */ defineRule),
+/* harmony export */   isNotNestedPath: () => (/* binding */ isNotNestedPath),
+/* harmony export */   normalizeRules: () => (/* binding */ normalizeRules),
+/* harmony export */   useField: () => (/* binding */ useField),
+/* harmony export */   useFieldArray: () => (/* binding */ useFieldArray),
+/* harmony export */   useFieldError: () => (/* binding */ useFieldError),
+/* harmony export */   useFieldValue: () => (/* binding */ useFieldValue),
+/* harmony export */   useForm: () => (/* binding */ useForm),
+/* harmony export */   useFormErrors: () => (/* binding */ useFormErrors),
+/* harmony export */   useFormValues: () => (/* binding */ useFormValues),
+/* harmony export */   useIsFieldDirty: () => (/* binding */ useIsFieldDirty),
+/* harmony export */   useIsFieldTouched: () => (/* binding */ useIsFieldTouched),
+/* harmony export */   useIsFieldValid: () => (/* binding */ useIsFieldValid),
+/* harmony export */   useIsFormDirty: () => (/* binding */ useIsFormDirty),
+/* harmony export */   useIsFormTouched: () => (/* binding */ useIsFormTouched),
+/* harmony export */   useIsFormValid: () => (/* binding */ useIsFormValid),
+/* harmony export */   useIsSubmitting: () => (/* binding */ useIsSubmitting),
+/* harmony export */   useIsValidating: () => (/* binding */ useIsValidating),
+/* harmony export */   useResetForm: () => (/* binding */ useResetForm),
+/* harmony export */   useSetFieldError: () => (/* binding */ useSetFieldError),
+/* harmony export */   useSetFieldTouched: () => (/* binding */ useSetFieldTouched),
+/* harmony export */   useSetFieldValue: () => (/* binding */ useSetFieldValue),
+/* harmony export */   useSetFormErrors: () => (/* binding */ useSetFormErrors),
+/* harmony export */   useSetFormTouched: () => (/* binding */ useSetFormTouched),
+/* harmony export */   useSetFormValues: () => (/* binding */ useSetFormValues),
+/* harmony export */   useSubmitCount: () => (/* binding */ useSubmitCount),
+/* harmony export */   useSubmitForm: () => (/* binding */ useSubmitForm),
+/* harmony export */   useValidateField: () => (/* binding */ useValidateField),
+/* harmony export */   useValidateForm: () => (/* binding */ useValidateForm),
+/* harmony export */   validate: () => (/* binding */ validate),
+/* harmony export */   validateObject: () => (/* binding */ validateObjectSchema)
+/* harmony export */ });
+/* harmony import */ var vue__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! vue */ "./node_modules/vue/dist/vue.esm-bundler.js");
+/* harmony import */ var _vue_devtools_api__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @vue/devtools-api */ "./node_modules/@vue/devtools-api/lib/esm/index.js");
+/**
+  * vee-validate v4.12.8
+  * (c) 2024 Abdelrahman Awad
+  * @license MIT
+  */
+
+
+
+function isCallable(fn) {
+    return typeof fn === 'function';
+}
+function isNullOrUndefined(value) {
+    return value === null || value === undefined;
+}
+const isObject = (obj) => obj !== null && !!obj && typeof obj === 'object' && !Array.isArray(obj);
+function isIndex(value) {
+    return Number(value) >= 0;
+}
+function toNumber(value) {
+    const n = parseFloat(value);
+    return isNaN(n) ? value : n;
+}
+function isObjectLike(value) {
+    return typeof value === 'object' && value !== null;
+}
+function getTag(value) {
+    if (value == null) {
+        return value === undefined ? '[object Undefined]' : '[object Null]';
+    }
+    return Object.prototype.toString.call(value);
+}
+// Reference: https://github.com/lodash/lodash/blob/master/isPlainObject.js
+function isPlainObject(value) {
+    if (!isObjectLike(value) || getTag(value) !== '[object Object]') {
+        return false;
+    }
+    if (Object.getPrototypeOf(value) === null) {
+        return true;
+    }
+    let proto = value;
+    while (Object.getPrototypeOf(proto) !== null) {
+        proto = Object.getPrototypeOf(proto);
+    }
+    return Object.getPrototypeOf(value) === proto;
+}
+function merge(target, source) {
+    Object.keys(source).forEach(key => {
+        if (isPlainObject(source[key]) && isPlainObject(target[key])) {
+            if (!target[key]) {
+                target[key] = {};
+            }
+            merge(target[key], source[key]);
+            return;
+        }
+        target[key] = source[key];
+    });
+    return target;
+}
+/**
+ * Constructs a path with dot paths for arrays to use brackets to be compatible with vee-validate path syntax
+ */
+function normalizeFormPath(path) {
+    const pathArr = path.split('.');
+    if (!pathArr.length) {
+        return '';
+    }
+    let fullPath = String(pathArr[0]);
+    for (let i = 1; i < pathArr.length; i++) {
+        if (isIndex(pathArr[i])) {
+            fullPath += `[${pathArr[i]}]`;
+            continue;
+        }
+        fullPath += `.${pathArr[i]}`;
+    }
+    return fullPath;
+}
+
+const RULES = {};
+/**
+ * Adds a custom validator to the list of validation rules.
+ */
+function defineRule(id, validator) {
+    // makes sure new rules are properly formatted.
+    guardExtend(id, validator);
+    RULES[id] = validator;
+}
+/**
+ * Gets an already defined rule
+ */
+function resolveRule(id) {
+    return RULES[id];
+}
+/**
+ * Guards from extension violations.
+ */
+function guardExtend(id, validator) {
+    if (isCallable(validator)) {
+        return;
+    }
+    throw new Error(`Extension Error: The validator '${id}' must be a function.`);
+}
+
+function set(obj, key, val) {
+	if (typeof val.value === 'object') val.value = klona(val.value);
+	if (!val.enumerable || val.get || val.set || !val.configurable || !val.writable || key === '__proto__') {
+		Object.defineProperty(obj, key, val);
+	} else obj[key] = val.value;
+}
+
+function klona(x) {
+	if (typeof x !== 'object') return x;
+
+	var i=0, k, list, tmp, str=Object.prototype.toString.call(x);
+
+	if (str === '[object Object]') {
+		tmp = Object.create(x.__proto__ || null);
+	} else if (str === '[object Array]') {
+		tmp = Array(x.length);
+	} else if (str === '[object Set]') {
+		tmp = new Set;
+		x.forEach(function (val) {
+			tmp.add(klona(val));
+		});
+	} else if (str === '[object Map]') {
+		tmp = new Map;
+		x.forEach(function (val, key) {
+			tmp.set(klona(key), klona(val));
+		});
+	} else if (str === '[object Date]') {
+		tmp = new Date(+x);
+	} else if (str === '[object RegExp]') {
+		tmp = new RegExp(x.source, x.flags);
+	} else if (str === '[object DataView]') {
+		tmp = new x.constructor( klona(x.buffer) );
+	} else if (str === '[object ArrayBuffer]') {
+		tmp = x.slice(0);
+	} else if (str.slice(-6) === 'Array]') {
+		// ArrayBuffer.isView(x)
+		// ~> `new` bcuz `Buffer.slice` => ref
+		tmp = new x.constructor(x);
+	}
+
+	if (tmp) {
+		for (list=Object.getOwnPropertySymbols(x); i < list.length; i++) {
+			set(tmp, list[i], Object.getOwnPropertyDescriptor(x, list[i]));
+		}
+
+		for (i=0, list=Object.getOwnPropertyNames(x); i < list.length; i++) {
+			if (Object.hasOwnProperty.call(tmp, k=list[i]) && tmp[k] === x[k]) continue;
+			set(tmp, k, Object.getOwnPropertyDescriptor(x, k));
+		}
+	}
+
+	return tmp || x;
+}
+
+const FormContextKey = Symbol('vee-validate-form');
+const FieldContextKey = Symbol('vee-validate-field-instance');
+const IS_ABSENT = Symbol('Default empty value');
+
+const isClient = typeof window !== 'undefined';
+function isLocator(value) {
+    return isCallable(value) && !!value.__locatorRef;
+}
+function isTypedSchema(value) {
+    return !!value && isCallable(value.parse) && value.__type === 'VVTypedSchema';
+}
+function isYupValidator(value) {
+    return !!value && isCallable(value.validate);
+}
+function hasCheckedAttr(type) {
+    return type === 'checkbox' || type === 'radio';
+}
+function isContainerValue(value) {
+    return isObject(value) || Array.isArray(value);
+}
+/**
+ * True if the value is an empty object or array
+ */
+function isEmptyContainer(value) {
+    if (Array.isArray(value)) {
+        return value.length === 0;
+    }
+    return isObject(value) && Object.keys(value).length === 0;
+}
+/**
+ * Checks if the path opted out of nested fields using `[fieldName]` syntax
+ */
+function isNotNestedPath(path) {
+    return /^\[.+\]$/i.test(path);
+}
+/**
+ * Checks if an element is a native HTML5 multi-select input element
+ */
+function isNativeMultiSelect(el) {
+    return isNativeSelect(el) && el.multiple;
+}
+/**
+ * Checks if an element is a native HTML5 select input element
+ */
+function isNativeSelect(el) {
+    return el.tagName === 'SELECT';
+}
+/**
+ * Checks if a tag name with attrs object will render a native multi-select element
+ */
+function isNativeMultiSelectNode(tag, attrs) {
+    // The falsy value array is the values that Vue won't add the `multiple` prop if it has one of these values
+    const hasTruthyBindingValue = ![false, null, undefined, 0].includes(attrs.multiple) && !Number.isNaN(attrs.multiple);
+    return tag === 'select' && 'multiple' in attrs && hasTruthyBindingValue;
+}
+/**
+ * Checks if a node should have a `:value` binding or not
+ *
+ * These nodes should not have a value binding
+ * For files, because they are not reactive
+ * For multi-selects because the value binding will reset the value
+ */
+function shouldHaveValueBinding(tag, attrs) {
+    return !isNativeMultiSelectNode(tag, attrs) && attrs.type !== 'file' && !hasCheckedAttr(attrs.type);
+}
+function isFormSubmitEvent(evt) {
+    return isEvent(evt) && evt.target && 'submit' in evt.target;
+}
+function isEvent(evt) {
+    if (!evt) {
+        return false;
+    }
+    if (typeof Event !== 'undefined' && isCallable(Event) && evt instanceof Event) {
+        return true;
+    }
+    // this is for IE and Cypress #3161
+    /* istanbul ignore next */
+    if (evt && evt.srcElement) {
+        return true;
+    }
+    return false;
+}
+function isPropPresent(obj, prop) {
+    return prop in obj && obj[prop] !== IS_ABSENT;
+}
+/**
+ * Compares if two values are the same borrowed from:
+ * https://github.com/epoberezkin/fast-deep-equal
+ * We added a case for file matching since `Object.keys` doesn't work with Files.
+ * */
+function isEqual(a, b) {
+    if (a === b)
+        return true;
+    if (a && b && typeof a === 'object' && typeof b === 'object') {
+        if (a.constructor !== b.constructor)
+            return false;
+        // eslint-disable-next-line no-var
+        var length, i, keys;
+        if (Array.isArray(a)) {
+            length = a.length;
+            if (length != b.length)
+                return false;
+            for (i = length; i-- !== 0;)
+                if (!isEqual(a[i], b[i]))
+                    return false;
+            return true;
+        }
+        if (a instanceof Map && b instanceof Map) {
+            if (a.size !== b.size)
+                return false;
+            for (i of a.entries())
+                if (!b.has(i[0]))
+                    return false;
+            for (i of a.entries())
+                if (!isEqual(i[1], b.get(i[0])))
+                    return false;
+            return true;
+        }
+        // We added this part for file comparison, arguably a little naive but should work for most cases.
+        // #3911
+        if (isFile(a) && isFile(b)) {
+            if (a.size !== b.size)
+                return false;
+            if (a.name !== b.name)
+                return false;
+            if (a.lastModified !== b.lastModified)
+                return false;
+            if (a.type !== b.type)
+                return false;
+            return true;
+        }
+        if (a instanceof Set && b instanceof Set) {
+            if (a.size !== b.size)
+                return false;
+            for (i of a.entries())
+                if (!b.has(i[0]))
+                    return false;
+            return true;
+        }
+        if (ArrayBuffer.isView(a) && ArrayBuffer.isView(b)) {
+            length = a.length;
+            if (length != b.length)
+                return false;
+            for (i = length; i-- !== 0;)
+                if (a[i] !== b[i])
+                    return false;
+            return true;
+        }
+        if (a.constructor === RegExp)
+            return a.source === b.source && a.flags === b.flags;
+        if (a.valueOf !== Object.prototype.valueOf)
+            return a.valueOf() === b.valueOf();
+        if (a.toString !== Object.prototype.toString)
+            return a.toString() === b.toString();
+        keys = Object.keys(a);
+        length = keys.length;
+        for (i = length; i-- !== 0;) {
+            // eslint-disable-next-line no-var
+            var key = keys[i];
+            if (!isEqual(a[key], b[key]))
+                return false;
+        }
+        return true;
+    }
+    // true if both NaN, false otherwise
+    return a !== a && b !== b;
+}
+function isFile(a) {
+    if (!isClient) {
+        return false;
+    }
+    return a instanceof File;
+}
+
+function cleanupNonNestedPath(path) {
+    if (isNotNestedPath(path)) {
+        return path.replace(/\[|\]/gi, '');
+    }
+    return path;
+}
+function getFromPath(object, path, fallback) {
+    if (!object) {
+        return fallback;
+    }
+    if (isNotNestedPath(path)) {
+        return object[cleanupNonNestedPath(path)];
+    }
+    const resolvedValue = (path || '')
+        .split(/\.|\[(\d+)\]/)
+        .filter(Boolean)
+        .reduce((acc, propKey) => {
+        if (isContainerValue(acc) && propKey in acc) {
+            return acc[propKey];
+        }
+        return fallback;
+    }, object);
+    return resolvedValue;
+}
+/**
+ * Sets a nested property value in a path, creates the path properties if it doesn't exist
+ */
+function setInPath(object, path, value) {
+    if (isNotNestedPath(path)) {
+        object[cleanupNonNestedPath(path)] = value;
+        return;
+    }
+    const keys = path.split(/\.|\[(\d+)\]/).filter(Boolean);
+    let acc = object;
+    for (let i = 0; i < keys.length; i++) {
+        // Last key, set it
+        if (i === keys.length - 1) {
+            acc[keys[i]] = value;
+            return;
+        }
+        // Key does not exist, create a container for it
+        if (!(keys[i] in acc) || isNullOrUndefined(acc[keys[i]])) {
+            // container can be either an object or an array depending on the next key if it exists
+            acc[keys[i]] = isIndex(keys[i + 1]) ? [] : {};
+        }
+        acc = acc[keys[i]];
+    }
+}
+function unset(object, key) {
+    if (Array.isArray(object) && isIndex(key)) {
+        object.splice(Number(key), 1);
+        return;
+    }
+    if (isObject(object)) {
+        delete object[key];
+    }
+}
+/**
+ * Removes a nested property from object
+ */
+function unsetPath(object, path) {
+    if (isNotNestedPath(path)) {
+        delete object[cleanupNonNestedPath(path)];
+        return;
+    }
+    const keys = path.split(/\.|\[(\d+)\]/).filter(Boolean);
+    let acc = object;
+    for (let i = 0; i < keys.length; i++) {
+        // Last key, unset it
+        if (i === keys.length - 1) {
+            unset(acc, keys[i]);
+            break;
+        }
+        // Key does not exist, exit
+        if (!(keys[i] in acc) || isNullOrUndefined(acc[keys[i]])) {
+            break;
+        }
+        acc = acc[keys[i]];
+    }
+    const pathValues = keys.map((_, idx) => {
+        return getFromPath(object, keys.slice(0, idx).join('.'));
+    });
+    for (let i = pathValues.length - 1; i >= 0; i--) {
+        if (!isEmptyContainer(pathValues[i])) {
+            continue;
+        }
+        if (i === 0) {
+            unset(object, keys[0]);
+            continue;
+        }
+        unset(pathValues[i - 1], keys[i - 1]);
+    }
+}
+/**
+ * A typed version of Object.keys
+ */
+function keysOf(record) {
+    return Object.keys(record);
+}
+// Uses same component provide as its own injections
+// Due to changes in https://github.com/vuejs/vue-next/pull/2424
+function injectWithSelf(symbol, def = undefined) {
+    const vm = (0,vue__WEBPACK_IMPORTED_MODULE_0__.getCurrentInstance)();
+    return (vm === null || vm === void 0 ? void 0 : vm.provides[symbol]) || (0,vue__WEBPACK_IMPORTED_MODULE_0__.inject)(symbol, def);
+}
+function warn(message) {
+    (0,vue__WEBPACK_IMPORTED_MODULE_0__.warn)(`[vee-validate]: ${message}`);
+}
+function resolveNextCheckboxValue(currentValue, checkedValue, uncheckedValue) {
+    if (Array.isArray(currentValue)) {
+        const newVal = [...currentValue];
+        // Use isEqual since checked object values can possibly fail the equality check #3883
+        const idx = newVal.findIndex(v => isEqual(v, checkedValue));
+        idx >= 0 ? newVal.splice(idx, 1) : newVal.push(checkedValue);
+        return newVal;
+    }
+    return isEqual(currentValue, checkedValue) ? uncheckedValue : checkedValue;
+}
+/**
+ * Creates a throttled function that only invokes the provided function (`func`) at most once per within a given number of milliseconds
+ * (`limit`)
+ */
+function throttle(func, limit) {
+    let inThrottle;
+    let lastResult;
+    return function (...args) {
+        // eslint-disable-next-line @typescript-eslint/no-this-alias
+        const context = this;
+        if (!inThrottle) {
+            inThrottle = true;
+            setTimeout(() => (inThrottle = false), limit);
+            lastResult = func.apply(context, args);
+        }
+        return lastResult;
+    };
+}
+function debounceAsync(inner, ms = 0) {
+    let timer = null;
+    let resolves = [];
+    return function (...args) {
+        // Run the function after a certain amount of time
+        if (timer) {
+            clearTimeout(timer);
+        }
+        // @ts-expect-error timer is a number
+        timer = setTimeout(() => {
+            // Get the result of the inner function, then apply it to the resolve function of
+            // each promise that has been created since the last time the inner function was run
+            const result = inner(...args);
+            resolves.forEach(r => r(result));
+            resolves = [];
+        }, ms);
+        return new Promise(resolve => resolves.push(resolve));
+    };
+}
+function applyModelModifiers(value, modifiers) {
+    if (!isObject(modifiers)) {
+        return value;
+    }
+    if (modifiers.number) {
+        return toNumber(value);
+    }
+    return value;
+}
+function withLatest(fn, onDone) {
+    let latestRun;
+    return async function runLatest(...args) {
+        const pending = fn(...args);
+        latestRun = pending;
+        const result = await pending;
+        if (pending !== latestRun) {
+            return result;
+        }
+        latestRun = undefined;
+        return onDone(result, args);
+    };
+}
+function computedDeep({ get, set }) {
+    const baseRef = (0,vue__WEBPACK_IMPORTED_MODULE_0__.ref)(klona(get()));
+    (0,vue__WEBPACK_IMPORTED_MODULE_0__.watch)(get, newValue => {
+        if (isEqual(newValue, baseRef.value)) {
+            return;
+        }
+        baseRef.value = klona(newValue);
+    }, {
+        deep: true,
+    });
+    (0,vue__WEBPACK_IMPORTED_MODULE_0__.watch)(baseRef, newValue => {
+        if (isEqual(newValue, get())) {
+            return;
+        }
+        set(klona(newValue));
+    }, {
+        deep: true,
+    });
+    return baseRef;
+}
+function normalizeErrorItem(message) {
+    return Array.isArray(message) ? message : message ? [message] : [];
+}
+function resolveFieldOrPathState(path) {
+    const form = injectWithSelf(FormContextKey);
+    const state = path ? (0,vue__WEBPACK_IMPORTED_MODULE_0__.computed)(() => form === null || form === void 0 ? void 0 : form.getPathState((0,vue__WEBPACK_IMPORTED_MODULE_0__.toValue)(path))) : undefined;
+    const field = path ? undefined : (0,vue__WEBPACK_IMPORTED_MODULE_0__.inject)(FieldContextKey);
+    if (!field && !(state === null || state === void 0 ? void 0 : state.value)) {
+        if ((true)) {
+            warn(`field with name ${(0,vue__WEBPACK_IMPORTED_MODULE_0__.toValue)(path)} was not found`);
+        }
+    }
+    return state || field;
+}
+function omit(obj, keys) {
+    const target = {};
+    for (const key in obj) {
+        if (!keys.includes(key)) {
+            target[key] = obj[key];
+        }
+    }
+    return target;
+}
+function debounceNextTick(inner) {
+    let lastTick = null;
+    let resolves = [];
+    return function (...args) {
+        // Run the function after a certain amount of time
+        const thisTick = (0,vue__WEBPACK_IMPORTED_MODULE_0__.nextTick)(() => {
+            if (lastTick !== thisTick) {
+                return;
+            }
+            // Get the result of the inner function, then apply it to the resolve function of
+            // each promise that has been created since the last time the inner function was run
+            const result = inner(...args);
+            resolves.forEach(r => r(result));
+            resolves = [];
+            lastTick = null;
+        });
+        lastTick = thisTick;
+        return new Promise(resolve => resolves.push(resolve));
+    };
+}
+
+function normalizeChildren(tag, context, slotProps) {
+    if (!context.slots.default) {
+        return context.slots.default;
+    }
+    if (typeof tag === 'string' || !tag) {
+        return context.slots.default(slotProps());
+    }
+    return {
+        default: () => { var _a, _b; return (_b = (_a = context.slots).default) === null || _b === void 0 ? void 0 : _b.call(_a, slotProps()); },
+    };
+}
+/**
+ * Vue adds a `_value` prop at the moment on the input elements to store the REAL value on them, real values are different than the `value` attribute
+ * as they do not get casted to strings unlike `el.value` which preserves user-code behavior
+ */
+function getBoundValue(el) {
+    if (hasValueBinding(el)) {
+        return el._value;
+    }
+    return undefined;
+}
+/**
+ * Vue adds a `_value` prop at the moment on the input elements to store the REAL value on them, real values are different than the `value` attribute
+ * as they do not get casted to strings unlike `el.value` which preserves user-code behavior
+ */
+function hasValueBinding(el) {
+    return '_value' in el;
+}
+
+function parseInputValue(el) {
+    if (el.type === 'number') {
+        return Number.isNaN(el.valueAsNumber) ? el.value : el.valueAsNumber;
+    }
+    if (el.type === 'range') {
+        return Number.isNaN(el.valueAsNumber) ? el.value : el.valueAsNumber;
+    }
+    return el.value;
+}
+function normalizeEventValue(value) {
+    if (!isEvent(value)) {
+        return value;
+    }
+    const input = value.target;
+    // Vue sets the current bound value on `_value` prop
+    // for checkboxes it it should fetch the value binding type as is (boolean instead of string)
+    if (hasCheckedAttr(input.type) && hasValueBinding(input)) {
+        return getBoundValue(input);
+    }
+    if (input.type === 'file' && input.files) {
+        const files = Array.from(input.files);
+        return input.multiple ? files : files[0];
+    }
+    if (isNativeMultiSelect(input)) {
+        return Array.from(input.options)
+            .filter(opt => opt.selected && !opt.disabled)
+            .map(getBoundValue);
+    }
+    // makes sure we get the actual `option` bound value
+    // #3440
+    if (isNativeSelect(input)) {
+        const selectedOption = Array.from(input.options).find(opt => opt.selected);
+        return selectedOption ? getBoundValue(selectedOption) : input.value;
+    }
+    return parseInputValue(input);
+}
+
+/**
+ * Normalizes the given rules expression.
+ */
+function normalizeRules(rules) {
+    const acc = {};
+    Object.defineProperty(acc, '_$$isNormalized', {
+        value: true,
+        writable: false,
+        enumerable: false,
+        configurable: false,
+    });
+    if (!rules) {
+        return acc;
+    }
+    // Object is already normalized, skip.
+    if (isObject(rules) && rules._$$isNormalized) {
+        return rules;
+    }
+    if (isObject(rules)) {
+        return Object.keys(rules).reduce((prev, curr) => {
+            const params = normalizeParams(rules[curr]);
+            if (rules[curr] !== false) {
+                prev[curr] = buildParams(params);
+            }
+            return prev;
+        }, acc);
+    }
+    /* istanbul ignore if */
+    if (typeof rules !== 'string') {
+        return acc;
+    }
+    return rules.split('|').reduce((prev, rule) => {
+        const parsedRule = parseRule(rule);
+        if (!parsedRule.name) {
+            return prev;
+        }
+        prev[parsedRule.name] = buildParams(parsedRule.params);
+        return prev;
+    }, acc);
+}
+/**
+ * Normalizes a rule param.
+ */
+function normalizeParams(params) {
+    if (params === true) {
+        return [];
+    }
+    if (Array.isArray(params)) {
+        return params;
+    }
+    if (isObject(params)) {
+        return params;
+    }
+    return [params];
+}
+function buildParams(provided) {
+    const mapValueToLocator = (value) => {
+        // A target param using interpolation
+        if (typeof value === 'string' && value[0] === '@') {
+            return createLocator(value.slice(1));
+        }
+        return value;
+    };
+    if (Array.isArray(provided)) {
+        return provided.map(mapValueToLocator);
+    }
+    // #3073
+    if (provided instanceof RegExp) {
+        return [provided];
+    }
+    return Object.keys(provided).reduce((prev, key) => {
+        prev[key] = mapValueToLocator(provided[key]);
+        return prev;
+    }, {});
+}
+/**
+ * Parses a rule string expression.
+ */
+const parseRule = (rule) => {
+    let params = [];
+    const name = rule.split(':')[0];
+    if (rule.includes(':')) {
+        params = rule.split(':').slice(1).join(':').split(',');
+    }
+    return { name, params };
+};
+function createLocator(value) {
+    const locator = (crossTable) => {
+        const val = getFromPath(crossTable, value) || crossTable[value];
+        return val;
+    };
+    locator.__locatorRef = value;
+    return locator;
+}
+function extractLocators(params) {
+    if (Array.isArray(params)) {
+        return params.filter(isLocator);
+    }
+    return keysOf(params)
+        .filter(key => isLocator(params[key]))
+        .map(key => params[key]);
+}
+
+const DEFAULT_CONFIG = {
+    generateMessage: ({ field }) => `${field} is not valid.`,
+    bails: true,
+    validateOnBlur: true,
+    validateOnChange: true,
+    validateOnInput: false,
+    validateOnModelUpdate: true,
+};
+let currentConfig = Object.assign({}, DEFAULT_CONFIG);
+const getConfig = () => currentConfig;
+const setConfig = (newConf) => {
+    currentConfig = Object.assign(Object.assign({}, currentConfig), newConf);
+};
+const configure = setConfig;
+
+/**
+ * Validates a value against the rules.
+ */
+async function validate(value, rules, options = {}) {
+    const shouldBail = options === null || options === void 0 ? void 0 : options.bails;
+    const field = {
+        name: (options === null || options === void 0 ? void 0 : options.name) || '{field}',
+        rules,
+        label: options === null || options === void 0 ? void 0 : options.label,
+        bails: shouldBail !== null && shouldBail !== void 0 ? shouldBail : true,
+        formData: (options === null || options === void 0 ? void 0 : options.values) || {},
+    };
+    const result = await _validate(field, value);
+    const errors = result.errors;
+    return {
+        errors,
+        valid: !errors.length,
+    };
+}
+/**
+ * Starts the validation process.
+ */
+async function _validate(field, value) {
+    if (isTypedSchema(field.rules) || isYupValidator(field.rules)) {
+        return validateFieldWithTypedSchema(value, field.rules);
+    }
+    // if a generic function or chain of generic functions
+    if (isCallable(field.rules) || Array.isArray(field.rules)) {
+        const ctx = {
+            field: field.label || field.name,
+            name: field.name,
+            label: field.label,
+            form: field.formData,
+            value,
+        };
+        // Normalize the pipeline
+        const pipeline = Array.isArray(field.rules) ? field.rules : [field.rules];
+        const length = pipeline.length;
+        const errors = [];
+        for (let i = 0; i < length; i++) {
+            const rule = pipeline[i];
+            const result = await rule(value, ctx);
+            const isValid = typeof result !== 'string' && !Array.isArray(result) && result;
+            if (isValid) {
+                continue;
+            }
+            if (Array.isArray(result)) {
+                errors.push(...result);
+            }
+            else {
+                const message = typeof result === 'string' ? result : _generateFieldError(ctx);
+                errors.push(message);
+            }
+            if (field.bails) {
+                return {
+                    errors,
+                };
+            }
+        }
+        return {
+            errors,
+        };
+    }
+    const normalizedContext = Object.assign(Object.assign({}, field), { rules: normalizeRules(field.rules) });
+    const errors = [];
+    const rulesKeys = Object.keys(normalizedContext.rules);
+    const length = rulesKeys.length;
+    for (let i = 0; i < length; i++) {
+        const rule = rulesKeys[i];
+        const result = await _test(normalizedContext, value, {
+            name: rule,
+            params: normalizedContext.rules[rule],
+        });
+        if (result.error) {
+            errors.push(result.error);
+            if (field.bails) {
+                return {
+                    errors,
+                };
+            }
+        }
+    }
+    return {
+        errors,
+    };
+}
+function isYupError(err) {
+    return !!err && err.name === 'ValidationError';
+}
+function yupToTypedSchema(yupSchema) {
+    const schema = {
+        __type: 'VVTypedSchema',
+        async parse(values) {
+            var _a;
+            try {
+                const output = await yupSchema.validate(values, { abortEarly: false });
+                return {
+                    output,
+                    errors: [],
+                };
+            }
+            catch (err) {
+                // Yup errors have a name prop one them.
+                // https://github.com/jquense/yup#validationerrorerrors-string--arraystring-value-any-path-string
+                if (!isYupError(err)) {
+                    throw err;
+                }
+                if (!((_a = err.inner) === null || _a === void 0 ? void 0 : _a.length) && err.errors.length) {
+                    return { errors: [{ path: err.path, errors: err.errors }] };
+                }
+                const errors = err.inner.reduce((acc, curr) => {
+                    const path = curr.path || '';
+                    if (!acc[path]) {
+                        acc[path] = { errors: [], path };
+                    }
+                    acc[path].errors.push(...curr.errors);
+                    return acc;
+                }, {});
+                return { errors: Object.values(errors) };
+            }
+        },
+    };
+    return schema;
+}
+/**
+ * Handles yup validation
+ */
+async function validateFieldWithTypedSchema(value, schema) {
+    const typedSchema = isTypedSchema(schema) ? schema : yupToTypedSchema(schema);
+    const result = await typedSchema.parse(value);
+    const messages = [];
+    for (const error of result.errors) {
+        if (error.errors.length) {
+            messages.push(...error.errors);
+        }
+    }
+    return {
+        errors: messages,
+    };
+}
+/**
+ * Tests a single input value against a rule.
+ */
+async function _test(field, value, rule) {
+    const validator = resolveRule(rule.name);
+    if (!validator) {
+        throw new Error(`No such validator '${rule.name}' exists.`);
+    }
+    const params = fillTargetValues(rule.params, field.formData);
+    const ctx = {
+        field: field.label || field.name,
+        name: field.name,
+        label: field.label,
+        value,
+        form: field.formData,
+        rule: Object.assign(Object.assign({}, rule), { params }),
+    };
+    const result = await validator(value, params, ctx);
+    if (typeof result === 'string') {
+        return {
+            error: result,
+        };
+    }
+    return {
+        error: result ? undefined : _generateFieldError(ctx),
+    };
+}
+/**
+ * Generates error messages.
+ */
+function _generateFieldError(fieldCtx) {
+    const message = getConfig().generateMessage;
+    if (!message) {
+        return 'Field is invalid';
+    }
+    return message(fieldCtx);
+}
+function fillTargetValues(params, crossTable) {
+    const normalize = (value) => {
+        if (isLocator(value)) {
+            return value(crossTable);
+        }
+        return value;
+    };
+    if (Array.isArray(params)) {
+        return params.map(normalize);
+    }
+    return Object.keys(params).reduce((acc, param) => {
+        acc[param] = normalize(params[param]);
+        return acc;
+    }, {});
+}
+async function validateTypedSchema(schema, values) {
+    const typedSchema = isTypedSchema(schema) ? schema : yupToTypedSchema(schema);
+    const validationResult = await typedSchema.parse(klona(values));
+    const results = {};
+    const errors = {};
+    for (const error of validationResult.errors) {
+        const messages = error.errors;
+        // Fixes issue with path mapping with Yup 1.0 including quotes around array indices
+        const path = (error.path || '').replace(/\["(\d+)"\]/g, (_, m) => {
+            return `[${m}]`;
+        });
+        results[path] = { valid: !messages.length, errors: messages };
+        if (messages.length) {
+            errors[path] = messages[0];
+        }
+    }
+    return {
+        valid: !validationResult.errors.length,
+        results,
+        errors,
+        values: validationResult.value,
+    };
+}
+async function validateObjectSchema(schema, values, opts) {
+    const paths = keysOf(schema);
+    const validations = paths.map(async (path) => {
+        var _a, _b, _c;
+        const strings = (_a = opts === null || opts === void 0 ? void 0 : opts.names) === null || _a === void 0 ? void 0 : _a[path];
+        const fieldResult = await validate(getFromPath(values, path), schema[path], {
+            name: (strings === null || strings === void 0 ? void 0 : strings.name) || path,
+            label: strings === null || strings === void 0 ? void 0 : strings.label,
+            values: values,
+            bails: (_c = (_b = opts === null || opts === void 0 ? void 0 : opts.bailsMap) === null || _b === void 0 ? void 0 : _b[path]) !== null && _c !== void 0 ? _c : true,
+        });
+        return Object.assign(Object.assign({}, fieldResult), { path });
+    });
+    let isAllValid = true;
+    const validationResults = await Promise.all(validations);
+    const results = {};
+    const errors = {};
+    for (const result of validationResults) {
+        results[result.path] = {
+            valid: result.valid,
+            errors: result.errors,
+        };
+        if (!result.valid) {
+            isAllValid = false;
+            errors[result.path] = result.errors[0];
+        }
+    }
+    return {
+        valid: isAllValid,
+        results,
+        errors,
+    };
+}
+
+let ID_COUNTER = 0;
+function useFieldState(path, init) {
+    const { value, initialValue, setInitialValue } = _useFieldValue(path, init.modelValue, init.form);
+    if (!init.form) {
+        const { errors, setErrors } = createFieldErrors();
+        const id = ID_COUNTER >= Number.MAX_SAFE_INTEGER ? 0 : ++ID_COUNTER;
+        const meta = createFieldMeta(value, initialValue, errors, init.schema);
+        function setState(state) {
+            var _a;
+            if ('value' in state) {
+                value.value = state.value;
+            }
+            if ('errors' in state) {
+                setErrors(state.errors);
+            }
+            if ('touched' in state) {
+                meta.touched = (_a = state.touched) !== null && _a !== void 0 ? _a : meta.touched;
+            }
+            if ('initialValue' in state) {
+                setInitialValue(state.initialValue);
+            }
+        }
+        return {
+            id,
+            path,
+            value,
+            initialValue,
+            meta,
+            flags: { pendingUnmount: { [id]: false }, pendingReset: false },
+            errors,
+            setState,
+        };
+    }
+    const state = init.form.createPathState(path, {
+        bails: init.bails,
+        label: init.label,
+        type: init.type,
+        validate: init.validate,
+        schema: init.schema,
+    });
+    const errors = (0,vue__WEBPACK_IMPORTED_MODULE_0__.computed)(() => state.errors);
+    function setState(state) {
+        var _a, _b, _c;
+        if ('value' in state) {
+            value.value = state.value;
+        }
+        if ('errors' in state) {
+            (_a = init.form) === null || _a === void 0 ? void 0 : _a.setFieldError((0,vue__WEBPACK_IMPORTED_MODULE_0__.unref)(path), state.errors);
+        }
+        if ('touched' in state) {
+            (_b = init.form) === null || _b === void 0 ? void 0 : _b.setFieldTouched((0,vue__WEBPACK_IMPORTED_MODULE_0__.unref)(path), (_c = state.touched) !== null && _c !== void 0 ? _c : false);
+        }
+        if ('initialValue' in state) {
+            setInitialValue(state.initialValue);
+        }
+    }
+    return {
+        id: Array.isArray(state.id) ? state.id[state.id.length - 1] : state.id,
+        path,
+        value,
+        errors,
+        meta: state,
+        initialValue,
+        flags: state.__flags,
+        setState,
+    };
+}
+/**
+ * Creates the field value and resolves the initial value
+ */
+function _useFieldValue(path, modelValue, form) {
+    const modelRef = (0,vue__WEBPACK_IMPORTED_MODULE_0__.ref)((0,vue__WEBPACK_IMPORTED_MODULE_0__.unref)(modelValue));
+    function resolveInitialValue() {
+        if (!form) {
+            return (0,vue__WEBPACK_IMPORTED_MODULE_0__.unref)(modelRef);
+        }
+        return getFromPath(form.initialValues.value, (0,vue__WEBPACK_IMPORTED_MODULE_0__.unref)(path), (0,vue__WEBPACK_IMPORTED_MODULE_0__.unref)(modelRef));
+    }
+    function setInitialValue(value) {
+        if (!form) {
+            modelRef.value = value;
+            return;
+        }
+        form.setFieldInitialValue((0,vue__WEBPACK_IMPORTED_MODULE_0__.unref)(path), value, true);
+    }
+    const initialValue = (0,vue__WEBPACK_IMPORTED_MODULE_0__.computed)(resolveInitialValue);
+    // if no form is associated, use a regular ref.
+    if (!form) {
+        const value = (0,vue__WEBPACK_IMPORTED_MODULE_0__.ref)(resolveInitialValue());
+        return {
+            value,
+            initialValue,
+            setInitialValue,
+        };
+    }
+    // to set the initial value, first check if there is a current value, if there is then use it.
+    // otherwise use the configured initial value if it exists.
+    // prioritize model value over form values
+    // #3429
+    const currentValue = resolveModelValue(modelValue, form, initialValue, path);
+    form.stageInitialValue((0,vue__WEBPACK_IMPORTED_MODULE_0__.unref)(path), currentValue, true);
+    // otherwise use a computed setter that triggers the `setFieldValue`
+    const value = (0,vue__WEBPACK_IMPORTED_MODULE_0__.computed)({
+        get() {
+            return getFromPath(form.values, (0,vue__WEBPACK_IMPORTED_MODULE_0__.unref)(path));
+        },
+        set(newVal) {
+            form.setFieldValue((0,vue__WEBPACK_IMPORTED_MODULE_0__.unref)(path), newVal, false);
+        },
+    });
+    return {
+        value,
+        initialValue,
+        setInitialValue,
+    };
+}
+/*
+  to set the initial value, first check if there is a current value, if there is then use it.
+  otherwise use the configured initial value if it exists.
+  prioritize model value over form values
+  #3429
+*/
+function resolveModelValue(modelValue, form, initialValue, path) {
+    if ((0,vue__WEBPACK_IMPORTED_MODULE_0__.isRef)(modelValue)) {
+        return (0,vue__WEBPACK_IMPORTED_MODULE_0__.unref)(modelValue);
+    }
+    if (modelValue !== undefined) {
+        return modelValue;
+    }
+    return getFromPath(form.values, (0,vue__WEBPACK_IMPORTED_MODULE_0__.unref)(path), (0,vue__WEBPACK_IMPORTED_MODULE_0__.unref)(initialValue));
+}
+/**
+ * Creates meta flags state and some associated effects with them
+ */
+function createFieldMeta(currentValue, initialValue, errors, schema) {
+    const isRequired = (0,vue__WEBPACK_IMPORTED_MODULE_0__.computed)(() => { var _a, _b, _c; return (_c = (_b = (_a = (0,vue__WEBPACK_IMPORTED_MODULE_0__.toValue)(schema)) === null || _a === void 0 ? void 0 : _a.describe) === null || _b === void 0 ? void 0 : _b.call(_a).required) !== null && _c !== void 0 ? _c : false; });
+    const meta = (0,vue__WEBPACK_IMPORTED_MODULE_0__.reactive)({
+        touched: false,
+        pending: false,
+        valid: true,
+        required: isRequired,
+        validated: !!(0,vue__WEBPACK_IMPORTED_MODULE_0__.unref)(errors).length,
+        initialValue: (0,vue__WEBPACK_IMPORTED_MODULE_0__.computed)(() => (0,vue__WEBPACK_IMPORTED_MODULE_0__.unref)(initialValue)),
+        dirty: (0,vue__WEBPACK_IMPORTED_MODULE_0__.computed)(() => {
+            return !isEqual((0,vue__WEBPACK_IMPORTED_MODULE_0__.unref)(currentValue), (0,vue__WEBPACK_IMPORTED_MODULE_0__.unref)(initialValue));
+        }),
+    });
+    (0,vue__WEBPACK_IMPORTED_MODULE_0__.watch)(errors, value => {
+        meta.valid = !value.length;
+    }, {
+        immediate: true,
+        flush: 'sync',
+    });
+    return meta;
+}
+/**
+ * Creates the error message state for the field state
+ */
+function createFieldErrors() {
+    const errors = (0,vue__WEBPACK_IMPORTED_MODULE_0__.ref)([]);
+    return {
+        errors,
+        setErrors: (messages) => {
+            errors.value = normalizeErrorItem(messages);
+        },
+    };
+}
+
+function installDevtoolsPlugin(app) {
+    if ((true)) {
+        (0,_vue_devtools_api__WEBPACK_IMPORTED_MODULE_1__.setupDevtoolsPlugin)({
+            id: 'vee-validate-devtools-plugin',
+            label: 'VeeValidate Plugin',
+            packageName: 'vee-validate',
+            homepage: 'https://vee-validate.logaretm.com/v4',
+            app,
+            logo: 'https://vee-validate.logaretm.com/v4/logo.png',
+        }, setupApiHooks);
+    }
+}
+const DEVTOOLS_FORMS = {};
+const DEVTOOLS_FIELDS = {};
+let API;
+const refreshInspector = throttle(() => {
+    setTimeout(async () => {
+        await (0,vue__WEBPACK_IMPORTED_MODULE_0__.nextTick)();
+        API === null || API === void 0 ? void 0 : API.sendInspectorState(INSPECTOR_ID);
+        API === null || API === void 0 ? void 0 : API.sendInspectorTree(INSPECTOR_ID);
+    }, 100);
+}, 100);
+function registerFormWithDevTools(form) {
+    const vm = (0,vue__WEBPACK_IMPORTED_MODULE_0__.getCurrentInstance)();
+    if (!API) {
+        const app = vm === null || vm === void 0 ? void 0 : vm.appContext.app;
+        if (!app) {
+            return;
+        }
+        installDevtoolsPlugin(app);
+    }
+    DEVTOOLS_FORMS[form.formId] = Object.assign({}, form);
+    DEVTOOLS_FORMS[form.formId]._vm = vm;
+    (0,vue__WEBPACK_IMPORTED_MODULE_0__.onUnmounted)(() => {
+        delete DEVTOOLS_FORMS[form.formId];
+        refreshInspector();
+    });
+    refreshInspector();
+}
+function registerSingleFieldWithDevtools(field) {
+    const vm = (0,vue__WEBPACK_IMPORTED_MODULE_0__.getCurrentInstance)();
+    if (!API) {
+        const app = vm === null || vm === void 0 ? void 0 : vm.appContext.app;
+        if (!app) {
+            return;
+        }
+        installDevtoolsPlugin(app);
+    }
+    DEVTOOLS_FIELDS[field.id] = Object.assign({}, field);
+    DEVTOOLS_FIELDS[field.id]._vm = vm;
+    (0,vue__WEBPACK_IMPORTED_MODULE_0__.onUnmounted)(() => {
+        delete DEVTOOLS_FIELDS[field.id];
+        refreshInspector();
+    });
+    refreshInspector();
+}
+const INSPECTOR_ID = 'vee-validate-inspector';
+const COLORS = {
+    error: 0xbd4b4b,
+    success: 0x06d77b,
+    unknown: 0x54436b,
+    white: 0xffffff,
+    black: 0x000000,
+    blue: 0x035397,
+    purple: 0xb980f0,
+    orange: 0xf5a962,
+    gray: 0xbbbfca,
+};
+let SELECTED_NODE = null;
+function setupApiHooks(api) {
+    API = api;
+    api.addInspector({
+        id: INSPECTOR_ID,
+        icon: 'rule',
+        label: 'vee-validate',
+        noSelectionText: 'Select a vee-validate node to inspect',
+        actions: [
+            {
+                icon: 'done_outline',
+                tooltip: 'Validate selected item',
+                action: async () => {
+                    if (!SELECTED_NODE) {
+                        console.error('There is not a valid selected vee-validate node or component');
+                        return;
+                    }
+                    if (SELECTED_NODE.type === 'field') {
+                        await SELECTED_NODE.field.validate();
+                        return;
+                    }
+                    if (SELECTED_NODE.type === 'form') {
+                        await SELECTED_NODE.form.validate();
+                        return;
+                    }
+                    if (SELECTED_NODE.type === 'pathState') {
+                        await SELECTED_NODE.form.validateField(SELECTED_NODE.state.path);
+                    }
+                },
+            },
+            {
+                icon: 'delete_sweep',
+                tooltip: 'Clear validation state of the selected item',
+                action: () => {
+                    if (!SELECTED_NODE) {
+                        console.error('There is not a valid selected vee-validate node or component');
+                        return;
+                    }
+                    if (SELECTED_NODE.type === 'field') {
+                        SELECTED_NODE.field.resetField();
+                        return;
+                    }
+                    if (SELECTED_NODE.type === 'form') {
+                        SELECTED_NODE.form.resetForm();
+                    }
+                    if (SELECTED_NODE.type === 'pathState') {
+                        SELECTED_NODE.form.resetField(SELECTED_NODE.state.path);
+                    }
+                },
+            },
+        ],
+    });
+    api.on.getInspectorTree(payload => {
+        if (payload.inspectorId !== INSPECTOR_ID) {
+            return;
+        }
+        const forms = Object.values(DEVTOOLS_FORMS);
+        const fields = Object.values(DEVTOOLS_FIELDS);
+        payload.rootNodes = [
+            ...forms.map(mapFormForDevtoolsInspector),
+            ...fields.map(field => mapFieldForDevtoolsInspector(field)),
+        ];
+    });
+    api.on.getInspectorState((payload, ctx) => {
+        if (payload.inspectorId !== INSPECTOR_ID || ctx.currentTab !== `custom-inspector:${INSPECTOR_ID}`) {
+            return;
+        }
+        const { form, field, state, type } = decodeNodeId(payload.nodeId);
+        if (form && type === 'form') {
+            payload.state = buildFormState(form);
+            SELECTED_NODE = { type: 'form', form };
+            return;
+        }
+        if (state && type === 'pathState' && form) {
+            payload.state = buildFieldState(state);
+            SELECTED_NODE = { type: 'pathState', state, form };
+            return;
+        }
+        if (field && type === 'field') {
+            payload.state = buildFieldState({
+                errors: field.errors.value,
+                dirty: field.meta.dirty,
+                valid: field.meta.valid,
+                touched: field.meta.touched,
+                value: field.value.value,
+                initialValue: field.meta.initialValue,
+            });
+            SELECTED_NODE = { field, type: 'field' };
+            return;
+        }
+        SELECTED_NODE = null;
+    });
+}
+function mapFormForDevtoolsInspector(form) {
+    const { textColor, bgColor } = getValidityColors(form.meta.value.valid);
+    const formTreeNodes = {};
+    Object.values(form.getAllPathStates()).forEach(state => {
+        setInPath(formTreeNodes, (0,vue__WEBPACK_IMPORTED_MODULE_0__.unref)(state.path), mapPathForDevtoolsInspector(state, form));
+    });
+    function buildFormTree(tree, path = []) {
+        const key = [...path].pop();
+        if ('id' in tree) {
+            return Object.assign(Object.assign({}, tree), { label: key || tree.label });
+        }
+        if (isObject(tree)) {
+            return {
+                id: `${path.join('.')}`,
+                label: key || '',
+                children: Object.keys(tree).map(key => buildFormTree(tree[key], [...path, key])),
+            };
+        }
+        if (Array.isArray(tree)) {
+            return {
+                id: `${path.join('.')}`,
+                label: `${key}[]`,
+                children: tree.map((c, idx) => buildFormTree(c, [...path, String(idx)])),
+            };
+        }
+        return { id: '', label: '', children: [] };
+    }
+    const { children } = buildFormTree(formTreeNodes);
+    return {
+        id: encodeNodeId(form),
+        label: 'Form',
+        children,
+        tags: [
+            {
+                label: 'Form',
+                textColor,
+                backgroundColor: bgColor,
+            },
+            {
+                label: `${form.getAllPathStates().length} fields`,
+                textColor: COLORS.white,
+                backgroundColor: COLORS.unknown,
+            },
+        ],
+    };
+}
+function mapPathForDevtoolsInspector(state, form) {
+    return {
+        id: encodeNodeId(form, state),
+        label: (0,vue__WEBPACK_IMPORTED_MODULE_0__.unref)(state.path),
+        tags: getFieldNodeTags(state.multiple, state.fieldsCount, state.type, state.valid, form),
+    };
+}
+function mapFieldForDevtoolsInspector(field, form) {
+    return {
+        id: encodeNodeId(form, field),
+        label: (0,vue__WEBPACK_IMPORTED_MODULE_0__.unref)(field.name),
+        tags: getFieldNodeTags(false, 1, field.type, field.meta.valid, form),
+    };
+}
+function getFieldNodeTags(multiple, fieldsCount, type, valid, form) {
+    const { textColor, bgColor } = getValidityColors(valid);
+    return [
+        multiple
+            ? undefined
+            : {
+                label: 'Field',
+                textColor,
+                backgroundColor: bgColor,
+            },
+        !form
+            ? {
+                label: 'Standalone',
+                textColor: COLORS.black,
+                backgroundColor: COLORS.gray,
+            }
+            : undefined,
+        type === 'checkbox'
+            ? {
+                label: 'Checkbox',
+                textColor: COLORS.white,
+                backgroundColor: COLORS.blue,
+            }
+            : undefined,
+        type === 'radio'
+            ? {
+                label: 'Radio',
+                textColor: COLORS.white,
+                backgroundColor: COLORS.purple,
+            }
+            : undefined,
+        multiple
+            ? {
+                label: 'Multiple',
+                textColor: COLORS.black,
+                backgroundColor: COLORS.orange,
+            }
+            : undefined,
+    ].filter(Boolean);
+}
+function encodeNodeId(form, stateOrField) {
+    const type = stateOrField ? ('path' in stateOrField ? 'pathState' : 'field') : 'form';
+    const fieldPath = stateOrField ? ('path' in stateOrField ? stateOrField === null || stateOrField === void 0 ? void 0 : stateOrField.path : (0,vue__WEBPACK_IMPORTED_MODULE_0__.unref)(stateOrField === null || stateOrField === void 0 ? void 0 : stateOrField.name)) : '';
+    const idObject = { f: form === null || form === void 0 ? void 0 : form.formId, ff: fieldPath, type };
+    return btoa(encodeURIComponent(JSON.stringify(idObject)));
+}
+function decodeNodeId(nodeId) {
+    try {
+        const idObject = JSON.parse(decodeURIComponent(atob(nodeId)));
+        const form = DEVTOOLS_FORMS[idObject.f];
+        if (!form && idObject.ff) {
+            const field = DEVTOOLS_FIELDS[idObject.ff];
+            if (!field) {
+                return {};
+            }
+            return {
+                type: idObject.type,
+                field,
+            };
+        }
+        if (!form) {
+            return {};
+        }
+        const state = form.getPathState(idObject.ff);
+        return {
+            type: idObject.type,
+            form,
+            state,
+        };
+    }
+    catch (err) {
+        // console.error(`Devtools: [vee-validate] Failed to parse node id ${nodeId}`);
+    }
+    return {};
+}
+function buildFieldState(state) {
+    return {
+        'Field state': [
+            { key: 'errors', value: state.errors },
+            {
+                key: 'initialValue',
+                value: state.initialValue,
+            },
+            {
+                key: 'currentValue',
+                value: state.value,
+            },
+            {
+                key: 'touched',
+                value: state.touched,
+            },
+            {
+                key: 'dirty',
+                value: state.dirty,
+            },
+            {
+                key: 'valid',
+                value: state.valid,
+            },
+        ],
+    };
+}
+function buildFormState(form) {
+    const { errorBag, meta, values, isSubmitting, isValidating, submitCount } = form;
+    return {
+        'Form state': [
+            {
+                key: 'submitCount',
+                value: submitCount.value,
+            },
+            {
+                key: 'isSubmitting',
+                value: isSubmitting.value,
+            },
+            {
+                key: 'isValidating',
+                value: isValidating.value,
+            },
+            {
+                key: 'touched',
+                value: meta.value.touched,
+            },
+            {
+                key: 'dirty',
+                value: meta.value.dirty,
+            },
+            {
+                key: 'valid',
+                value: meta.value.valid,
+            },
+            {
+                key: 'initialValues',
+                value: meta.value.initialValues,
+            },
+            {
+                key: 'currentValues',
+                value: values,
+            },
+            {
+                key: 'errors',
+                value: keysOf(errorBag.value).reduce((acc, key) => {
+                    var _a;
+                    const message = (_a = errorBag.value[key]) === null || _a === void 0 ? void 0 : _a[0];
+                    if (message) {
+                        acc[key] = message;
+                    }
+                    return acc;
+                }, {}),
+            },
+        ],
+    };
+}
+/**
+ * Resolves the tag color based on the form state
+ */
+function getValidityColors(valid) {
+    return {
+        bgColor: valid ? COLORS.success : COLORS.error,
+        textColor: valid ? COLORS.black : COLORS.white,
+    };
+}
+
+/**
+ * Creates a field composite.
+ */
+function useField(path, rules, opts) {
+    if (hasCheckedAttr(opts === null || opts === void 0 ? void 0 : opts.type)) {
+        return useFieldWithChecked(path, rules, opts);
+    }
+    return _useField(path, rules, opts);
+}
+function _useField(path, rules, opts) {
+    const { initialValue: modelValue, validateOnMount, bails, type, checkedValue, label, validateOnValueUpdate, uncheckedValue, controlled, keepValueOnUnmount, syncVModel, form: controlForm, } = normalizeOptions(opts);
+    const injectedForm = controlled ? injectWithSelf(FormContextKey) : undefined;
+    const form = controlForm || injectedForm;
+    const name = (0,vue__WEBPACK_IMPORTED_MODULE_0__.computed)(() => normalizeFormPath((0,vue__WEBPACK_IMPORTED_MODULE_0__.toValue)(path)));
+    const validator = (0,vue__WEBPACK_IMPORTED_MODULE_0__.computed)(() => {
+        const schema = (0,vue__WEBPACK_IMPORTED_MODULE_0__.toValue)(form === null || form === void 0 ? void 0 : form.schema);
+        if (schema) {
+            return undefined;
+        }
+        const rulesValue = (0,vue__WEBPACK_IMPORTED_MODULE_0__.unref)(rules);
+        if (isYupValidator(rulesValue) ||
+            isTypedSchema(rulesValue) ||
+            isCallable(rulesValue) ||
+            Array.isArray(rulesValue)) {
+            return rulesValue;
+        }
+        return normalizeRules(rulesValue);
+    });
+    const isTyped = !isCallable(validator.value) && isTypedSchema((0,vue__WEBPACK_IMPORTED_MODULE_0__.toValue)(rules));
+    const { id, value, initialValue, meta, setState, errors, flags } = useFieldState(name, {
+        modelValue,
+        form,
+        bails,
+        label,
+        type,
+        validate: validator.value ? validate$1 : undefined,
+        schema: isTyped ? rules : undefined,
+    });
+    const errorMessage = (0,vue__WEBPACK_IMPORTED_MODULE_0__.computed)(() => errors.value[0]);
+    if (syncVModel) {
+        useVModel({
+            value,
+            prop: syncVModel,
+            handleChange,
+            shouldValidate: () => validateOnValueUpdate && !flags.pendingReset,
+        });
+    }
+    /**
+     * Handles common onBlur meta update
+     */
+    const handleBlur = (evt, shouldValidate = false) => {
+        meta.touched = true;
+        if (shouldValidate) {
+            validateWithStateMutation();
+        }
+    };
+    async function validateCurrentValue(mode) {
+        var _a, _b;
+        if (form === null || form === void 0 ? void 0 : form.validateSchema) {
+            const { results } = await form.validateSchema(mode);
+            return (_a = results[(0,vue__WEBPACK_IMPORTED_MODULE_0__.toValue)(name)]) !== null && _a !== void 0 ? _a : { valid: true, errors: [] };
+        }
+        if (validator.value) {
+            return validate(value.value, validator.value, {
+                name: (0,vue__WEBPACK_IMPORTED_MODULE_0__.toValue)(name),
+                label: (0,vue__WEBPACK_IMPORTED_MODULE_0__.toValue)(label),
+                values: (_b = form === null || form === void 0 ? void 0 : form.values) !== null && _b !== void 0 ? _b : {},
+                bails,
+            });
+        }
+        return { valid: true, errors: [] };
+    }
+    const validateWithStateMutation = withLatest(async () => {
+        meta.pending = true;
+        meta.validated = true;
+        return validateCurrentValue('validated-only');
+    }, result => {
+        if (flags.pendingUnmount[field.id]) {
+            return result;
+        }
+        setState({ errors: result.errors });
+        meta.pending = false;
+        meta.valid = result.valid;
+        return result;
+    });
+    const validateValidStateOnly = withLatest(async () => {
+        return validateCurrentValue('silent');
+    }, result => {
+        meta.valid = result.valid;
+        return result;
+    });
+    function validate$1(opts) {
+        if ((opts === null || opts === void 0 ? void 0 : opts.mode) === 'silent') {
+            return validateValidStateOnly();
+        }
+        return validateWithStateMutation();
+    }
+    // Common input/change event handler
+    function handleChange(e, shouldValidate = true) {
+        const newValue = normalizeEventValue(e);
+        setValue(newValue, shouldValidate);
+    }
+    // Runs the initial validation
+    (0,vue__WEBPACK_IMPORTED_MODULE_0__.onMounted)(() => {
+        if (validateOnMount) {
+            return validateWithStateMutation();
+        }
+        // validate self initially if no form was handling this
+        // forms should have their own initial silent validation run to make things more efficient
+        if (!form || !form.validateSchema) {
+            validateValidStateOnly();
+        }
+    });
+    function setTouched(isTouched) {
+        meta.touched = isTouched;
+    }
+    function resetField(state) {
+        var _a;
+        const newValue = state && 'value' in state ? state.value : initialValue.value;
+        setState({
+            value: klona(newValue),
+            initialValue: klona(newValue),
+            touched: (_a = state === null || state === void 0 ? void 0 : state.touched) !== null && _a !== void 0 ? _a : false,
+            errors: (state === null || state === void 0 ? void 0 : state.errors) || [],
+        });
+        meta.pending = false;
+        meta.validated = false;
+        validateValidStateOnly();
+    }
+    const vm = (0,vue__WEBPACK_IMPORTED_MODULE_0__.getCurrentInstance)();
+    function setValue(newValue, shouldValidate = true) {
+        value.value = vm && syncVModel ? applyModelModifiers(newValue, vm.props.modelModifiers) : newValue;
+        const validateFn = shouldValidate ? validateWithStateMutation : validateValidStateOnly;
+        validateFn();
+    }
+    function setErrors(errors) {
+        setState({ errors: Array.isArray(errors) ? errors : [errors] });
+    }
+    const valueProxy = (0,vue__WEBPACK_IMPORTED_MODULE_0__.computed)({
+        get() {
+            return value.value;
+        },
+        set(newValue) {
+            setValue(newValue, validateOnValueUpdate);
+        },
+    });
+    const field = {
+        id,
+        name,
+        label,
+        value: valueProxy,
+        meta,
+        errors,
+        errorMessage,
+        type,
+        checkedValue,
+        uncheckedValue,
+        bails,
+        keepValueOnUnmount,
+        resetField,
+        handleReset: () => resetField(),
+        validate: validate$1,
+        handleChange,
+        handleBlur,
+        setState,
+        setTouched,
+        setErrors,
+        setValue,
+    };
+    (0,vue__WEBPACK_IMPORTED_MODULE_0__.provide)(FieldContextKey, field);
+    if ((0,vue__WEBPACK_IMPORTED_MODULE_0__.isRef)(rules) && typeof (0,vue__WEBPACK_IMPORTED_MODULE_0__.unref)(rules) !== 'function') {
+        (0,vue__WEBPACK_IMPORTED_MODULE_0__.watch)(rules, (value, oldValue) => {
+            if (isEqual(value, oldValue)) {
+                return;
+            }
+            meta.validated ? validateWithStateMutation() : validateValidStateOnly();
+        }, {
+            deep: true,
+        });
+    }
+    if ((true)) {
+        field._vm = (0,vue__WEBPACK_IMPORTED_MODULE_0__.getCurrentInstance)();
+        (0,vue__WEBPACK_IMPORTED_MODULE_0__.watch)(() => (Object.assign(Object.assign({ errors: errors.value }, meta), { value: value.value })), refreshInspector, {
+            deep: true,
+        });
+        if (!form) {
+            registerSingleFieldWithDevtools(field);
+        }
+    }
+    // if no associated form return the field API immediately
+    if (!form) {
+        return field;
+    }
+    // associate the field with the given form
+    // extract cross-field dependencies in a computed prop
+    const dependencies = (0,vue__WEBPACK_IMPORTED_MODULE_0__.computed)(() => {
+        const rulesVal = validator.value;
+        // is falsy, a function schema or a yup schema
+        if (!rulesVal ||
+            isCallable(rulesVal) ||
+            isYupValidator(rulesVal) ||
+            isTypedSchema(rulesVal) ||
+            Array.isArray(rulesVal)) {
+            return {};
+        }
+        return Object.keys(rulesVal).reduce((acc, rule) => {
+            const deps = extractLocators(rulesVal[rule])
+                .map((dep) => dep.__locatorRef)
+                .reduce((depAcc, depName) => {
+                const depValue = getFromPath(form.values, depName) || form.values[depName];
+                if (depValue !== undefined) {
+                    depAcc[depName] = depValue;
+                }
+                return depAcc;
+            }, {});
+            Object.assign(acc, deps);
+            return acc;
+        }, {});
+    });
+    // Adds a watcher that runs the validation whenever field dependencies change
+    (0,vue__WEBPACK_IMPORTED_MODULE_0__.watch)(dependencies, (deps, oldDeps) => {
+        // Skip if no dependencies or if the field wasn't manipulated
+        if (!Object.keys(deps).length) {
+            return;
+        }
+        const shouldValidate = !isEqual(deps, oldDeps);
+        if (shouldValidate) {
+            meta.validated ? validateWithStateMutation() : validateValidStateOnly();
+        }
+    });
+    (0,vue__WEBPACK_IMPORTED_MODULE_0__.onBeforeUnmount)(() => {
+        var _a;
+        const shouldKeepValue = (_a = (0,vue__WEBPACK_IMPORTED_MODULE_0__.toValue)(field.keepValueOnUnmount)) !== null && _a !== void 0 ? _a : (0,vue__WEBPACK_IMPORTED_MODULE_0__.toValue)(form.keepValuesOnUnmount);
+        const path = (0,vue__WEBPACK_IMPORTED_MODULE_0__.toValue)(name);
+        if (shouldKeepValue || !form || flags.pendingUnmount[field.id]) {
+            form === null || form === void 0 ? void 0 : form.removePathState(path, id);
+            return;
+        }
+        flags.pendingUnmount[field.id] = true;
+        const pathState = form.getPathState(path);
+        const matchesId = Array.isArray(pathState === null || pathState === void 0 ? void 0 : pathState.id) && (pathState === null || pathState === void 0 ? void 0 : pathState.multiple)
+            ? pathState === null || pathState === void 0 ? void 0 : pathState.id.includes(field.id)
+            : (pathState === null || pathState === void 0 ? void 0 : pathState.id) === field.id;
+        if (!matchesId) {
+            return;
+        }
+        if ((pathState === null || pathState === void 0 ? void 0 : pathState.multiple) && Array.isArray(pathState.value)) {
+            const valueIdx = pathState.value.findIndex(i => isEqual(i, (0,vue__WEBPACK_IMPORTED_MODULE_0__.toValue)(field.checkedValue)));
+            if (valueIdx > -1) {
+                const newVal = [...pathState.value];
+                newVal.splice(valueIdx, 1);
+                form.setFieldValue(path, newVal);
+            }
+            if (Array.isArray(pathState.id)) {
+                pathState.id.splice(pathState.id.indexOf(field.id), 1);
+            }
+        }
+        else {
+            form.unsetPathValue((0,vue__WEBPACK_IMPORTED_MODULE_0__.toValue)(name));
+        }
+        form.removePathState(path, id);
+    });
+    return field;
+}
+/**
+ * Normalizes partial field options to include the full options
+ */
+function normalizeOptions(opts) {
+    const defaults = () => ({
+        initialValue: undefined,
+        validateOnMount: false,
+        bails: true,
+        label: undefined,
+        validateOnValueUpdate: true,
+        keepValueOnUnmount: undefined,
+        syncVModel: false,
+        controlled: true,
+    });
+    const isVModelSynced = !!(opts === null || opts === void 0 ? void 0 : opts.syncVModel);
+    const modelPropName = typeof (opts === null || opts === void 0 ? void 0 : opts.syncVModel) === 'string' ? opts.syncVModel : (opts === null || opts === void 0 ? void 0 : opts.modelPropName) || 'modelValue';
+    const initialValue = isVModelSynced && !('initialValue' in (opts || {}))
+        ? getCurrentModelValue((0,vue__WEBPACK_IMPORTED_MODULE_0__.getCurrentInstance)(), modelPropName)
+        : opts === null || opts === void 0 ? void 0 : opts.initialValue;
+    if (!opts) {
+        return Object.assign(Object.assign({}, defaults()), { initialValue });
+    }
+    // TODO: Deprecate this in next major release
+    const checkedValue = 'valueProp' in opts ? opts.valueProp : opts.checkedValue;
+    const controlled = 'standalone' in opts ? !opts.standalone : opts.controlled;
+    const syncVModel = (opts === null || opts === void 0 ? void 0 : opts.modelPropName) || (opts === null || opts === void 0 ? void 0 : opts.syncVModel) || false;
+    return Object.assign(Object.assign(Object.assign({}, defaults()), (opts || {})), { initialValue, controlled: controlled !== null && controlled !== void 0 ? controlled : true, checkedValue,
+        syncVModel });
+}
+function useFieldWithChecked(name, rules, opts) {
+    const form = !(opts === null || opts === void 0 ? void 0 : opts.standalone) ? injectWithSelf(FormContextKey) : undefined;
+    const checkedValue = opts === null || opts === void 0 ? void 0 : opts.checkedValue;
+    const uncheckedValue = opts === null || opts === void 0 ? void 0 : opts.uncheckedValue;
+    function patchCheckedApi(field) {
+        const handleChange = field.handleChange;
+        const checked = (0,vue__WEBPACK_IMPORTED_MODULE_0__.computed)(() => {
+            const currentValue = (0,vue__WEBPACK_IMPORTED_MODULE_0__.toValue)(field.value);
+            const checkedVal = (0,vue__WEBPACK_IMPORTED_MODULE_0__.toValue)(checkedValue);
+            return Array.isArray(currentValue)
+                ? currentValue.findIndex(v => isEqual(v, checkedVal)) >= 0
+                : isEqual(checkedVal, currentValue);
+        });
+        function handleCheckboxChange(e, shouldValidate = true) {
+            var _a, _b;
+            if (checked.value === ((_a = e === null || e === void 0 ? void 0 : e.target) === null || _a === void 0 ? void 0 : _a.checked)) {
+                if (shouldValidate) {
+                    field.validate();
+                }
+                return;
+            }
+            const path = (0,vue__WEBPACK_IMPORTED_MODULE_0__.toValue)(name);
+            const pathState = form === null || form === void 0 ? void 0 : form.getPathState(path);
+            const value = normalizeEventValue(e);
+            let newValue = (_b = (0,vue__WEBPACK_IMPORTED_MODULE_0__.toValue)(checkedValue)) !== null && _b !== void 0 ? _b : value;
+            if (form && (pathState === null || pathState === void 0 ? void 0 : pathState.multiple) && pathState.type === 'checkbox') {
+                newValue = resolveNextCheckboxValue(getFromPath(form.values, path) || [], newValue, undefined);
+            }
+            else if ((opts === null || opts === void 0 ? void 0 : opts.type) === 'checkbox') {
+                newValue = resolveNextCheckboxValue((0,vue__WEBPACK_IMPORTED_MODULE_0__.toValue)(field.value), newValue, (0,vue__WEBPACK_IMPORTED_MODULE_0__.toValue)(uncheckedValue));
+            }
+            handleChange(newValue, shouldValidate);
+        }
+        return Object.assign(Object.assign({}, field), { checked,
+            checkedValue,
+            uncheckedValue, handleChange: handleCheckboxChange });
+    }
+    return patchCheckedApi(_useField(name, rules, opts));
+}
+function useVModel({ prop, value, handleChange, shouldValidate }) {
+    const vm = (0,vue__WEBPACK_IMPORTED_MODULE_0__.getCurrentInstance)();
+    /* istanbul ignore next */
+    if (!vm || !prop) {
+        if ((true)) {
+            console.warn('Failed to setup model events because `useField` was not called in setup.');
+        }
+        return;
+    }
+    const propName = typeof prop === 'string' ? prop : 'modelValue';
+    const emitName = `update:${propName}`;
+    // Component doesn't have a model prop setup (must be defined on the props)
+    if (!(propName in vm.props)) {
+        return;
+    }
+    (0,vue__WEBPACK_IMPORTED_MODULE_0__.watch)(value, newValue => {
+        if (isEqual(newValue, getCurrentModelValue(vm, propName))) {
+            return;
+        }
+        vm.emit(emitName, newValue);
+    });
+    (0,vue__WEBPACK_IMPORTED_MODULE_0__.watch)(() => getCurrentModelValue(vm, propName), propValue => {
+        if (propValue === IS_ABSENT && value.value === undefined) {
+            return;
+        }
+        const newValue = propValue === IS_ABSENT ? undefined : propValue;
+        if (isEqual(newValue, value.value)) {
+            return;
+        }
+        handleChange(newValue, shouldValidate());
+    });
+}
+function getCurrentModelValue(vm, propName) {
+    if (!vm) {
+        return undefined;
+    }
+    return vm.props[propName];
+}
+
+const FieldImpl = /** #__PURE__ */ (0,vue__WEBPACK_IMPORTED_MODULE_0__.defineComponent)({
+    name: 'Field',
+    inheritAttrs: false,
+    props: {
+        as: {
+            type: [String, Object],
+            default: undefined,
+        },
+        name: {
+            type: String,
+            required: true,
+        },
+        rules: {
+            type: [Object, String, Function],
+            default: undefined,
+        },
+        validateOnMount: {
+            type: Boolean,
+            default: false,
+        },
+        validateOnBlur: {
+            type: Boolean,
+            default: undefined,
+        },
+        validateOnChange: {
+            type: Boolean,
+            default: undefined,
+        },
+        validateOnInput: {
+            type: Boolean,
+            default: undefined,
+        },
+        validateOnModelUpdate: {
+            type: Boolean,
+            default: undefined,
+        },
+        bails: {
+            type: Boolean,
+            default: () => getConfig().bails,
+        },
+        label: {
+            type: String,
+            default: undefined,
+        },
+        uncheckedValue: {
+            type: null,
+            default: undefined,
+        },
+        modelValue: {
+            type: null,
+            default: IS_ABSENT,
+        },
+        modelModifiers: {
+            type: null,
+            default: () => ({}),
+        },
+        'onUpdate:modelValue': {
+            type: null,
+            default: undefined,
+        },
+        standalone: {
+            type: Boolean,
+            default: false,
+        },
+        keepValue: {
+            type: Boolean,
+            default: undefined,
+        },
+    },
+    setup(props, ctx) {
+        const rules = (0,vue__WEBPACK_IMPORTED_MODULE_0__.toRef)(props, 'rules');
+        const name = (0,vue__WEBPACK_IMPORTED_MODULE_0__.toRef)(props, 'name');
+        const label = (0,vue__WEBPACK_IMPORTED_MODULE_0__.toRef)(props, 'label');
+        const uncheckedValue = (0,vue__WEBPACK_IMPORTED_MODULE_0__.toRef)(props, 'uncheckedValue');
+        const keepValue = (0,vue__WEBPACK_IMPORTED_MODULE_0__.toRef)(props, 'keepValue');
+        const { errors, value, errorMessage, validate: validateField, handleChange, handleBlur, setTouched, resetField, handleReset, meta, checked, setErrors, } = useField(name, rules, {
+            validateOnMount: props.validateOnMount,
+            bails: props.bails,
+            standalone: props.standalone,
+            type: ctx.attrs.type,
+            initialValue: resolveInitialValue(props, ctx),
+            // Only for checkboxes and radio buttons
+            checkedValue: ctx.attrs.value,
+            uncheckedValue,
+            label,
+            validateOnValueUpdate: props.validateOnModelUpdate,
+            keepValueOnUnmount: keepValue,
+            syncVModel: true,
+        });
+        // If there is a v-model applied on the component we need to emit the `update:modelValue` whenever the value binding changes
+        const onChangeHandler = function handleChangeWithModel(e, shouldValidate = true) {
+            handleChange(e, shouldValidate);
+        };
+        const sharedProps = (0,vue__WEBPACK_IMPORTED_MODULE_0__.computed)(() => {
+            const { validateOnInput, validateOnChange, validateOnBlur, validateOnModelUpdate } = resolveValidationTriggers(props);
+            function baseOnBlur(e) {
+                handleBlur(e, validateOnBlur);
+                if (isCallable(ctx.attrs.onBlur)) {
+                    ctx.attrs.onBlur(e);
+                }
+            }
+            function baseOnInput(e) {
+                onChangeHandler(e, validateOnInput);
+                if (isCallable(ctx.attrs.onInput)) {
+                    ctx.attrs.onInput(e);
+                }
+            }
+            function baseOnChange(e) {
+                onChangeHandler(e, validateOnChange);
+                if (isCallable(ctx.attrs.onChange)) {
+                    ctx.attrs.onChange(e);
+                }
+            }
+            const attrs = {
+                name: props.name,
+                onBlur: baseOnBlur,
+                onInput: baseOnInput,
+                onChange: baseOnChange,
+            };
+            attrs['onUpdate:modelValue'] = e => onChangeHandler(e, validateOnModelUpdate);
+            return attrs;
+        });
+        const fieldProps = (0,vue__WEBPACK_IMPORTED_MODULE_0__.computed)(() => {
+            const attrs = Object.assign({}, sharedProps.value);
+            if (hasCheckedAttr(ctx.attrs.type) && checked) {
+                attrs.checked = checked.value;
+            }
+            const tag = resolveTag(props, ctx);
+            if (shouldHaveValueBinding(tag, ctx.attrs)) {
+                attrs.value = value.value;
+            }
+            return attrs;
+        });
+        const componentProps = (0,vue__WEBPACK_IMPORTED_MODULE_0__.computed)(() => {
+            return Object.assign(Object.assign({}, sharedProps.value), { modelValue: value.value });
+        });
+        function slotProps() {
+            return {
+                field: fieldProps.value,
+                componentField: componentProps.value,
+                value: value.value,
+                meta,
+                errors: errors.value,
+                errorMessage: errorMessage.value,
+                validate: validateField,
+                resetField,
+                handleChange: onChangeHandler,
+                handleInput: e => onChangeHandler(e, false),
+                handleReset,
+                handleBlur: sharedProps.value.onBlur,
+                setTouched,
+                setErrors,
+            };
+        }
+        ctx.expose({
+            value,
+            meta,
+            errors,
+            errorMessage,
+            setErrors,
+            setTouched,
+            reset: resetField,
+            validate: validateField,
+            handleChange,
+        });
+        return () => {
+            const tag = (0,vue__WEBPACK_IMPORTED_MODULE_0__.resolveDynamicComponent)(resolveTag(props, ctx));
+            const children = normalizeChildren(tag, ctx, slotProps);
+            if (tag) {
+                return (0,vue__WEBPACK_IMPORTED_MODULE_0__.h)(tag, Object.assign(Object.assign({}, ctx.attrs), fieldProps.value), children);
+            }
+            return children;
+        };
+    },
+});
+function resolveTag(props, ctx) {
+    let tag = props.as || '';
+    if (!props.as && !ctx.slots.default) {
+        tag = 'input';
+    }
+    return tag;
+}
+function resolveValidationTriggers(props) {
+    var _a, _b, _c, _d;
+    const { validateOnInput, validateOnChange, validateOnBlur, validateOnModelUpdate } = getConfig();
+    return {
+        validateOnInput: (_a = props.validateOnInput) !== null && _a !== void 0 ? _a : validateOnInput,
+        validateOnChange: (_b = props.validateOnChange) !== null && _b !== void 0 ? _b : validateOnChange,
+        validateOnBlur: (_c = props.validateOnBlur) !== null && _c !== void 0 ? _c : validateOnBlur,
+        validateOnModelUpdate: (_d = props.validateOnModelUpdate) !== null && _d !== void 0 ? _d : validateOnModelUpdate,
+    };
+}
+function resolveInitialValue(props, ctx) {
+    // Gets the initial value either from `value` prop/attr or `v-model` binding (modelValue)
+    // For checkboxes and radio buttons it will always be the model value not the `value` attribute
+    if (!hasCheckedAttr(ctx.attrs.type)) {
+        return isPropPresent(props, 'modelValue') ? props.modelValue : ctx.attrs.value;
+    }
+    return isPropPresent(props, 'modelValue') ? props.modelValue : undefined;
+}
+const Field = FieldImpl;
+
+let FORM_COUNTER = 0;
+const PRIVATE_PATH_STATE_KEYS = ['bails', 'fieldsCount', 'id', 'multiple', 'type', 'validate'];
+function resolveInitialValues(opts) {
+    const givenInitial = (opts === null || opts === void 0 ? void 0 : opts.initialValues) || {};
+    const providedValues = Object.assign({}, (0,vue__WEBPACK_IMPORTED_MODULE_0__.toValue)(givenInitial));
+    const schema = (0,vue__WEBPACK_IMPORTED_MODULE_0__.unref)(opts === null || opts === void 0 ? void 0 : opts.validationSchema);
+    if (schema && isTypedSchema(schema) && isCallable(schema.cast)) {
+        return klona(schema.cast(providedValues) || {});
+    }
+    return klona(providedValues);
+}
+function useForm(opts) {
+    var _a;
+    const formId = FORM_COUNTER++;
+    // Prevents fields from double resetting their values, which causes checkboxes to toggle their initial value
+    let FIELD_ID_COUNTER = 0;
+    // If the form is currently submitting
+    const isSubmitting = (0,vue__WEBPACK_IMPORTED_MODULE_0__.ref)(false);
+    // If the form is currently validating
+    const isValidating = (0,vue__WEBPACK_IMPORTED_MODULE_0__.ref)(false);
+    // The number of times the user tried to submit the form
+    const submitCount = (0,vue__WEBPACK_IMPORTED_MODULE_0__.ref)(0);
+    // field arrays managed by this form
+    const fieldArrays = [];
+    // a private ref for all form values
+    const formValues = (0,vue__WEBPACK_IMPORTED_MODULE_0__.reactive)(resolveInitialValues(opts));
+    const pathStates = (0,vue__WEBPACK_IMPORTED_MODULE_0__.ref)([]);
+    const extraErrorsBag = (0,vue__WEBPACK_IMPORTED_MODULE_0__.ref)({});
+    const pathStateLookup = (0,vue__WEBPACK_IMPORTED_MODULE_0__.ref)({});
+    const rebuildPathLookup = debounceNextTick(() => {
+        pathStateLookup.value = pathStates.value.reduce((names, state) => {
+            names[normalizeFormPath((0,vue__WEBPACK_IMPORTED_MODULE_0__.toValue)(state.path))] = state;
+            return names;
+        }, {});
+    });
+    /**
+     * Manually sets an error message on a specific field
+     */
+    function setFieldError(field, message) {
+        const state = findPathState(field);
+        if (!state) {
+            if (typeof field === 'string') {
+                extraErrorsBag.value[normalizeFormPath(field)] = normalizeErrorItem(message);
+            }
+            return;
+        }
+        // Move the error from the extras path if exists
+        if (typeof field === 'string') {
+            const normalizedPath = normalizeFormPath(field);
+            if (extraErrorsBag.value[normalizedPath]) {
+                delete extraErrorsBag.value[normalizedPath];
+            }
+        }
+        state.errors = normalizeErrorItem(message);
+        state.valid = !state.errors.length;
+    }
+    /**
+     * Sets errors for the fields specified in the object
+     */
+    function setErrors(paths) {
+        keysOf(paths).forEach(path => {
+            setFieldError(path, paths[path]);
+        });
+    }
+    if (opts === null || opts === void 0 ? void 0 : opts.initialErrors) {
+        setErrors(opts.initialErrors);
+    }
+    const errorBag = (0,vue__WEBPACK_IMPORTED_MODULE_0__.computed)(() => {
+        const pathErrors = pathStates.value.reduce((acc, state) => {
+            if (state.errors.length) {
+                acc[state.path] = state.errors;
+            }
+            return acc;
+        }, {});
+        return Object.assign(Object.assign({}, extraErrorsBag.value), pathErrors);
+    });
+    // Gets the first error of each field
+    const errors = (0,vue__WEBPACK_IMPORTED_MODULE_0__.computed)(() => {
+        return keysOf(errorBag.value).reduce((acc, key) => {
+            const errors = errorBag.value[key];
+            if (errors === null || errors === void 0 ? void 0 : errors.length) {
+                acc[key] = errors[0];
+            }
+            return acc;
+        }, {});
+    });
+    /**
+     * Holds a computed reference to all fields names and labels
+     */
+    const fieldNames = (0,vue__WEBPACK_IMPORTED_MODULE_0__.computed)(() => {
+        return pathStates.value.reduce((names, state) => {
+            names[state.path] = { name: state.path || '', label: state.label || '' };
+            return names;
+        }, {});
+    });
+    const fieldBailsMap = (0,vue__WEBPACK_IMPORTED_MODULE_0__.computed)(() => {
+        return pathStates.value.reduce((map, state) => {
+            var _a;
+            map[state.path] = (_a = state.bails) !== null && _a !== void 0 ? _a : true;
+            return map;
+        }, {});
+    });
+    // mutable non-reactive reference to initial errors
+    // we need this to process initial errors then unset them
+    const initialErrors = Object.assign({}, ((opts === null || opts === void 0 ? void 0 : opts.initialErrors) || {}));
+    const keepValuesOnUnmount = (_a = opts === null || opts === void 0 ? void 0 : opts.keepValuesOnUnmount) !== null && _a !== void 0 ? _a : false;
+    // initial form values
+    const { initialValues, originalInitialValues, setInitialValues } = useFormInitialValues(pathStates, formValues, opts);
+    // form meta aggregations
+    const meta = useFormMeta(pathStates, formValues, originalInitialValues, errors);
+    const controlledValues = (0,vue__WEBPACK_IMPORTED_MODULE_0__.computed)(() => {
+        return pathStates.value.reduce((acc, state) => {
+            const value = getFromPath(formValues, state.path);
+            setInPath(acc, state.path, value);
+            return acc;
+        }, {});
+    });
+    const schema = opts === null || opts === void 0 ? void 0 : opts.validationSchema;
+    function createPathState(path, config) {
+        var _a, _b;
+        const initialValue = (0,vue__WEBPACK_IMPORTED_MODULE_0__.computed)(() => getFromPath(initialValues.value, (0,vue__WEBPACK_IMPORTED_MODULE_0__.toValue)(path)));
+        const pathStateExists = pathStateLookup.value[(0,vue__WEBPACK_IMPORTED_MODULE_0__.toValue)(path)];
+        const isCheckboxOrRadio = (config === null || config === void 0 ? void 0 : config.type) === 'checkbox' || (config === null || config === void 0 ? void 0 : config.type) === 'radio';
+        if (pathStateExists && isCheckboxOrRadio) {
+            pathStateExists.multiple = true;
+            const id = FIELD_ID_COUNTER++;
+            if (Array.isArray(pathStateExists.id)) {
+                pathStateExists.id.push(id);
+            }
+            else {
+                pathStateExists.id = [pathStateExists.id, id];
+            }
+            pathStateExists.fieldsCount++;
+            pathStateExists.__flags.pendingUnmount[id] = false;
+            return pathStateExists;
+        }
+        const currentValue = (0,vue__WEBPACK_IMPORTED_MODULE_0__.computed)(() => getFromPath(formValues, (0,vue__WEBPACK_IMPORTED_MODULE_0__.toValue)(path)));
+        const pathValue = (0,vue__WEBPACK_IMPORTED_MODULE_0__.toValue)(path);
+        const unsetBatchIndex = UNSET_BATCH.findIndex(_path => _path === pathValue);
+        if (unsetBatchIndex !== -1) {
+            UNSET_BATCH.splice(unsetBatchIndex, 1);
+        }
+        const isRequired = (0,vue__WEBPACK_IMPORTED_MODULE_0__.computed)(() => {
+            var _a, _b, _c, _d;
+            const schemaValue = (0,vue__WEBPACK_IMPORTED_MODULE_0__.toValue)(schema);
+            if (isTypedSchema(schemaValue)) {
+                return (_b = (_a = schemaValue.describe) === null || _a === void 0 ? void 0 : _a.call(schemaValue, (0,vue__WEBPACK_IMPORTED_MODULE_0__.toValue)(path)).required) !== null && _b !== void 0 ? _b : false;
+            }
+            // Path own schema
+            const configSchemaValue = (0,vue__WEBPACK_IMPORTED_MODULE_0__.toValue)(config === null || config === void 0 ? void 0 : config.schema);
+            if (isTypedSchema(configSchemaValue)) {
+                return (_d = (_c = configSchemaValue.describe) === null || _c === void 0 ? void 0 : _c.call(configSchemaValue).required) !== null && _d !== void 0 ? _d : false;
+            }
+            return false;
+        });
+        const id = FIELD_ID_COUNTER++;
+        const state = (0,vue__WEBPACK_IMPORTED_MODULE_0__.reactive)({
+            id,
+            path,
+            touched: false,
+            pending: false,
+            valid: true,
+            validated: !!((_a = initialErrors[pathValue]) === null || _a === void 0 ? void 0 : _a.length),
+            required: isRequired,
+            initialValue,
+            errors: (0,vue__WEBPACK_IMPORTED_MODULE_0__.shallowRef)([]),
+            bails: (_b = config === null || config === void 0 ? void 0 : config.bails) !== null && _b !== void 0 ? _b : false,
+            label: config === null || config === void 0 ? void 0 : config.label,
+            type: (config === null || config === void 0 ? void 0 : config.type) || 'default',
+            value: currentValue,
+            multiple: false,
+            __flags: {
+                pendingUnmount: { [id]: false },
+                pendingReset: false,
+            },
+            fieldsCount: 1,
+            validate: config === null || config === void 0 ? void 0 : config.validate,
+            dirty: (0,vue__WEBPACK_IMPORTED_MODULE_0__.computed)(() => {
+                return !isEqual((0,vue__WEBPACK_IMPORTED_MODULE_0__.unref)(currentValue), (0,vue__WEBPACK_IMPORTED_MODULE_0__.unref)(initialValue));
+            }),
+        });
+        pathStates.value.push(state);
+        pathStateLookup.value[pathValue] = state;
+        rebuildPathLookup();
+        if (errors.value[pathValue] && !initialErrors[pathValue]) {
+            (0,vue__WEBPACK_IMPORTED_MODULE_0__.nextTick)(() => {
+                validateField(pathValue, { mode: 'silent' });
+            });
+        }
+        // Handles when a path changes
+        if ((0,vue__WEBPACK_IMPORTED_MODULE_0__.isRef)(path)) {
+            (0,vue__WEBPACK_IMPORTED_MODULE_0__.watch)(path, newPath => {
+                rebuildPathLookup();
+                const nextValue = klona(currentValue.value);
+                pathStateLookup.value[newPath] = state;
+                (0,vue__WEBPACK_IMPORTED_MODULE_0__.nextTick)(() => {
+                    setInPath(formValues, newPath, nextValue);
+                });
+            });
+        }
+        return state;
+    }
+    /**
+     * Batches validation runs in 5ms batches
+     * Must have two distinct batch queues to make sure they don't override each other settings #3783
+     */
+    const debouncedSilentValidation = debounceAsync(_validateSchema, 5);
+    const debouncedValidation = debounceAsync(_validateSchema, 5);
+    const validateSchema = withLatest(async (mode) => {
+        return (await (mode === 'silent'
+            ? debouncedSilentValidation()
+            : debouncedValidation()));
+    }, (formResult, [mode]) => {
+        // fields by id lookup
+        // errors fields names, we need it to also check if custom errors are updated
+        const currentErrorsPaths = keysOf(formCtx.errorBag.value);
+        // collect all the keys from the schema and all fields
+        // this ensures we have a complete key map of all the fields
+        const paths = [
+            ...new Set([...keysOf(formResult.results), ...pathStates.value.map(p => p.path), ...currentErrorsPaths]),
+        ].sort();
+        // aggregates the paths into a single result object while applying the results on the fields
+        const results = paths.reduce((validation, _path) => {
+            var _a;
+            const expectedPath = _path;
+            const pathState = findPathState(expectedPath) || findHoistedPath(expectedPath);
+            const messages = ((_a = formResult.results[expectedPath]) === null || _a === void 0 ? void 0 : _a.errors) || [];
+            // This is the real path of the field, because it might've been a hoisted field
+            const path = ((0,vue__WEBPACK_IMPORTED_MODULE_0__.toValue)(pathState === null || pathState === void 0 ? void 0 : pathState.path) || expectedPath);
+            // It is possible that multiple paths are collected across loops
+            // We want to merge them to avoid overriding any iteration's results
+            const fieldResult = mergeValidationResults({ errors: messages, valid: !messages.length }, validation.results[path]);
+            validation.results[path] = fieldResult;
+            if (!fieldResult.valid) {
+                validation.errors[path] = fieldResult.errors[0];
+            }
+            // clean up extra errors if path state exists
+            if (pathState && extraErrorsBag.value[path]) {
+                delete extraErrorsBag.value[path];
+            }
+            // field not rendered
+            if (!pathState) {
+                setFieldError(path, messages);
+                return validation;
+            }
+            // always update the valid flag regardless of the mode
+            pathState.valid = fieldResult.valid;
+            if (mode === 'silent') {
+                return validation;
+            }
+            if (mode === 'validated-only' && !pathState.validated) {
+                return validation;
+            }
+            setFieldError(pathState, fieldResult.errors);
+            return validation;
+        }, { valid: formResult.valid, results: {}, errors: {} });
+        if (formResult.values) {
+            results.values = formResult.values;
+        }
+        keysOf(results.results).forEach(path => {
+            var _a;
+            const pathState = findPathState(path);
+            if (!pathState) {
+                return;
+            }
+            if (mode === 'silent') {
+                return;
+            }
+            if (mode === 'validated-only' && !pathState.validated) {
+                return;
+            }
+            setFieldError(pathState, (_a = results.results[path]) === null || _a === void 0 ? void 0 : _a.errors);
+        });
+        return results;
+    });
+    function mutateAllPathState(mutation) {
+        pathStates.value.forEach(mutation);
+    }
+    function findPathState(path) {
+        const normalizedPath = typeof path === 'string' ? normalizeFormPath(path) : path;
+        const pathState = typeof normalizedPath === 'string' ? pathStateLookup.value[normalizedPath] : normalizedPath;
+        return pathState;
+    }
+    function findHoistedPath(path) {
+        const candidates = pathStates.value.filter(state => path.startsWith(state.path));
+        return candidates.reduce((bestCandidate, candidate) => {
+            if (!bestCandidate) {
+                return candidate;
+            }
+            return (candidate.path.length > bestCandidate.path.length ? candidate : bestCandidate);
+        }, undefined);
+    }
+    let UNSET_BATCH = [];
+    let PENDING_UNSET;
+    function unsetPathValue(path) {
+        UNSET_BATCH.push(path);
+        if (!PENDING_UNSET) {
+            PENDING_UNSET = (0,vue__WEBPACK_IMPORTED_MODULE_0__.nextTick)(() => {
+                const sortedPaths = [...UNSET_BATCH].sort().reverse();
+                sortedPaths.forEach(p => {
+                    unsetPath(formValues, p);
+                });
+                UNSET_BATCH = [];
+                PENDING_UNSET = null;
+            });
+        }
+        return PENDING_UNSET;
+    }
+    function makeSubmissionFactory(onlyControlled) {
+        return function submitHandlerFactory(fn, onValidationError) {
+            return function submissionHandler(e) {
+                if (e instanceof Event) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+                // Touch all fields
+                mutateAllPathState(s => (s.touched = true));
+                isSubmitting.value = true;
+                submitCount.value++;
+                return validate()
+                    .then(result => {
+                    const values = klona(formValues);
+                    if (result.valid && typeof fn === 'function') {
+                        const controlled = klona(controlledValues.value);
+                        let submittedValues = (onlyControlled ? controlled : values);
+                        if (result.values) {
+                            submittedValues = result.values;
+                        }
+                        return fn(submittedValues, {
+                            evt: e,
+                            controlledValues: controlled,
+                            setErrors,
+                            setFieldError,
+                            setTouched,
+                            setFieldTouched,
+                            setValues,
+                            setFieldValue,
+                            resetForm,
+                            resetField,
+                        });
+                    }
+                    if (!result.valid && typeof onValidationError === 'function') {
+                        onValidationError({
+                            values,
+                            evt: e,
+                            errors: result.errors,
+                            results: result.results,
+                        });
+                    }
+                })
+                    .then(returnVal => {
+                    isSubmitting.value = false;
+                    return returnVal;
+                }, err => {
+                    isSubmitting.value = false;
+                    // re-throw the err so it doesn't go silent
+                    throw err;
+                });
+            };
+        };
+    }
+    const handleSubmitImpl = makeSubmissionFactory(false);
+    const handleSubmit = handleSubmitImpl;
+    handleSubmit.withControlled = makeSubmissionFactory(true);
+    function removePathState(path, id) {
+        const idx = pathStates.value.findIndex(s => {
+            return s.path === path && (Array.isArray(s.id) ? s.id.includes(id) : s.id === id);
+        });
+        const pathState = pathStates.value[idx];
+        if (idx === -1 || !pathState) {
+            return;
+        }
+        (0,vue__WEBPACK_IMPORTED_MODULE_0__.nextTick)(() => {
+            validateField(path, { mode: 'silent', warn: false });
+        });
+        if (pathState.multiple && pathState.fieldsCount) {
+            pathState.fieldsCount--;
+        }
+        if (Array.isArray(pathState.id)) {
+            const idIndex = pathState.id.indexOf(id);
+            if (idIndex >= 0) {
+                pathState.id.splice(idIndex, 1);
+            }
+            delete pathState.__flags.pendingUnmount[id];
+        }
+        if (!pathState.multiple || pathState.fieldsCount <= 0) {
+            pathStates.value.splice(idx, 1);
+            unsetInitialValue(path);
+            rebuildPathLookup();
+            delete pathStateLookup.value[path];
+        }
+    }
+    function destroyPath(path) {
+        keysOf(pathStateLookup.value).forEach(key => {
+            if (key.startsWith(path)) {
+                delete pathStateLookup.value[key];
+            }
+        });
+        pathStates.value = pathStates.value.filter(s => !s.path.startsWith(path));
+        (0,vue__WEBPACK_IMPORTED_MODULE_0__.nextTick)(() => {
+            rebuildPathLookup();
+        });
+    }
+    const formCtx = {
+        formId,
+        values: formValues,
+        controlledValues,
+        errorBag,
+        errors,
+        schema,
+        submitCount,
+        meta,
+        isSubmitting,
+        isValidating,
+        fieldArrays,
+        keepValuesOnUnmount,
+        validateSchema: (0,vue__WEBPACK_IMPORTED_MODULE_0__.unref)(schema) ? validateSchema : undefined,
+        validate,
+        setFieldError,
+        validateField,
+        setFieldValue,
+        setValues,
+        setErrors,
+        setFieldTouched,
+        setTouched,
+        resetForm,
+        resetField,
+        handleSubmit,
+        useFieldModel,
+        defineInputBinds,
+        defineComponentBinds: defineComponentBinds,
+        defineField,
+        stageInitialValue,
+        unsetInitialValue,
+        setFieldInitialValue,
+        createPathState,
+        getPathState: findPathState,
+        unsetPathValue,
+        removePathState,
+        initialValues: initialValues,
+        getAllPathStates: () => pathStates.value,
+        destroyPath,
+        isFieldTouched,
+        isFieldDirty,
+        isFieldValid,
+    };
+    /**
+     * Sets a single field value
+     */
+    function setFieldValue(field, value, shouldValidate = true) {
+        const clonedValue = klona(value);
+        const path = typeof field === 'string' ? field : field.path;
+        const pathState = findPathState(path);
+        if (!pathState) {
+            createPathState(path);
+        }
+        setInPath(formValues, path, clonedValue);
+        if (shouldValidate) {
+            validateField(path);
+        }
+    }
+    function forceSetValues(fields, shouldValidate = true) {
+        // clean up old values
+        keysOf(formValues).forEach(key => {
+            delete formValues[key];
+        });
+        // set up new values
+        keysOf(fields).forEach(path => {
+            setFieldValue(path, fields[path], false);
+        });
+        if (shouldValidate) {
+            validate();
+        }
+    }
+    /**
+     * Sets multiple fields values
+     */
+    function setValues(fields, shouldValidate = true) {
+        merge(formValues, fields);
+        // regenerate the arrays when the form values change
+        fieldArrays.forEach(f => f && f.reset());
+        if (shouldValidate) {
+            validate();
+        }
+    }
+    function createModel(path, shouldValidate) {
+        const pathState = findPathState((0,vue__WEBPACK_IMPORTED_MODULE_0__.toValue)(path)) || createPathState(path);
+        return (0,vue__WEBPACK_IMPORTED_MODULE_0__.computed)({
+            get() {
+                return pathState.value;
+            },
+            set(value) {
+                var _a;
+                const pathValue = (0,vue__WEBPACK_IMPORTED_MODULE_0__.toValue)(path);
+                setFieldValue(pathValue, value, (_a = (0,vue__WEBPACK_IMPORTED_MODULE_0__.toValue)(shouldValidate)) !== null && _a !== void 0 ? _a : false);
+            },
+        });
+    }
+    /**
+     * Sets the touched meta state on a field
+     */
+    function setFieldTouched(field, isTouched) {
+        const pathState = findPathState(field);
+        if (pathState) {
+            pathState.touched = isTouched;
+        }
+    }
+    function isFieldTouched(field) {
+        const pathState = findPathState(field);
+        if (pathState) {
+            return pathState.touched;
+        }
+        // Find all nested paths and consider their touched state
+        return pathStates.value.filter(s => s.path.startsWith(field)).some(s => s.touched);
+    }
+    function isFieldDirty(field) {
+        const pathState = findPathState(field);
+        if (pathState) {
+            return pathState.dirty;
+        }
+        return pathStates.value.filter(s => s.path.startsWith(field)).some(s => s.dirty);
+    }
+    function isFieldValid(field) {
+        const pathState = findPathState(field);
+        if (pathState) {
+            return pathState.valid;
+        }
+        return pathStates.value.filter(s => s.path.startsWith(field)).every(s => s.valid);
+    }
+    /**
+     * Sets the touched meta state on multiple fields
+     */
+    function setTouched(fields) {
+        if (typeof fields === 'boolean') {
+            mutateAllPathState(state => {
+                state.touched = fields;
+            });
+            return;
+        }
+        keysOf(fields).forEach(field => {
+            setFieldTouched(field, !!fields[field]);
+        });
+    }
+    function resetField(field, state) {
+        var _a;
+        const newValue = state && 'value' in state ? state.value : getFromPath(initialValues.value, field);
+        const pathState = findPathState(field);
+        if (pathState) {
+            pathState.__flags.pendingReset = true;
+        }
+        setFieldInitialValue(field, klona(newValue), true);
+        setFieldValue(field, newValue, false);
+        setFieldTouched(field, (_a = state === null || state === void 0 ? void 0 : state.touched) !== null && _a !== void 0 ? _a : false);
+        setFieldError(field, (state === null || state === void 0 ? void 0 : state.errors) || []);
+        (0,vue__WEBPACK_IMPORTED_MODULE_0__.nextTick)(() => {
+            if (pathState) {
+                pathState.__flags.pendingReset = false;
+            }
+        });
+    }
+    /**
+     * Resets all fields
+     */
+    function resetForm(resetState, opts) {
+        let newValues = klona((resetState === null || resetState === void 0 ? void 0 : resetState.values) ? resetState.values : originalInitialValues.value);
+        newValues = (opts === null || opts === void 0 ? void 0 : opts.force) ? newValues : merge(originalInitialValues.value, newValues);
+        newValues = isTypedSchema(schema) && isCallable(schema.cast) ? schema.cast(newValues) : newValues;
+        setInitialValues(newValues);
+        mutateAllPathState(state => {
+            var _a;
+            state.__flags.pendingReset = true;
+            state.validated = false;
+            state.touched = ((_a = resetState === null || resetState === void 0 ? void 0 : resetState.touched) === null || _a === void 0 ? void 0 : _a[state.path]) || false;
+            setFieldValue(state.path, getFromPath(newValues, state.path), false);
+            setFieldError(state.path, undefined);
+        });
+        (opts === null || opts === void 0 ? void 0 : opts.force) ? forceSetValues(newValues, false) : setValues(newValues, false);
+        setErrors((resetState === null || resetState === void 0 ? void 0 : resetState.errors) || {});
+        submitCount.value = (resetState === null || resetState === void 0 ? void 0 : resetState.submitCount) || 0;
+        (0,vue__WEBPACK_IMPORTED_MODULE_0__.nextTick)(() => {
+            validate({ mode: 'silent' });
+            mutateAllPathState(state => {
+                state.__flags.pendingReset = false;
+            });
+        });
+    }
+    async function validate(opts) {
+        const mode = (opts === null || opts === void 0 ? void 0 : opts.mode) || 'force';
+        if (mode === 'force') {
+            mutateAllPathState(f => (f.validated = true));
+        }
+        if (formCtx.validateSchema) {
+            return formCtx.validateSchema(mode);
+        }
+        isValidating.value = true;
+        // No schema, each field is responsible to validate itself
+        const validations = await Promise.all(pathStates.value.map(state => {
+            if (!state.validate) {
+                return Promise.resolve({
+                    key: state.path,
+                    valid: true,
+                    errors: [],
+                });
+            }
+            return state.validate(opts).then((result) => {
+                return {
+                    key: state.path,
+                    valid: result.valid,
+                    errors: result.errors,
+                };
+            });
+        }));
+        isValidating.value = false;
+        const results = {};
+        const errors = {};
+        for (const validation of validations) {
+            results[validation.key] = {
+                valid: validation.valid,
+                errors: validation.errors,
+            };
+            if (validation.errors.length) {
+                errors[validation.key] = validation.errors[0];
+            }
+        }
+        return {
+            valid: validations.every(r => r.valid),
+            results,
+            errors,
+        };
+    }
+    async function validateField(path, opts) {
+        var _a;
+        const state = findPathState(path);
+        if (state && (opts === null || opts === void 0 ? void 0 : opts.mode) !== 'silent') {
+            state.validated = true;
+        }
+        if (schema) {
+            const { results } = await validateSchema((opts === null || opts === void 0 ? void 0 : opts.mode) || 'validated-only');
+            return results[path] || { errors: [], valid: true };
+        }
+        if (state === null || state === void 0 ? void 0 : state.validate) {
+            return state.validate(opts);
+        }
+        const shouldWarn = !state && ((_a = opts === null || opts === void 0 ? void 0 : opts.warn) !== null && _a !== void 0 ? _a : true);
+        if (shouldWarn) {
+            if ((true)) {
+                (0,vue__WEBPACK_IMPORTED_MODULE_0__.warn)(`field with path ${path} was not found`);
+            }
+        }
+        return Promise.resolve({ errors: [], valid: true });
+    }
+    function unsetInitialValue(path) {
+        unsetPath(initialValues.value, path);
+    }
+    /**
+     * Sneaky function to set initial field values
+     */
+    function stageInitialValue(path, value, updateOriginal = false) {
+        setFieldInitialValue(path, value);
+        setInPath(formValues, path, value);
+        if (updateOriginal && !(opts === null || opts === void 0 ? void 0 : opts.initialValues)) {
+            setInPath(originalInitialValues.value, path, klona(value));
+        }
+    }
+    function setFieldInitialValue(path, value, updateOriginal = false) {
+        setInPath(initialValues.value, path, klona(value));
+        if (updateOriginal) {
+            setInPath(originalInitialValues.value, path, klona(value));
+        }
+    }
+    async function _validateSchema() {
+        const schemaValue = (0,vue__WEBPACK_IMPORTED_MODULE_0__.unref)(schema);
+        if (!schemaValue) {
+            return { valid: true, results: {}, errors: {} };
+        }
+        isValidating.value = true;
+        const formResult = isYupValidator(schemaValue) || isTypedSchema(schemaValue)
+            ? await validateTypedSchema(schemaValue, formValues)
+            : await validateObjectSchema(schemaValue, formValues, {
+                names: fieldNames.value,
+                bailsMap: fieldBailsMap.value,
+            });
+        isValidating.value = false;
+        return formResult;
+    }
+    const submitForm = handleSubmit((_, { evt }) => {
+        if (isFormSubmitEvent(evt)) {
+            evt.target.submit();
+        }
+    });
+    // Trigger initial validation
+    (0,vue__WEBPACK_IMPORTED_MODULE_0__.onMounted)(() => {
+        if (opts === null || opts === void 0 ? void 0 : opts.initialErrors) {
+            setErrors(opts.initialErrors);
+        }
+        if (opts === null || opts === void 0 ? void 0 : opts.initialTouched) {
+            setTouched(opts.initialTouched);
+        }
+        // if validate on mount was enabled
+        if (opts === null || opts === void 0 ? void 0 : opts.validateOnMount) {
+            validate();
+            return;
+        }
+        // otherwise run initial silent validation through schema if available
+        // the useField should skip their own silent validation if a yup schema is present
+        if (formCtx.validateSchema) {
+            formCtx.validateSchema('silent');
+        }
+    });
+    if ((0,vue__WEBPACK_IMPORTED_MODULE_0__.isRef)(schema)) {
+        (0,vue__WEBPACK_IMPORTED_MODULE_0__.watch)(schema, () => {
+            var _a;
+            (_a = formCtx.validateSchema) === null || _a === void 0 ? void 0 : _a.call(formCtx, 'validated-only');
+        });
+    }
+    // Provide injections
+    (0,vue__WEBPACK_IMPORTED_MODULE_0__.provide)(FormContextKey, formCtx);
+    if ((true)) {
+        registerFormWithDevTools(formCtx);
+        (0,vue__WEBPACK_IMPORTED_MODULE_0__.watch)(() => (Object.assign(Object.assign({ errors: errorBag.value }, meta.value), { values: formValues, isSubmitting: isSubmitting.value, isValidating: isValidating.value, submitCount: submitCount.value })), refreshInspector, {
+            deep: true,
+        });
+    }
+    function defineField(path, config) {
+        const label = isCallable(config) ? undefined : config === null || config === void 0 ? void 0 : config.label;
+        const pathState = (findPathState((0,vue__WEBPACK_IMPORTED_MODULE_0__.toValue)(path)) || createPathState(path, { label }));
+        const evalConfig = () => (isCallable(config) ? config(omit(pathState, PRIVATE_PATH_STATE_KEYS)) : config || {});
+        function onBlur() {
+            var _a;
+            pathState.touched = true;
+            const validateOnBlur = (_a = evalConfig().validateOnBlur) !== null && _a !== void 0 ? _a : getConfig().validateOnBlur;
+            if (validateOnBlur) {
+                validateField(pathState.path);
+            }
+        }
+        function onInput() {
+            var _a;
+            const validateOnInput = (_a = evalConfig().validateOnInput) !== null && _a !== void 0 ? _a : getConfig().validateOnInput;
+            if (validateOnInput) {
+                (0,vue__WEBPACK_IMPORTED_MODULE_0__.nextTick)(() => {
+                    validateField(pathState.path);
+                });
+            }
+        }
+        function onChange() {
+            var _a;
+            const validateOnChange = (_a = evalConfig().validateOnChange) !== null && _a !== void 0 ? _a : getConfig().validateOnChange;
+            if (validateOnChange) {
+                (0,vue__WEBPACK_IMPORTED_MODULE_0__.nextTick)(() => {
+                    validateField(pathState.path);
+                });
+            }
+        }
+        const props = (0,vue__WEBPACK_IMPORTED_MODULE_0__.computed)(() => {
+            const base = {
+                onChange,
+                onInput,
+                onBlur,
+            };
+            if (isCallable(config)) {
+                return Object.assign(Object.assign({}, base), (config(omit(pathState, PRIVATE_PATH_STATE_KEYS)).props || {}));
+            }
+            if (config === null || config === void 0 ? void 0 : config.props) {
+                return Object.assign(Object.assign({}, base), config.props(omit(pathState, PRIVATE_PATH_STATE_KEYS)));
+            }
+            return base;
+        });
+        const model = createModel(path, () => { var _a, _b, _c; return (_c = (_a = evalConfig().validateOnModelUpdate) !== null && _a !== void 0 ? _a : (_b = getConfig()) === null || _b === void 0 ? void 0 : _b.validateOnModelUpdate) !== null && _c !== void 0 ? _c : true; });
+        return [model, props];
+    }
+    function useFieldModel(pathOrPaths) {
+        if (!Array.isArray(pathOrPaths)) {
+            return createModel(pathOrPaths);
+        }
+        return pathOrPaths.map(p => createModel(p, true));
+    }
+    /**
+     * @deprecated use defineField instead
+     */
+    function defineInputBinds(path, config) {
+        const [model, props] = defineField(path, config);
+        function onBlur() {
+            props.value.onBlur();
+        }
+        function onInput(e) {
+            const value = normalizeEventValue(e);
+            setFieldValue((0,vue__WEBPACK_IMPORTED_MODULE_0__.toValue)(path), value, false);
+            props.value.onInput();
+        }
+        function onChange(e) {
+            const value = normalizeEventValue(e);
+            setFieldValue((0,vue__WEBPACK_IMPORTED_MODULE_0__.toValue)(path), value, false);
+            props.value.onChange();
+        }
+        return (0,vue__WEBPACK_IMPORTED_MODULE_0__.computed)(() => {
+            return Object.assign(Object.assign({}, props.value), { onBlur,
+                onInput,
+                onChange, value: model.value });
+        });
+    }
+    /**
+     * @deprecated use defineField instead
+     */
+    function defineComponentBinds(path, config) {
+        const [model, props] = defineField(path, config);
+        const pathState = findPathState((0,vue__WEBPACK_IMPORTED_MODULE_0__.toValue)(path));
+        function onUpdateModelValue(value) {
+            model.value = value;
+        }
+        return (0,vue__WEBPACK_IMPORTED_MODULE_0__.computed)(() => {
+            const conf = isCallable(config) ? config(omit(pathState, PRIVATE_PATH_STATE_KEYS)) : config || {};
+            return Object.assign({ [conf.model || 'modelValue']: model.value, [`onUpdate:${conf.model || 'modelValue'}`]: onUpdateModelValue }, props.value);
+        });
+    }
+    return Object.assign(Object.assign({}, formCtx), { values: (0,vue__WEBPACK_IMPORTED_MODULE_0__.readonly)(formValues), handleReset: () => resetForm(), submitForm });
+}
+/**
+ * Manages form meta aggregation
+ */
+function useFormMeta(pathsState, currentValues, initialValues, errors) {
+    const MERGE_STRATEGIES = {
+        touched: 'some',
+        pending: 'some',
+        valid: 'every',
+    };
+    const isDirty = (0,vue__WEBPACK_IMPORTED_MODULE_0__.computed)(() => {
+        return !isEqual(currentValues, (0,vue__WEBPACK_IMPORTED_MODULE_0__.unref)(initialValues));
+    });
+    function calculateFlags() {
+        const states = pathsState.value;
+        return keysOf(MERGE_STRATEGIES).reduce((acc, flag) => {
+            const mergeMethod = MERGE_STRATEGIES[flag];
+            acc[flag] = states[mergeMethod](s => s[flag]);
+            return acc;
+        }, {});
+    }
+    const flags = (0,vue__WEBPACK_IMPORTED_MODULE_0__.reactive)(calculateFlags());
+    (0,vue__WEBPACK_IMPORTED_MODULE_0__.watchEffect)(() => {
+        const value = calculateFlags();
+        flags.touched = value.touched;
+        flags.valid = value.valid;
+        flags.pending = value.pending;
+    });
+    return (0,vue__WEBPACK_IMPORTED_MODULE_0__.computed)(() => {
+        return Object.assign(Object.assign({ initialValues: (0,vue__WEBPACK_IMPORTED_MODULE_0__.unref)(initialValues) }, flags), { valid: flags.valid && !keysOf(errors.value).length, dirty: isDirty.value });
+    });
+}
+/**
+ * Manages the initial values prop
+ */
+function useFormInitialValues(pathsState, formValues, opts) {
+    const values = resolveInitialValues(opts);
+    // these are the mutable initial values as the fields are mounted/unmounted
+    const initialValues = (0,vue__WEBPACK_IMPORTED_MODULE_0__.ref)(values);
+    // these are the original initial value as provided by the user initially, they don't keep track of conditional fields
+    // this is important because some conditional fields will overwrite the initial values for other fields who had the same name
+    // like array fields, any push/insert operation will overwrite the initial values because they "create new fields"
+    // so these are the values that the reset function should use
+    // these only change when the user explicitly changes the initial values or when the user resets them with new values.
+    const originalInitialValues = (0,vue__WEBPACK_IMPORTED_MODULE_0__.ref)(klona(values));
+    function setInitialValues(values, updateFields = false) {
+        initialValues.value = merge(klona(initialValues.value) || {}, klona(values));
+        originalInitialValues.value = merge(klona(originalInitialValues.value) || {}, klona(values));
+        if (!updateFields) {
+            return;
+        }
+        // update the pristine non-touched fields
+        // those are excluded because it's unlikely you want to change the form values using initial values
+        // we mostly watch them for API population or newly inserted fields
+        // if the user API is taking too much time before user interaction they should consider disabling or hiding their inputs until the values are ready
+        pathsState.value.forEach(state => {
+            const wasTouched = state.touched;
+            if (wasTouched) {
+                return;
+            }
+            const newValue = getFromPath(initialValues.value, state.path);
+            setInPath(formValues, state.path, klona(newValue));
+        });
+    }
+    return {
+        initialValues,
+        originalInitialValues,
+        setInitialValues,
+    };
+}
+function mergeValidationResults(a, b) {
+    if (!b) {
+        return a;
+    }
+    return {
+        valid: a.valid && b.valid,
+        errors: [...a.errors, ...b.errors],
+    };
+}
+
+const FormImpl = /** #__PURE__ */ (0,vue__WEBPACK_IMPORTED_MODULE_0__.defineComponent)({
+    name: 'Form',
+    inheritAttrs: false,
+    props: {
+        as: {
+            type: null,
+            default: 'form',
+        },
+        validationSchema: {
+            type: Object,
+            default: undefined,
+        },
+        initialValues: {
+            type: Object,
+            default: undefined,
+        },
+        initialErrors: {
+            type: Object,
+            default: undefined,
+        },
+        initialTouched: {
+            type: Object,
+            default: undefined,
+        },
+        validateOnMount: {
+            type: Boolean,
+            default: false,
+        },
+        onSubmit: {
+            type: Function,
+            default: undefined,
+        },
+        onInvalidSubmit: {
+            type: Function,
+            default: undefined,
+        },
+        keepValues: {
+            type: Boolean,
+            default: false,
+        },
+    },
+    setup(props, ctx) {
+        const validationSchema = (0,vue__WEBPACK_IMPORTED_MODULE_0__.toRef)(props, 'validationSchema');
+        const keepValues = (0,vue__WEBPACK_IMPORTED_MODULE_0__.toRef)(props, 'keepValues');
+        const { errors, errorBag, values, meta, isSubmitting, isValidating, submitCount, controlledValues, validate, validateField, handleReset, resetForm, handleSubmit, setErrors, setFieldError, setFieldValue, setValues, setFieldTouched, setTouched, resetField, } = useForm({
+            validationSchema: validationSchema.value ? validationSchema : undefined,
+            initialValues: props.initialValues,
+            initialErrors: props.initialErrors,
+            initialTouched: props.initialTouched,
+            validateOnMount: props.validateOnMount,
+            keepValuesOnUnmount: keepValues,
+        });
+        const submitForm = handleSubmit((_, { evt }) => {
+            if (isFormSubmitEvent(evt)) {
+                evt.target.submit();
+            }
+        }, props.onInvalidSubmit);
+        const onSubmit = props.onSubmit ? handleSubmit(props.onSubmit, props.onInvalidSubmit) : submitForm;
+        function handleFormReset(e) {
+            if (isEvent(e)) {
+                // Prevent default form reset behavior
+                e.preventDefault();
+            }
+            handleReset();
+            if (typeof ctx.attrs.onReset === 'function') {
+                ctx.attrs.onReset();
+            }
+        }
+        function handleScopedSlotSubmit(evt, onSubmit) {
+            const onSuccess = typeof evt === 'function' && !onSubmit ? evt : onSubmit;
+            return handleSubmit(onSuccess, props.onInvalidSubmit)(evt);
+        }
+        function getValues() {
+            return klona(values);
+        }
+        function getMeta() {
+            return klona(meta.value);
+        }
+        function getErrors() {
+            return klona(errors.value);
+        }
+        function slotProps() {
+            return {
+                meta: meta.value,
+                errors: errors.value,
+                errorBag: errorBag.value,
+                values,
+                isSubmitting: isSubmitting.value,
+                isValidating: isValidating.value,
+                submitCount: submitCount.value,
+                controlledValues: controlledValues.value,
+                validate,
+                validateField,
+                handleSubmit: handleScopedSlotSubmit,
+                handleReset,
+                submitForm,
+                setErrors,
+                setFieldError,
+                setFieldValue,
+                setValues,
+                setFieldTouched,
+                setTouched,
+                resetForm,
+                resetField,
+                getValues,
+                getMeta,
+                getErrors,
+            };
+        }
+        // expose these functions and methods as part of public API
+        ctx.expose({
+            setFieldError,
+            setErrors,
+            setFieldValue,
+            setValues,
+            setFieldTouched,
+            setTouched,
+            resetForm,
+            validate,
+            validateField,
+            resetField,
+            getValues,
+            getMeta,
+            getErrors,
+            values,
+            meta,
+            errors,
+        });
+        return function renderForm() {
+            // avoid resolving the form component as itself
+            const tag = props.as === 'form' ? props.as : !props.as ? null : (0,vue__WEBPACK_IMPORTED_MODULE_0__.resolveDynamicComponent)(props.as);
+            const children = normalizeChildren(tag, ctx, slotProps);
+            if (!tag) {
+                return children;
+            }
+            // Attributes to add on a native `form` tag
+            const formAttrs = tag === 'form'
+                ? {
+                    // Disables native validation as vee-validate will handle it.
+                    novalidate: true,
+                }
+                : {};
+            return (0,vue__WEBPACK_IMPORTED_MODULE_0__.h)(tag, Object.assign(Object.assign(Object.assign({}, formAttrs), ctx.attrs), { onSubmit, onReset: handleFormReset }), children);
+        };
+    },
+});
+const Form = FormImpl;
+
+function useFieldArray(arrayPath) {
+    const form = injectWithSelf(FormContextKey, undefined);
+    const fields = (0,vue__WEBPACK_IMPORTED_MODULE_0__.ref)([]);
+    const noOp = () => { };
+    const noOpApi = {
+        fields,
+        remove: noOp,
+        push: noOp,
+        swap: noOp,
+        insert: noOp,
+        update: noOp,
+        replace: noOp,
+        prepend: noOp,
+        move: noOp,
+    };
+    if (!form) {
+        if ((true)) {
+            warn('FieldArray requires being a child of `<Form/>` or `useForm` being called before it. Array fields may not work correctly');
+        }
+        return noOpApi;
+    }
+    if (!(0,vue__WEBPACK_IMPORTED_MODULE_0__.unref)(arrayPath)) {
+        if ((true)) {
+            warn('FieldArray requires a field path to be provided, did you forget to pass the `name` prop?');
+        }
+        return noOpApi;
+    }
+    const alreadyExists = form.fieldArrays.find(a => (0,vue__WEBPACK_IMPORTED_MODULE_0__.unref)(a.path) === (0,vue__WEBPACK_IMPORTED_MODULE_0__.unref)(arrayPath));
+    if (alreadyExists) {
+        return alreadyExists;
+    }
+    let entryCounter = 0;
+    function getCurrentValues() {
+        return getFromPath(form === null || form === void 0 ? void 0 : form.values, (0,vue__WEBPACK_IMPORTED_MODULE_0__.toValue)(arrayPath), []) || [];
+    }
+    function initFields() {
+        const currentValues = getCurrentValues();
+        if (!Array.isArray(currentValues)) {
+            return;
+        }
+        fields.value = currentValues.map((v, idx) => createEntry(v, idx, fields.value));
+        updateEntryFlags();
+    }
+    initFields();
+    function updateEntryFlags() {
+        const fieldsLength = fields.value.length;
+        for (let i = 0; i < fieldsLength; i++) {
+            const entry = fields.value[i];
+            entry.isFirst = i === 0;
+            entry.isLast = i === fieldsLength - 1;
+        }
+    }
+    function createEntry(value, idx, currentFields) {
+        // Skips the work by returning the current entry if it already exists
+        // This should make the `key` prop stable and doesn't cause more re-renders than needed
+        // The value is computed and should update anyways
+        if (currentFields && !isNullOrUndefined(idx) && currentFields[idx]) {
+            return currentFields[idx];
+        }
+        const key = entryCounter++;
+        const entry = {
+            key,
+            value: computedDeep({
+                get() {
+                    const currentValues = getFromPath(form === null || form === void 0 ? void 0 : form.values, (0,vue__WEBPACK_IMPORTED_MODULE_0__.toValue)(arrayPath), []) || [];
+                    const idx = fields.value.findIndex(e => e.key === key);
+                    return idx === -1 ? value : currentValues[idx];
+                },
+                set(value) {
+                    const idx = fields.value.findIndex(e => e.key === key);
+                    if (idx === -1) {
+                        if ((true)) {
+                            warn(`Attempting to update a non-existent array item`);
+                        }
+                        return;
+                    }
+                    update(idx, value);
+                },
+            }), // will be auto unwrapped
+            isFirst: false,
+            isLast: false,
+        };
+        return entry;
+    }
+    function afterMutation() {
+        updateEntryFlags();
+        // Should trigger a silent validation since a field may not do that #4096
+        form === null || form === void 0 ? void 0 : form.validate({ mode: 'silent' });
+    }
+    function remove(idx) {
+        const pathName = (0,vue__WEBPACK_IMPORTED_MODULE_0__.toValue)(arrayPath);
+        const pathValue = getFromPath(form === null || form === void 0 ? void 0 : form.values, pathName);
+        if (!pathValue || !Array.isArray(pathValue)) {
+            return;
+        }
+        const newValue = [...pathValue];
+        newValue.splice(idx, 1);
+        const fieldPath = pathName + `[${idx}]`;
+        form.destroyPath(fieldPath);
+        form.unsetInitialValue(fieldPath);
+        setInPath(form.values, pathName, newValue);
+        fields.value.splice(idx, 1);
+        afterMutation();
+    }
+    function push(initialValue) {
+        const value = klona(initialValue);
+        const pathName = (0,vue__WEBPACK_IMPORTED_MODULE_0__.toValue)(arrayPath);
+        const pathValue = getFromPath(form === null || form === void 0 ? void 0 : form.values, pathName);
+        const normalizedPathValue = isNullOrUndefined(pathValue) ? [] : pathValue;
+        if (!Array.isArray(normalizedPathValue)) {
+            return;
+        }
+        const newValue = [...normalizedPathValue];
+        newValue.push(value);
+        form.stageInitialValue(pathName + `[${newValue.length - 1}]`, value);
+        setInPath(form.values, pathName, newValue);
+        fields.value.push(createEntry(value));
+        afterMutation();
+    }
+    function swap(indexA, indexB) {
+        const pathName = (0,vue__WEBPACK_IMPORTED_MODULE_0__.toValue)(arrayPath);
+        const pathValue = getFromPath(form === null || form === void 0 ? void 0 : form.values, pathName);
+        if (!Array.isArray(pathValue) || !(indexA in pathValue) || !(indexB in pathValue)) {
+            return;
+        }
+        const newValue = [...pathValue];
+        const newFields = [...fields.value];
+        // the old switcheroo
+        const temp = newValue[indexA];
+        newValue[indexA] = newValue[indexB];
+        newValue[indexB] = temp;
+        const tempEntry = newFields[indexA];
+        newFields[indexA] = newFields[indexB];
+        newFields[indexB] = tempEntry;
+        setInPath(form.values, pathName, newValue);
+        fields.value = newFields;
+        updateEntryFlags();
+    }
+    function insert(idx, initialValue) {
+        const value = klona(initialValue);
+        const pathName = (0,vue__WEBPACK_IMPORTED_MODULE_0__.toValue)(arrayPath);
+        const pathValue = getFromPath(form === null || form === void 0 ? void 0 : form.values, pathName);
+        if (!Array.isArray(pathValue) || pathValue.length < idx) {
+            return;
+        }
+        const newValue = [...pathValue];
+        const newFields = [...fields.value];
+        newValue.splice(idx, 0, value);
+        newFields.splice(idx, 0, createEntry(value));
+        setInPath(form.values, pathName, newValue);
+        fields.value = newFields;
+        afterMutation();
+    }
+    function replace(arr) {
+        const pathName = (0,vue__WEBPACK_IMPORTED_MODULE_0__.toValue)(arrayPath);
+        form.stageInitialValue(pathName, arr);
+        setInPath(form.values, pathName, arr);
+        initFields();
+        afterMutation();
+    }
+    function update(idx, value) {
+        const pathName = (0,vue__WEBPACK_IMPORTED_MODULE_0__.toValue)(arrayPath);
+        const pathValue = getFromPath(form === null || form === void 0 ? void 0 : form.values, pathName);
+        if (!Array.isArray(pathValue) || pathValue.length - 1 < idx) {
+            return;
+        }
+        setInPath(form.values, `${pathName}[${idx}]`, value);
+        form === null || form === void 0 ? void 0 : form.validate({ mode: 'validated-only' });
+    }
+    function prepend(initialValue) {
+        const value = klona(initialValue);
+        const pathName = (0,vue__WEBPACK_IMPORTED_MODULE_0__.toValue)(arrayPath);
+        const pathValue = getFromPath(form === null || form === void 0 ? void 0 : form.values, pathName);
+        const normalizedPathValue = isNullOrUndefined(pathValue) ? [] : pathValue;
+        if (!Array.isArray(normalizedPathValue)) {
+            return;
+        }
+        const newValue = [value, ...normalizedPathValue];
+        setInPath(form.values, pathName, newValue);
+        form.stageInitialValue(pathName + `[0]`, value);
+        fields.value.unshift(createEntry(value));
+        afterMutation();
+    }
+    function move(oldIdx, newIdx) {
+        const pathName = (0,vue__WEBPACK_IMPORTED_MODULE_0__.toValue)(arrayPath);
+        const pathValue = getFromPath(form === null || form === void 0 ? void 0 : form.values, pathName);
+        const newValue = isNullOrUndefined(pathValue) ? [] : [...pathValue];
+        if (!Array.isArray(pathValue) || !(oldIdx in pathValue) || !(newIdx in pathValue)) {
+            return;
+        }
+        const newFields = [...fields.value];
+        const movedItem = newFields[oldIdx];
+        newFields.splice(oldIdx, 1);
+        newFields.splice(newIdx, 0, movedItem);
+        const movedValue = newValue[oldIdx];
+        newValue.splice(oldIdx, 1);
+        newValue.splice(newIdx, 0, movedValue);
+        setInPath(form.values, pathName, newValue);
+        fields.value = newFields;
+        afterMutation();
+    }
+    const fieldArrayCtx = {
+        fields,
+        remove,
+        push,
+        swap,
+        insert,
+        update,
+        replace,
+        prepend,
+        move,
+    };
+    form.fieldArrays.push(Object.assign({ path: arrayPath, reset: initFields }, fieldArrayCtx));
+    (0,vue__WEBPACK_IMPORTED_MODULE_0__.onBeforeUnmount)(() => {
+        const idx = form.fieldArrays.findIndex(i => (0,vue__WEBPACK_IMPORTED_MODULE_0__.toValue)(i.path) === (0,vue__WEBPACK_IMPORTED_MODULE_0__.toValue)(arrayPath));
+        if (idx >= 0) {
+            form.fieldArrays.splice(idx, 1);
+        }
+    });
+    // Makes sure to sync the form values with the array value if they go out of sync
+    // #4153
+    (0,vue__WEBPACK_IMPORTED_MODULE_0__.watch)(getCurrentValues, formValues => {
+        const fieldsValues = fields.value.map(f => f.value);
+        // If form values are not the same as the current values then something overrode them.
+        if (!isEqual(formValues, fieldsValues)) {
+            initFields();
+        }
+    });
+    return fieldArrayCtx;
+}
+
+const FieldArrayImpl = /** #__PURE__ */ (0,vue__WEBPACK_IMPORTED_MODULE_0__.defineComponent)({
+    name: 'FieldArray',
+    inheritAttrs: false,
+    props: {
+        name: {
+            type: String,
+            required: true,
+        },
+    },
+    setup(props, ctx) {
+        const { push, remove, swap, insert, replace, update, prepend, move, fields } = useFieldArray(() => props.name);
+        function slotProps() {
+            return {
+                fields: fields.value,
+                push,
+                remove,
+                swap,
+                insert,
+                update,
+                replace,
+                prepend,
+                move,
+            };
+        }
+        ctx.expose({
+            push,
+            remove,
+            swap,
+            insert,
+            update,
+            replace,
+            prepend,
+            move,
+        });
+        return () => {
+            const children = normalizeChildren(undefined, ctx, slotProps);
+            return children;
+        };
+    },
+});
+const FieldArray = FieldArrayImpl;
+
+const ErrorMessageImpl = /** #__PURE__ */ (0,vue__WEBPACK_IMPORTED_MODULE_0__.defineComponent)({
+    name: 'ErrorMessage',
+    props: {
+        as: {
+            type: String,
+            default: undefined,
+        },
+        name: {
+            type: String,
+            required: true,
+        },
+    },
+    setup(props, ctx) {
+        const form = (0,vue__WEBPACK_IMPORTED_MODULE_0__.inject)(FormContextKey, undefined);
+        const message = (0,vue__WEBPACK_IMPORTED_MODULE_0__.computed)(() => {
+            return form === null || form === void 0 ? void 0 : form.errors.value[props.name];
+        });
+        function slotProps() {
+            return {
+                message: message.value,
+            };
+        }
+        return () => {
+            // Renders nothing if there are no messages
+            if (!message.value) {
+                return undefined;
+            }
+            const tag = (props.as ? (0,vue__WEBPACK_IMPORTED_MODULE_0__.resolveDynamicComponent)(props.as) : props.as);
+            const children = normalizeChildren(tag, ctx, slotProps);
+            const attrs = Object.assign({ role: 'alert' }, ctx.attrs);
+            // If no tag was specified and there are children
+            // render the slot as is without wrapping it
+            if (!tag && (Array.isArray(children) || !children) && (children === null || children === void 0 ? void 0 : children.length)) {
+                return children;
+            }
+            // If no children in slot
+            // render whatever specified and fallback to a <span> with the message in it's contents
+            if ((Array.isArray(children) || !children) && !(children === null || children === void 0 ? void 0 : children.length)) {
+                return (0,vue__WEBPACK_IMPORTED_MODULE_0__.h)(tag || 'span', attrs, message.value);
+            }
+            return (0,vue__WEBPACK_IMPORTED_MODULE_0__.h)(tag, attrs, children);
+        };
+    },
+});
+const ErrorMessage = ErrorMessageImpl;
+
+function useResetForm() {
+    const form = injectWithSelf(FormContextKey);
+    if (!form) {
+        if ((true)) {
+            warn('No vee-validate <Form /> or `useForm` was detected in the component tree');
+        }
+    }
+    return function resetForm(state) {
+        if (!form) {
+            return;
+        }
+        return form.resetForm(state);
+    };
+}
+
+/**
+ * If a field is dirty or not
+ */
+function useIsFieldDirty(path) {
+    const fieldOrPath = resolveFieldOrPathState(path);
+    return (0,vue__WEBPACK_IMPORTED_MODULE_0__.computed)(() => {
+        var _a, _b;
+        if (!fieldOrPath) {
+            return false;
+        }
+        return (_b = ('meta' in fieldOrPath ? fieldOrPath.meta.dirty : (_a = fieldOrPath === null || fieldOrPath === void 0 ? void 0 : fieldOrPath.value) === null || _a === void 0 ? void 0 : _a.dirty)) !== null && _b !== void 0 ? _b : false;
+    });
+}
+
+/**
+ * If a field is touched or not
+ */
+function useIsFieldTouched(path) {
+    const fieldOrPath = resolveFieldOrPathState(path);
+    return (0,vue__WEBPACK_IMPORTED_MODULE_0__.computed)(() => {
+        var _a, _b;
+        if (!fieldOrPath) {
+            return false;
+        }
+        return (_b = ('meta' in fieldOrPath ? fieldOrPath.meta.touched : (_a = fieldOrPath === null || fieldOrPath === void 0 ? void 0 : fieldOrPath.value) === null || _a === void 0 ? void 0 : _a.touched)) !== null && _b !== void 0 ? _b : false;
+    });
+}
+
+/**
+ * If a field is validated and is valid
+ */
+function useIsFieldValid(path) {
+    const fieldOrPath = resolveFieldOrPathState(path);
+    return (0,vue__WEBPACK_IMPORTED_MODULE_0__.computed)(() => {
+        var _a, _b;
+        if (!fieldOrPath) {
+            return false;
+        }
+        return (_b = ('meta' in fieldOrPath ? fieldOrPath.meta.valid : (_a = fieldOrPath === null || fieldOrPath === void 0 ? void 0 : fieldOrPath.value) === null || _a === void 0 ? void 0 : _a.valid)) !== null && _b !== void 0 ? _b : false;
+    });
+}
+
+/**
+ * If the form is submitting or not
+ */
+function useIsSubmitting() {
+    const form = injectWithSelf(FormContextKey);
+    if (!form) {
+        if ((true)) {
+            warn('No vee-validate <Form /> or `useForm` was detected in the component tree');
+        }
+    }
+    return (0,vue__WEBPACK_IMPORTED_MODULE_0__.computed)(() => {
+        var _a;
+        return (_a = form === null || form === void 0 ? void 0 : form.isSubmitting.value) !== null && _a !== void 0 ? _a : false;
+    });
+}
+
+/**
+ * If the form is validating or not
+ */
+function useIsValidating() {
+    const form = injectWithSelf(FormContextKey);
+    if (!form) {
+        if ((true)) {
+            warn('No vee-validate <Form /> or `useForm` was detected in the component tree');
+        }
+    }
+    return (0,vue__WEBPACK_IMPORTED_MODULE_0__.computed)(() => {
+        var _a;
+        return (_a = form === null || form === void 0 ? void 0 : form.isValidating.value) !== null && _a !== void 0 ? _a : false;
+    });
+}
+
+/**
+ * Validates a single field
+ */
+function useValidateField(path) {
+    const form = injectWithSelf(FormContextKey);
+    const field = path ? undefined : (0,vue__WEBPACK_IMPORTED_MODULE_0__.inject)(FieldContextKey);
+    return function validateField() {
+        if (field) {
+            return field.validate();
+        }
+        if (form && path) {
+            return form === null || form === void 0 ? void 0 : form.validateField((0,vue__WEBPACK_IMPORTED_MODULE_0__.toValue)(path));
+        }
+        if ((true)) {
+            warn(`field with name ${(0,vue__WEBPACK_IMPORTED_MODULE_0__.unref)(path)} was not found`);
+        }
+        return Promise.resolve({
+            errors: [],
+            valid: true,
+        });
+    };
+}
+
+/**
+ * If the form is dirty or not
+ */
+function useIsFormDirty() {
+    const form = injectWithSelf(FormContextKey);
+    if (!form) {
+        if ((true)) {
+            warn('No vee-validate <Form /> or `useForm` was detected in the component tree');
+        }
+    }
+    return (0,vue__WEBPACK_IMPORTED_MODULE_0__.computed)(() => {
+        var _a;
+        return (_a = form === null || form === void 0 ? void 0 : form.meta.value.dirty) !== null && _a !== void 0 ? _a : false;
+    });
+}
+
+/**
+ * If the form is touched or not
+ */
+function useIsFormTouched() {
+    const form = injectWithSelf(FormContextKey);
+    if (!form) {
+        if ((true)) {
+            warn('No vee-validate <Form /> or `useForm` was detected in the component tree');
+        }
+    }
+    return (0,vue__WEBPACK_IMPORTED_MODULE_0__.computed)(() => {
+        var _a;
+        return (_a = form === null || form === void 0 ? void 0 : form.meta.value.touched) !== null && _a !== void 0 ? _a : false;
+    });
+}
+
+/**
+ * If the form has been validated and is valid
+ */
+function useIsFormValid() {
+    const form = injectWithSelf(FormContextKey);
+    if (!form) {
+        if ((true)) {
+            warn('No vee-validate <Form /> or `useForm` was detected in the component tree');
+        }
+    }
+    return (0,vue__WEBPACK_IMPORTED_MODULE_0__.computed)(() => {
+        var _a;
+        return (_a = form === null || form === void 0 ? void 0 : form.meta.value.valid) !== null && _a !== void 0 ? _a : false;
+    });
+}
+
+/**
+ * Validate multiple fields
+ */
+function useValidateForm() {
+    const form = injectWithSelf(FormContextKey);
+    if (!form) {
+        if ((true)) {
+            warn('No vee-validate <Form /> or `useForm` was detected in the component tree');
+        }
+    }
+    return function validateField() {
+        if (!form) {
+            return Promise.resolve({ results: {}, errors: {}, valid: true });
+        }
+        return form.validate();
+    };
+}
+
+/**
+ * The number of form's submission count
+ */
+function useSubmitCount() {
+    const form = injectWithSelf(FormContextKey);
+    if (!form) {
+        if ((true)) {
+            warn('No vee-validate <Form /> or `useForm` was detected in the component tree');
+        }
+    }
+    return (0,vue__WEBPACK_IMPORTED_MODULE_0__.computed)(() => {
+        var _a;
+        return (_a = form === null || form === void 0 ? void 0 : form.submitCount.value) !== null && _a !== void 0 ? _a : 0;
+    });
+}
+
+/**
+ * Gives access to a field's current value
+ */
+function useFieldValue(path) {
+    const form = injectWithSelf(FormContextKey);
+    // We don't want to use self injected context as it doesn't make sense
+    const field = path ? undefined : (0,vue__WEBPACK_IMPORTED_MODULE_0__.inject)(FieldContextKey);
+    return (0,vue__WEBPACK_IMPORTED_MODULE_0__.computed)(() => {
+        if (path) {
+            return getFromPath(form === null || form === void 0 ? void 0 : form.values, (0,vue__WEBPACK_IMPORTED_MODULE_0__.toValue)(path));
+        }
+        return (0,vue__WEBPACK_IMPORTED_MODULE_0__.toValue)(field === null || field === void 0 ? void 0 : field.value);
+    });
+}
+
+/**
+ * Gives access to a form's values
+ */
+function useFormValues() {
+    const form = injectWithSelf(FormContextKey);
+    if (!form) {
+        if ((true)) {
+            warn('No vee-validate <Form /> or `useForm` was detected in the component tree');
+        }
+    }
+    return (0,vue__WEBPACK_IMPORTED_MODULE_0__.computed)(() => {
+        return (form === null || form === void 0 ? void 0 : form.values) || {};
+    });
+}
+
+/**
+ * Gives access to all form errors
+ */
+function useFormErrors() {
+    const form = injectWithSelf(FormContextKey);
+    if (!form) {
+        if ((true)) {
+            warn('No vee-validate <Form /> or `useForm` was detected in the component tree');
+        }
+    }
+    return (0,vue__WEBPACK_IMPORTED_MODULE_0__.computed)(() => {
+        return ((form === null || form === void 0 ? void 0 : form.errors.value) || {});
+    });
+}
+
+/**
+ * Gives access to a single field error
+ */
+function useFieldError(path) {
+    const form = injectWithSelf(FormContextKey);
+    // We don't want to use self injected context as it doesn't make sense
+    const field = path ? undefined : (0,vue__WEBPACK_IMPORTED_MODULE_0__.inject)(FieldContextKey);
+    return (0,vue__WEBPACK_IMPORTED_MODULE_0__.computed)(() => {
+        if (path) {
+            return form === null || form === void 0 ? void 0 : form.errors.value[(0,vue__WEBPACK_IMPORTED_MODULE_0__.toValue)(path)];
+        }
+        return field === null || field === void 0 ? void 0 : field.errorMessage.value;
+    });
+}
+
+function useSubmitForm(cb) {
+    const form = injectWithSelf(FormContextKey);
+    if (!form) {
+        if ((true)) {
+            warn('No vee-validate <Form /> or `useForm` was detected in the component tree');
+        }
+    }
+    const onSubmit = form ? form.handleSubmit(cb) : undefined;
+    return function submitForm(e) {
+        if (!onSubmit) {
+            return;
+        }
+        return onSubmit(e);
+    };
+}
+
+/**
+ * Sets a field's error message
+ */
+function useSetFieldError(path) {
+    const form = injectWithSelf(FormContextKey);
+    // We don't want to use self injected context as it doesn't make sense
+    const field = path ? undefined : (0,vue__WEBPACK_IMPORTED_MODULE_0__.inject)(FieldContextKey);
+    return function setFieldError(message) {
+        if (path && form) {
+            form.setFieldError((0,vue__WEBPACK_IMPORTED_MODULE_0__.toValue)(path), message);
+            return;
+        }
+        if (field) {
+            field.setErrors(message || []);
+            return;
+        }
+        if ((true)) {
+            warn(`Could not set error message since there is no form context or a field named "${(0,vue__WEBPACK_IMPORTED_MODULE_0__.toValue)(path)}", did you forget to call "useField" or "useForm"?`);
+        }
+    };
+}
+
+/**
+ * Sets a field's touched meta state
+ */
+function useSetFieldTouched(path) {
+    const form = injectWithSelf(FormContextKey);
+    // We don't want to use self injected context as it doesn't make sense
+    const field = path ? undefined : (0,vue__WEBPACK_IMPORTED_MODULE_0__.inject)(FieldContextKey);
+    return function setFieldTouched(touched) {
+        if (path && form) {
+            form.setFieldTouched((0,vue__WEBPACK_IMPORTED_MODULE_0__.toValue)(path), touched);
+            return;
+        }
+        if (field) {
+            field.setTouched(touched);
+            return;
+        }
+        if ((true)) {
+            warn(`Could not set touched state since there is no form context or a field named "${(0,vue__WEBPACK_IMPORTED_MODULE_0__.toValue)(path)}", did you forget to call "useField" or "useForm"?`);
+        }
+    };
+}
+
+/**
+ * Sets a field's value
+ */
+function useSetFieldValue(path) {
+    const form = injectWithSelf(FormContextKey);
+    // We don't want to use self injected context as it doesn't make sense
+    const field = path ? undefined : (0,vue__WEBPACK_IMPORTED_MODULE_0__.inject)(FieldContextKey);
+    return function setFieldValue(value, shouldValidate = true) {
+        if (path && form) {
+            form.setFieldValue((0,vue__WEBPACK_IMPORTED_MODULE_0__.toValue)(path), value, shouldValidate);
+            return;
+        }
+        if (field) {
+            field.setValue(value, shouldValidate);
+            return;
+        }
+        if ((true)) {
+            warn(`Could not set value since there is no form context or a field named "${(0,vue__WEBPACK_IMPORTED_MODULE_0__.toValue)(path)}", did you forget to call "useField" or "useForm"?`);
+        }
+    };
+}
+
+/**
+ * Sets multiple fields errors
+ */
+function useSetFormErrors() {
+    const form = injectWithSelf(FormContextKey);
+    function setFormErrors(fields) {
+        if (form) {
+            form.setErrors(fields);
+            return;
+        }
+        if ((true)) {
+            warn(`Could not set errors because a form was not detected, did you forget to use "useForm" in a parent component?`);
+        }
+    }
+    return setFormErrors;
+}
+
+/**
+ * Sets multiple fields touched or all fields in the form
+ */
+function useSetFormTouched() {
+    const form = injectWithSelf(FormContextKey);
+    function setFormTouched(fields) {
+        if (form) {
+            form.setTouched(fields);
+            return;
+        }
+        if ((true)) {
+            warn(`Could not set touched state because a form was not detected, did you forget to use "useForm" in a parent component?`);
+        }
+    }
+    return setFormTouched;
+}
+
+/**
+ * Sets multiple fields values
+ */
+function useSetFormValues() {
+    const form = injectWithSelf(FormContextKey);
+    function setFormValues(fields, shouldValidate = true) {
+        if (form) {
+            form.setValues(fields, shouldValidate);
+            return;
+        }
+        if ((true)) {
+            warn(`Could not set form values because a form was not detected, did you forget to use "useForm" in a parent component?`);
+        }
+    }
+    return setFormValues;
+}
+
+
+
+
+/***/ }),
+
 /***/ "./node_modules/vue-loader/dist/exportHelper.js":
 /*!******************************************************!*\
   !*** ./node_modules/vue-loader/dist/exportHelper.js ***!
@@ -22129,3494 +26996,6 @@ __webpack_require__.r(__webpack_exports__);
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _node_modules_style_loader_dist_cjs_js_node_modules_css_loader_dist_cjs_js_clonedRuleSet_9_use_1_node_modules_vue_loader_dist_stylePostLoader_js_node_modules_postcss_loader_dist_cjs_js_clonedRuleSet_9_use_2_node_modules_vue_loader_dist_index_js_ruleSet_0_use_0_App_vue_vue_type_style_index_0_id_f348271a_lang_css__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! -!../../node_modules/style-loader/dist/cjs.js!../../node_modules/css-loader/dist/cjs.js??clonedRuleSet-9.use[1]!../../node_modules/vue-loader/dist/stylePostLoader.js!../../node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-9.use[2]!../../node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./App.vue?vue&type=style&index=0&id=f348271a&lang=css */ "./node_modules/style-loader/dist/cjs.js!./node_modules/css-loader/dist/cjs.js??clonedRuleSet-9.use[1]!./node_modules/vue-loader/dist/stylePostLoader.js!./node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-9.use[2]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./resources/js/App.vue?vue&type=style&index=0&id=f348271a&lang=css");
-
-
-/***/ }),
-
-/***/ "./node_modules/vue-router/dist/vue-router.esm-bundler.js":
-/*!****************************************************************!*\
-  !*** ./node_modules/vue-router/dist/vue-router.esm-bundler.js ***!
-  \****************************************************************/
-/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-/* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   NavigationFailureType: () => (/* binding */ NavigationFailureType),
-/* harmony export */   RouterLink: () => (/* binding */ RouterLink),
-/* harmony export */   RouterView: () => (/* binding */ RouterView),
-/* harmony export */   START_LOCATION: () => (/* binding */ START_LOCATION_NORMALIZED),
-/* harmony export */   createMemoryHistory: () => (/* binding */ createMemoryHistory),
-/* harmony export */   createRouter: () => (/* binding */ createRouter),
-/* harmony export */   createRouterMatcher: () => (/* binding */ createRouterMatcher),
-/* harmony export */   createWebHashHistory: () => (/* binding */ createWebHashHistory),
-/* harmony export */   createWebHistory: () => (/* binding */ createWebHistory),
-/* harmony export */   isNavigationFailure: () => (/* binding */ isNavigationFailure),
-/* harmony export */   matchedRouteKey: () => (/* binding */ matchedRouteKey),
-/* harmony export */   onBeforeRouteLeave: () => (/* binding */ onBeforeRouteLeave),
-/* harmony export */   onBeforeRouteUpdate: () => (/* binding */ onBeforeRouteUpdate),
-/* harmony export */   parseQuery: () => (/* binding */ parseQuery),
-/* harmony export */   routeLocationKey: () => (/* binding */ routeLocationKey),
-/* harmony export */   routerKey: () => (/* binding */ routerKey),
-/* harmony export */   routerViewLocationKey: () => (/* binding */ routerViewLocationKey),
-/* harmony export */   stringifyQuery: () => (/* binding */ stringifyQuery),
-/* harmony export */   useLink: () => (/* binding */ useLink),
-/* harmony export */   useRoute: () => (/* binding */ useRoute),
-/* harmony export */   useRouter: () => (/* binding */ useRouter),
-/* harmony export */   viewDepthKey: () => (/* binding */ viewDepthKey)
-/* harmony export */ });
-/* harmony import */ var vue__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! vue */ "./node_modules/vue/dist/vue.esm-bundler.js");
-/* harmony import */ var _vue_devtools_api__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @vue/devtools-api */ "./node_modules/@vue/devtools-api/lib/esm/index.js");
-/*!
-  * vue-router v4.0.13
-  * (c) 2022 Eduardo San Martin Morote
-  * @license MIT
-  */
-
-
-
-const hasSymbol = typeof Symbol === 'function' && typeof Symbol.toStringTag === 'symbol';
-const PolySymbol = (name) => 
-// vr = vue router
-hasSymbol
-    ? Symbol(( true) ? '[vue-router]: ' + name : 0)
-    : (( true) ? '[vue-router]: ' : 0) + name;
-// rvlm = Router View Location Matched
-/**
- * RouteRecord being rendered by the closest ancestor Router View. Used for
- * `onBeforeRouteUpdate` and `onBeforeRouteLeave`. rvlm stands for Router View
- * Location Matched
- *
- * @internal
- */
-const matchedRouteKey = /*#__PURE__*/ PolySymbol(( true) ? 'router view location matched' : 0);
-/**
- * Allows overriding the router view depth to control which component in
- * `matched` is rendered. rvd stands for Router View Depth
- *
- * @internal
- */
-const viewDepthKey = /*#__PURE__*/ PolySymbol(( true) ? 'router view depth' : 0);
-/**
- * Allows overriding the router instance returned by `useRouter` in tests. r
- * stands for router
- *
- * @internal
- */
-const routerKey = /*#__PURE__*/ PolySymbol(( true) ? 'router' : 0);
-/**
- * Allows overriding the current route returned by `useRoute` in tests. rl
- * stands for route location
- *
- * @internal
- */
-const routeLocationKey = /*#__PURE__*/ PolySymbol(( true) ? 'route location' : 0);
-/**
- * Allows overriding the current route used by router-view. Internally this is
- * used when the `route` prop is passed.
- *
- * @internal
- */
-const routerViewLocationKey = /*#__PURE__*/ PolySymbol(( true) ? 'router view location' : 0);
-
-const isBrowser = typeof window !== 'undefined';
-
-function isESModule(obj) {
-    return obj.__esModule || (hasSymbol && obj[Symbol.toStringTag] === 'Module');
-}
-const assign = Object.assign;
-function applyToParams(fn, params) {
-    const newParams = {};
-    for (const key in params) {
-        const value = params[key];
-        newParams[key] = Array.isArray(value) ? value.map(fn) : fn(value);
-    }
-    return newParams;
-}
-const noop = () => { };
-
-function warn(msg) {
-    // avoid using ...args as it breaks in older Edge builds
-    const args = Array.from(arguments).slice(1);
-    console.warn.apply(console, ['[Vue Router warn]: ' + msg].concat(args));
-}
-
-const TRAILING_SLASH_RE = /\/$/;
-const removeTrailingSlash = (path) => path.replace(TRAILING_SLASH_RE, '');
-/**
- * Transforms an URI into a normalized history location
- *
- * @param parseQuery
- * @param location - URI to normalize
- * @param currentLocation - current absolute location. Allows resolving relative
- * paths. Must start with `/`. Defaults to `/`
- * @returns a normalized history location
- */
-function parseURL(parseQuery, location, currentLocation = '/') {
-    let path, query = {}, searchString = '', hash = '';
-    // Could use URL and URLSearchParams but IE 11 doesn't support it
-    const searchPos = location.indexOf('?');
-    const hashPos = location.indexOf('#', searchPos > -1 ? searchPos : 0);
-    if (searchPos > -1) {
-        path = location.slice(0, searchPos);
-        searchString = location.slice(searchPos + 1, hashPos > -1 ? hashPos : location.length);
-        query = parseQuery(searchString);
-    }
-    if (hashPos > -1) {
-        path = path || location.slice(0, hashPos);
-        // keep the # character
-        hash = location.slice(hashPos, location.length);
-    }
-    // no search and no query
-    path = resolveRelativePath(path != null ? path : location, currentLocation);
-    // empty path means a relative query or hash `?foo=f`, `#thing`
-    return {
-        fullPath: path + (searchString && '?') + searchString + hash,
-        path,
-        query,
-        hash,
-    };
-}
-/**
- * Stringifies a URL object
- *
- * @param stringifyQuery
- * @param location
- */
-function stringifyURL(stringifyQuery, location) {
-    const query = location.query ? stringifyQuery(location.query) : '';
-    return location.path + (query && '?') + query + (location.hash || '');
-}
-/**
- * Strips off the base from the beginning of a location.pathname in a non
- * case-sensitive way.
- *
- * @param pathname - location.pathname
- * @param base - base to strip off
- */
-function stripBase(pathname, base) {
-    // no base or base is not found at the beginning
-    if (!base || !pathname.toLowerCase().startsWith(base.toLowerCase()))
-        return pathname;
-    return pathname.slice(base.length) || '/';
-}
-/**
- * Checks if two RouteLocation are equal. This means that both locations are
- * pointing towards the same {@link RouteRecord} and that all `params`, `query`
- * parameters and `hash` are the same
- *
- * @param a - first {@link RouteLocation}
- * @param b - second {@link RouteLocation}
- */
-function isSameRouteLocation(stringifyQuery, a, b) {
-    const aLastIndex = a.matched.length - 1;
-    const bLastIndex = b.matched.length - 1;
-    return (aLastIndex > -1 &&
-        aLastIndex === bLastIndex &&
-        isSameRouteRecord(a.matched[aLastIndex], b.matched[bLastIndex]) &&
-        isSameRouteLocationParams(a.params, b.params) &&
-        stringifyQuery(a.query) === stringifyQuery(b.query) &&
-        a.hash === b.hash);
-}
-/**
- * Check if two `RouteRecords` are equal. Takes into account aliases: they are
- * considered equal to the `RouteRecord` they are aliasing.
- *
- * @param a - first {@link RouteRecord}
- * @param b - second {@link RouteRecord}
- */
-function isSameRouteRecord(a, b) {
-    // since the original record has an undefined value for aliasOf
-    // but all aliases point to the original record, this will always compare
-    // the original record
-    return (a.aliasOf || a) === (b.aliasOf || b);
-}
-function isSameRouteLocationParams(a, b) {
-    if (Object.keys(a).length !== Object.keys(b).length)
-        return false;
-    for (const key in a) {
-        if (!isSameRouteLocationParamsValue(a[key], b[key]))
-            return false;
-    }
-    return true;
-}
-function isSameRouteLocationParamsValue(a, b) {
-    return Array.isArray(a)
-        ? isEquivalentArray(a, b)
-        : Array.isArray(b)
-            ? isEquivalentArray(b, a)
-            : a === b;
-}
-/**
- * Check if two arrays are the same or if an array with one single entry is the
- * same as another primitive value. Used to check query and parameters
- *
- * @param a - array of values
- * @param b - array of values or a single value
- */
-function isEquivalentArray(a, b) {
-    return Array.isArray(b)
-        ? a.length === b.length && a.every((value, i) => value === b[i])
-        : a.length === 1 && a[0] === b;
-}
-/**
- * Resolves a relative path that starts with `.`.
- *
- * @param to - path location we are resolving
- * @param from - currentLocation.path, should start with `/`
- */
-function resolveRelativePath(to, from) {
-    if (to.startsWith('/'))
-        return to;
-    if (( true) && !from.startsWith('/')) {
-        warn(`Cannot resolve a relative location without an absolute path. Trying to resolve "${to}" from "${from}". It should look like "/${from}".`);
-        return to;
-    }
-    if (!to)
-        return from;
-    const fromSegments = from.split('/');
-    const toSegments = to.split('/');
-    let position = fromSegments.length - 1;
-    let toPosition;
-    let segment;
-    for (toPosition = 0; toPosition < toSegments.length; toPosition++) {
-        segment = toSegments[toPosition];
-        // can't go below zero
-        if (position === 1 || segment === '.')
-            continue;
-        if (segment === '..')
-            position--;
-        // found something that is not relative path
-        else
-            break;
-    }
-    return (fromSegments.slice(0, position).join('/') +
-        '/' +
-        toSegments
-            .slice(toPosition - (toPosition === toSegments.length ? 1 : 0))
-            .join('/'));
-}
-
-var NavigationType;
-(function (NavigationType) {
-    NavigationType["pop"] = "pop";
-    NavigationType["push"] = "push";
-})(NavigationType || (NavigationType = {}));
-var NavigationDirection;
-(function (NavigationDirection) {
-    NavigationDirection["back"] = "back";
-    NavigationDirection["forward"] = "forward";
-    NavigationDirection["unknown"] = "";
-})(NavigationDirection || (NavigationDirection = {}));
-/**
- * Starting location for Histories
- */
-const START = '';
-// Generic utils
-/**
- * Normalizes a base by removing any trailing slash and reading the base tag if
- * present.
- *
- * @param base - base to normalize
- */
-function normalizeBase(base) {
-    if (!base) {
-        if (isBrowser) {
-            // respect <base> tag
-            const baseEl = document.querySelector('base');
-            base = (baseEl && baseEl.getAttribute('href')) || '/';
-            // strip full URL origin
-            base = base.replace(/^\w+:\/\/[^\/]+/, '');
-        }
-        else {
-            base = '/';
-        }
-    }
-    // ensure leading slash when it was removed by the regex above avoid leading
-    // slash with hash because the file could be read from the disk like file://
-    // and the leading slash would cause problems
-    if (base[0] !== '/' && base[0] !== '#')
-        base = '/' + base;
-    // remove the trailing slash so all other method can just do `base + fullPath`
-    // to build an href
-    return removeTrailingSlash(base);
-}
-// remove any character before the hash
-const BEFORE_HASH_RE = /^[^#]+#/;
-function createHref(base, location) {
-    return base.replace(BEFORE_HASH_RE, '#') + location;
-}
-
-function getElementPosition(el, offset) {
-    const docRect = document.documentElement.getBoundingClientRect();
-    const elRect = el.getBoundingClientRect();
-    return {
-        behavior: offset.behavior,
-        left: elRect.left - docRect.left - (offset.left || 0),
-        top: elRect.top - docRect.top - (offset.top || 0),
-    };
-}
-const computeScrollPosition = () => ({
-    left: window.pageXOffset,
-    top: window.pageYOffset,
-});
-function scrollToPosition(position) {
-    let scrollToOptions;
-    if ('el' in position) {
-        const positionEl = position.el;
-        const isIdSelector = typeof positionEl === 'string' && positionEl.startsWith('#');
-        /**
-         * `id`s can accept pretty much any characters, including CSS combinators
-         * like `>` or `~`. It's still possible to retrieve elements using
-         * `document.getElementById('~')` but it needs to be escaped when using
-         * `document.querySelector('#\\~')` for it to be valid. The only
-         * requirements for `id`s are them to be unique on the page and to not be
-         * empty (`id=""`). Because of that, when passing an id selector, it should
-         * be properly escaped for it to work with `querySelector`. We could check
-         * for the id selector to be simple (no CSS combinators `+ >~`) but that
-         * would make things inconsistent since they are valid characters for an
-         * `id` but would need to be escaped when using `querySelector`, breaking
-         * their usage and ending up in no selector returned. Selectors need to be
-         * escaped:
-         *
-         * - `#1-thing` becomes `#\31 -thing`
-         * - `#with~symbols` becomes `#with\\~symbols`
-         *
-         * - More information about  the topic can be found at
-         *   https://mathiasbynens.be/notes/html5-id-class.
-         * - Practical example: https://mathiasbynens.be/demo/html5-id
-         */
-        if (( true) && typeof position.el === 'string') {
-            if (!isIdSelector || !document.getElementById(position.el.slice(1))) {
-                try {
-                    const foundEl = document.querySelector(position.el);
-                    if (isIdSelector && foundEl) {
-                        warn(`The selector "${position.el}" should be passed as "el: document.querySelector('${position.el}')" because it starts with "#".`);
-                        // return to avoid other warnings
-                        return;
-                    }
-                }
-                catch (err) {
-                    warn(`The selector "${position.el}" is invalid. If you are using an id selector, make sure to escape it. You can find more information about escaping characters in selectors at https://mathiasbynens.be/notes/css-escapes or use CSS.escape (https://developer.mozilla.org/en-US/docs/Web/API/CSS/escape).`);
-                    // return to avoid other warnings
-                    return;
-                }
-            }
-        }
-        const el = typeof positionEl === 'string'
-            ? isIdSelector
-                ? document.getElementById(positionEl.slice(1))
-                : document.querySelector(positionEl)
-            : positionEl;
-        if (!el) {
-            ( true) &&
-                warn(`Couldn't find element using selector "${position.el}" returned by scrollBehavior.`);
-            return;
-        }
-        scrollToOptions = getElementPosition(el, position);
-    }
-    else {
-        scrollToOptions = position;
-    }
-    if ('scrollBehavior' in document.documentElement.style)
-        window.scrollTo(scrollToOptions);
-    else {
-        window.scrollTo(scrollToOptions.left != null ? scrollToOptions.left : window.pageXOffset, scrollToOptions.top != null ? scrollToOptions.top : window.pageYOffset);
-    }
-}
-function getScrollKey(path, delta) {
-    const position = history.state ? history.state.position - delta : -1;
-    return position + path;
-}
-const scrollPositions = new Map();
-function saveScrollPosition(key, scrollPosition) {
-    scrollPositions.set(key, scrollPosition);
-}
-function getSavedScrollPosition(key) {
-    const scroll = scrollPositions.get(key);
-    // consume it so it's not used again
-    scrollPositions.delete(key);
-    return scroll;
-}
-// TODO: RFC about how to save scroll position
-/**
- * ScrollBehavior instance used by the router to compute and restore the scroll
- * position when navigating.
- */
-// export interface ScrollHandler<ScrollPositionEntry extends HistoryStateValue, ScrollPosition extends ScrollPositionEntry> {
-//   // returns a scroll position that can be saved in history
-//   compute(): ScrollPositionEntry
-//   // can take an extended ScrollPositionEntry
-//   scroll(position: ScrollPosition): void
-// }
-// export const scrollHandler: ScrollHandler<ScrollPosition> = {
-//   compute: computeScroll,
-//   scroll: scrollToPosition,
-// }
-
-let createBaseLocation = () => location.protocol + '//' + location.host;
-/**
- * Creates a normalized history location from a window.location object
- * @param location -
- */
-function createCurrentLocation(base, location) {
-    const { pathname, search, hash } = location;
-    // allows hash bases like #, /#, #/, #!, #!/, /#!/, or even /folder#end
-    const hashPos = base.indexOf('#');
-    if (hashPos > -1) {
-        let slicePos = hash.includes(base.slice(hashPos))
-            ? base.slice(hashPos).length
-            : 1;
-        let pathFromHash = hash.slice(slicePos);
-        // prepend the starting slash to hash so the url starts with /#
-        if (pathFromHash[0] !== '/')
-            pathFromHash = '/' + pathFromHash;
-        return stripBase(pathFromHash, '');
-    }
-    const path = stripBase(pathname, base);
-    return path + search + hash;
-}
-function useHistoryListeners(base, historyState, currentLocation, replace) {
-    let listeners = [];
-    let teardowns = [];
-    // TODO: should it be a stack? a Dict. Check if the popstate listener
-    // can trigger twice
-    let pauseState = null;
-    const popStateHandler = ({ state, }) => {
-        const to = createCurrentLocation(base, location);
-        const from = currentLocation.value;
-        const fromState = historyState.value;
-        let delta = 0;
-        if (state) {
-            currentLocation.value = to;
-            historyState.value = state;
-            // ignore the popstate and reset the pauseState
-            if (pauseState && pauseState === from) {
-                pauseState = null;
-                return;
-            }
-            delta = fromState ? state.position - fromState.position : 0;
-        }
-        else {
-            replace(to);
-        }
-        // console.log({ deltaFromCurrent })
-        // Here we could also revert the navigation by calling history.go(-delta)
-        // this listener will have to be adapted to not trigger again and to wait for the url
-        // to be updated before triggering the listeners. Some kind of validation function would also
-        // need to be passed to the listeners so the navigation can be accepted
-        // call all listeners
-        listeners.forEach(listener => {
-            listener(currentLocation.value, from, {
-                delta,
-                type: NavigationType.pop,
-                direction: delta
-                    ? delta > 0
-                        ? NavigationDirection.forward
-                        : NavigationDirection.back
-                    : NavigationDirection.unknown,
-            });
-        });
-    };
-    function pauseListeners() {
-        pauseState = currentLocation.value;
-    }
-    function listen(callback) {
-        // setup the listener and prepare teardown callbacks
-        listeners.push(callback);
-        const teardown = () => {
-            const index = listeners.indexOf(callback);
-            if (index > -1)
-                listeners.splice(index, 1);
-        };
-        teardowns.push(teardown);
-        return teardown;
-    }
-    function beforeUnloadListener() {
-        const { history } = window;
-        if (!history.state)
-            return;
-        history.replaceState(assign({}, history.state, { scroll: computeScrollPosition() }), '');
-    }
-    function destroy() {
-        for (const teardown of teardowns)
-            teardown();
-        teardowns = [];
-        window.removeEventListener('popstate', popStateHandler);
-        window.removeEventListener('beforeunload', beforeUnloadListener);
-    }
-    // setup the listeners and prepare teardown callbacks
-    window.addEventListener('popstate', popStateHandler);
-    window.addEventListener('beforeunload', beforeUnloadListener);
-    return {
-        pauseListeners,
-        listen,
-        destroy,
-    };
-}
-/**
- * Creates a state object
- */
-function buildState(back, current, forward, replaced = false, computeScroll = false) {
-    return {
-        back,
-        current,
-        forward,
-        replaced,
-        position: window.history.length,
-        scroll: computeScroll ? computeScrollPosition() : null,
-    };
-}
-function useHistoryStateNavigation(base) {
-    const { history, location } = window;
-    // private variables
-    const currentLocation = {
-        value: createCurrentLocation(base, location),
-    };
-    const historyState = { value: history.state };
-    // build current history entry as this is a fresh navigation
-    if (!historyState.value) {
-        changeLocation(currentLocation.value, {
-            back: null,
-            current: currentLocation.value,
-            forward: null,
-            // the length is off by one, we need to decrease it
-            position: history.length - 1,
-            replaced: true,
-            // don't add a scroll as the user may have an anchor and we want
-            // scrollBehavior to be triggered without a saved position
-            scroll: null,
-        }, true);
-    }
-    function changeLocation(to, state, replace) {
-        /**
-         * if a base tag is provided and we are on a normal domain, we have to
-         * respect the provided `base` attribute because pushState() will use it and
-         * potentially erase anything before the `#` like at
-         * https://github.com/vuejs/router/issues/685 where a base of
-         * `/folder/#` but a base of `/` would erase the `/folder/` section. If
-         * there is no host, the `<base>` tag makes no sense and if there isn't a
-         * base tag we can just use everything after the `#`.
-         */
-        const hashIndex = base.indexOf('#');
-        const url = hashIndex > -1
-            ? (location.host && document.querySelector('base')
-                ? base
-                : base.slice(hashIndex)) + to
-            : createBaseLocation() + base + to;
-        try {
-            // BROWSER QUIRK
-            // NOTE: Safari throws a SecurityError when calling this function 100 times in 30 seconds
-            history[replace ? 'replaceState' : 'pushState'](state, '', url);
-            historyState.value = state;
-        }
-        catch (err) {
-            if ((true)) {
-                warn('Error with push/replace State', err);
-            }
-            else {}
-            // Force the navigation, this also resets the call count
-            location[replace ? 'replace' : 'assign'](url);
-        }
-    }
-    function replace(to, data) {
-        const state = assign({}, history.state, buildState(historyState.value.back, 
-        // keep back and forward entries but override current position
-        to, historyState.value.forward, true), data, { position: historyState.value.position });
-        changeLocation(to, state, true);
-        currentLocation.value = to;
-    }
-    function push(to, data) {
-        // Add to current entry the information of where we are going
-        // as well as saving the current position
-        const currentState = assign({}, 
-        // use current history state to gracefully handle a wrong call to
-        // history.replaceState
-        // https://github.com/vuejs/router/issues/366
-        historyState.value, history.state, {
-            forward: to,
-            scroll: computeScrollPosition(),
-        });
-        if (( true) && !history.state) {
-            warn(`history.state seems to have been manually replaced without preserving the necessary values. Make sure to preserve existing history state if you are manually calling history.replaceState:\n\n` +
-                `history.replaceState(history.state, '', url)\n\n` +
-                `You can find more information at https://next.router.vuejs.org/guide/migration/#usage-of-history-state.`);
-        }
-        changeLocation(currentState.current, currentState, true);
-        const state = assign({}, buildState(currentLocation.value, to, null), { position: currentState.position + 1 }, data);
-        changeLocation(to, state, false);
-        currentLocation.value = to;
-    }
-    return {
-        location: currentLocation,
-        state: historyState,
-        push,
-        replace,
-    };
-}
-/**
- * Creates an HTML5 history. Most common history for single page applications.
- *
- * @param base -
- */
-function createWebHistory(base) {
-    base = normalizeBase(base);
-    const historyNavigation = useHistoryStateNavigation(base);
-    const historyListeners = useHistoryListeners(base, historyNavigation.state, historyNavigation.location, historyNavigation.replace);
-    function go(delta, triggerListeners = true) {
-        if (!triggerListeners)
-            historyListeners.pauseListeners();
-        history.go(delta);
-    }
-    const routerHistory = assign({
-        // it's overridden right after
-        location: '',
-        base,
-        go,
-        createHref: createHref.bind(null, base),
-    }, historyNavigation, historyListeners);
-    Object.defineProperty(routerHistory, 'location', {
-        enumerable: true,
-        get: () => historyNavigation.location.value,
-    });
-    Object.defineProperty(routerHistory, 'state', {
-        enumerable: true,
-        get: () => historyNavigation.state.value,
-    });
-    return routerHistory;
-}
-
-/**
- * Creates a in-memory based history. The main purpose of this history is to handle SSR. It starts in a special location that is nowhere.
- * It's up to the user to replace that location with the starter location by either calling `router.push` or `router.replace`.
- *
- * @param base - Base applied to all urls, defaults to '/'
- * @returns a history object that can be passed to the router constructor
- */
-function createMemoryHistory(base = '') {
-    let listeners = [];
-    let queue = [START];
-    let position = 0;
-    base = normalizeBase(base);
-    function setLocation(location) {
-        position++;
-        if (position === queue.length) {
-            // we are at the end, we can simply append a new entry
-            queue.push(location);
-        }
-        else {
-            // we are in the middle, we remove everything from here in the queue
-            queue.splice(position);
-            queue.push(location);
-        }
-    }
-    function triggerListeners(to, from, { direction, delta }) {
-        const info = {
-            direction,
-            delta,
-            type: NavigationType.pop,
-        };
-        for (const callback of listeners) {
-            callback(to, from, info);
-        }
-    }
-    const routerHistory = {
-        // rewritten by Object.defineProperty
-        location: START,
-        // TODO: should be kept in queue
-        state: {},
-        base,
-        createHref: createHref.bind(null, base),
-        replace(to) {
-            // remove current entry and decrement position
-            queue.splice(position--, 1);
-            setLocation(to);
-        },
-        push(to, data) {
-            setLocation(to);
-        },
-        listen(callback) {
-            listeners.push(callback);
-            return () => {
-                const index = listeners.indexOf(callback);
-                if (index > -1)
-                    listeners.splice(index, 1);
-            };
-        },
-        destroy() {
-            listeners = [];
-            queue = [START];
-            position = 0;
-        },
-        go(delta, shouldTrigger = true) {
-            const from = this.location;
-            const direction = 
-            // we are considering delta === 0 going forward, but in abstract mode
-            // using 0 for the delta doesn't make sense like it does in html5 where
-            // it reloads the page
-            delta < 0 ? NavigationDirection.back : NavigationDirection.forward;
-            position = Math.max(0, Math.min(position + delta, queue.length - 1));
-            if (shouldTrigger) {
-                triggerListeners(this.location, from, {
-                    direction,
-                    delta,
-                });
-            }
-        },
-    };
-    Object.defineProperty(routerHistory, 'location', {
-        enumerable: true,
-        get: () => queue[position],
-    });
-    return routerHistory;
-}
-
-/**
- * Creates a hash history. Useful for web applications with no host (e.g.
- * `file://`) or when configuring a server to handle any URL is not possible.
- *
- * @param base - optional base to provide. Defaults to `location.pathname +
- * location.search` If there is a `<base>` tag in the `head`, its value will be
- * ignored in favor of this parameter **but note it affects all the
- * history.pushState() calls**, meaning that if you use a `<base>` tag, it's
- * `href` value **has to match this parameter** (ignoring anything after the
- * `#`).
- *
- * @example
- * ```js
- * // at https://example.com/folder
- * createWebHashHistory() // gives a url of `https://example.com/folder#`
- * createWebHashHistory('/folder/') // gives a url of `https://example.com/folder/#`
- * // if the `#` is provided in the base, it won't be added by `createWebHashHistory`
- * createWebHashHistory('/folder/#/app/') // gives a url of `https://example.com/folder/#/app/`
- * // you should avoid doing this because it changes the original url and breaks copying urls
- * createWebHashHistory('/other-folder/') // gives a url of `https://example.com/other-folder/#`
- *
- * // at file:///usr/etc/folder/index.html
- * // for locations with no `host`, the base is ignored
- * createWebHashHistory('/iAmIgnored') // gives a url of `file:///usr/etc/folder/index.html#`
- * ```
- */
-function createWebHashHistory(base) {
-    // Make sure this implementation is fine in terms of encoding, specially for IE11
-    // for `file://`, directly use the pathname and ignore the base
-    // location.pathname contains an initial `/` even at the root: `https://example.com`
-    base = location.host ? base || location.pathname + location.search : '';
-    // allow the user to provide a `#` in the middle: `/base/#/app`
-    if (!base.includes('#'))
-        base += '#';
-    if (( true) && !base.endsWith('#/') && !base.endsWith('#')) {
-        warn(`A hash base must end with a "#":\n"${base}" should be "${base.replace(/#.*$/, '#')}".`);
-    }
-    return createWebHistory(base);
-}
-
-function isRouteLocation(route) {
-    return typeof route === 'string' || (route && typeof route === 'object');
-}
-function isRouteName(name) {
-    return typeof name === 'string' || typeof name === 'symbol';
-}
-
-/**
- * Initial route location where the router is. Can be used in navigation guards
- * to differentiate the initial navigation.
- *
- * @example
- * ```js
- * import { START_LOCATION } from 'vue-router'
- *
- * router.beforeEach((to, from) => {
- *   if (from === START_LOCATION) {
- *     // initial navigation
- *   }
- * })
- * ```
- */
-const START_LOCATION_NORMALIZED = {
-    path: '/',
-    name: undefined,
-    params: {},
-    query: {},
-    hash: '',
-    fullPath: '/',
-    matched: [],
-    meta: {},
-    redirectedFrom: undefined,
-};
-
-const NavigationFailureSymbol = /*#__PURE__*/ PolySymbol(( true) ? 'navigation failure' : 0);
-/**
- * Enumeration with all possible types for navigation failures. Can be passed to
- * {@link isNavigationFailure} to check for specific failures.
- */
-var NavigationFailureType;
-(function (NavigationFailureType) {
-    /**
-     * An aborted navigation is a navigation that failed because a navigation
-     * guard returned `false` or called `next(false)`
-     */
-    NavigationFailureType[NavigationFailureType["aborted"] = 4] = "aborted";
-    /**
-     * A cancelled navigation is a navigation that failed because a more recent
-     * navigation finished started (not necessarily finished).
-     */
-    NavigationFailureType[NavigationFailureType["cancelled"] = 8] = "cancelled";
-    /**
-     * A duplicated navigation is a navigation that failed because it was
-     * initiated while already being at the exact same location.
-     */
-    NavigationFailureType[NavigationFailureType["duplicated"] = 16] = "duplicated";
-})(NavigationFailureType || (NavigationFailureType = {}));
-// DEV only debug messages
-const ErrorTypeMessages = {
-    [1 /* MATCHER_NOT_FOUND */]({ location, currentLocation }) {
-        return `No match for\n ${JSON.stringify(location)}${currentLocation
-            ? '\nwhile being at\n' + JSON.stringify(currentLocation)
-            : ''}`;
-    },
-    [2 /* NAVIGATION_GUARD_REDIRECT */]({ from, to, }) {
-        return `Redirected from "${from.fullPath}" to "${stringifyRoute(to)}" via a navigation guard.`;
-    },
-    [4 /* NAVIGATION_ABORTED */]({ from, to }) {
-        return `Navigation aborted from "${from.fullPath}" to "${to.fullPath}" via a navigation guard.`;
-    },
-    [8 /* NAVIGATION_CANCELLED */]({ from, to }) {
-        return `Navigation cancelled from "${from.fullPath}" to "${to.fullPath}" with a new navigation.`;
-    },
-    [16 /* NAVIGATION_DUPLICATED */]({ from, to }) {
-        return `Avoided redundant navigation to current location: "${from.fullPath}".`;
-    },
-};
-function createRouterError(type, params) {
-    // keep full error messages in cjs versions
-    if (true) {
-        return assign(new Error(ErrorTypeMessages[type](params)), {
-            type,
-            [NavigationFailureSymbol]: true,
-        }, params);
-    }
-    else {}
-}
-function isNavigationFailure(error, type) {
-    return (error instanceof Error &&
-        NavigationFailureSymbol in error &&
-        (type == null || !!(error.type & type)));
-}
-const propertiesToLog = ['params', 'query', 'hash'];
-function stringifyRoute(to) {
-    if (typeof to === 'string')
-        return to;
-    if ('path' in to)
-        return to.path;
-    const location = {};
-    for (const key of propertiesToLog) {
-        if (key in to)
-            location[key] = to[key];
-    }
-    return JSON.stringify(location, null, 2);
-}
-
-// default pattern for a param: non greedy everything but /
-const BASE_PARAM_PATTERN = '[^/]+?';
-const BASE_PATH_PARSER_OPTIONS = {
-    sensitive: false,
-    strict: false,
-    start: true,
-    end: true,
-};
-// Special Regex characters that must be escaped in static tokens
-const REGEX_CHARS_RE = /[.+*?^${}()[\]/\\]/g;
-/**
- * Creates a path parser from an array of Segments (a segment is an array of Tokens)
- *
- * @param segments - array of segments returned by tokenizePath
- * @param extraOptions - optional options for the regexp
- * @returns a PathParser
- */
-function tokensToParser(segments, extraOptions) {
-    const options = assign({}, BASE_PATH_PARSER_OPTIONS, extraOptions);
-    // the amount of scores is the same as the length of segments except for the root segment "/"
-    const score = [];
-    // the regexp as a string
-    let pattern = options.start ? '^' : '';
-    // extracted keys
-    const keys = [];
-    for (const segment of segments) {
-        // the root segment needs special treatment
-        const segmentScores = segment.length ? [] : [90 /* Root */];
-        // allow trailing slash
-        if (options.strict && !segment.length)
-            pattern += '/';
-        for (let tokenIndex = 0; tokenIndex < segment.length; tokenIndex++) {
-            const token = segment[tokenIndex];
-            // resets the score if we are inside a sub segment /:a-other-:b
-            let subSegmentScore = 40 /* Segment */ +
-                (options.sensitive ? 0.25 /* BonusCaseSensitive */ : 0);
-            if (token.type === 0 /* Static */) {
-                // prepend the slash if we are starting a new segment
-                if (!tokenIndex)
-                    pattern += '/';
-                pattern += token.value.replace(REGEX_CHARS_RE, '\\$&');
-                subSegmentScore += 40 /* Static */;
-            }
-            else if (token.type === 1 /* Param */) {
-                const { value, repeatable, optional, regexp } = token;
-                keys.push({
-                    name: value,
-                    repeatable,
-                    optional,
-                });
-                const re = regexp ? regexp : BASE_PARAM_PATTERN;
-                // the user provided a custom regexp /:id(\\d+)
-                if (re !== BASE_PARAM_PATTERN) {
-                    subSegmentScore += 10 /* BonusCustomRegExp */;
-                    // make sure the regexp is valid before using it
-                    try {
-                        new RegExp(`(${re})`);
-                    }
-                    catch (err) {
-                        throw new Error(`Invalid custom RegExp for param "${value}" (${re}): ` +
-                            err.message);
-                    }
-                }
-                // when we repeat we must take care of the repeating leading slash
-                let subPattern = repeatable ? `((?:${re})(?:/(?:${re}))*)` : `(${re})`;
-                // prepend the slash if we are starting a new segment
-                if (!tokenIndex)
-                    subPattern =
-                        // avoid an optional / if there are more segments e.g. /:p?-static
-                        // or /:p?-:p2
-                        optional && segment.length < 2
-                            ? `(?:/${subPattern})`
-                            : '/' + subPattern;
-                if (optional)
-                    subPattern += '?';
-                pattern += subPattern;
-                subSegmentScore += 20 /* Dynamic */;
-                if (optional)
-                    subSegmentScore += -8 /* BonusOptional */;
-                if (repeatable)
-                    subSegmentScore += -20 /* BonusRepeatable */;
-                if (re === '.*')
-                    subSegmentScore += -50 /* BonusWildcard */;
-            }
-            segmentScores.push(subSegmentScore);
-        }
-        // an empty array like /home/ -> [[{home}], []]
-        // if (!segment.length) pattern += '/'
-        score.push(segmentScores);
-    }
-    // only apply the strict bonus to the last score
-    if (options.strict && options.end) {
-        const i = score.length - 1;
-        score[i][score[i].length - 1] += 0.7000000000000001 /* BonusStrict */;
-    }
-    // TODO: dev only warn double trailing slash
-    if (!options.strict)
-        pattern += '/?';
-    if (options.end)
-        pattern += '$';
-    // allow paths like /dynamic to only match dynamic or dynamic/... but not dynamic_something_else
-    else if (options.strict)
-        pattern += '(?:/|$)';
-    const re = new RegExp(pattern, options.sensitive ? '' : 'i');
-    function parse(path) {
-        const match = path.match(re);
-        const params = {};
-        if (!match)
-            return null;
-        for (let i = 1; i < match.length; i++) {
-            const value = match[i] || '';
-            const key = keys[i - 1];
-            params[key.name] = value && key.repeatable ? value.split('/') : value;
-        }
-        return params;
-    }
-    function stringify(params) {
-        let path = '';
-        // for optional parameters to allow to be empty
-        let avoidDuplicatedSlash = false;
-        for (const segment of segments) {
-            if (!avoidDuplicatedSlash || !path.endsWith('/'))
-                path += '/';
-            avoidDuplicatedSlash = false;
-            for (const token of segment) {
-                if (token.type === 0 /* Static */) {
-                    path += token.value;
-                }
-                else if (token.type === 1 /* Param */) {
-                    const { value, repeatable, optional } = token;
-                    const param = value in params ? params[value] : '';
-                    if (Array.isArray(param) && !repeatable)
-                        throw new Error(`Provided param "${value}" is an array but it is not repeatable (* or + modifiers)`);
-                    const text = Array.isArray(param) ? param.join('/') : param;
-                    if (!text) {
-                        if (optional) {
-                            // if we have more than one optional param like /:a?-static we
-                            // don't need to care about the optional param
-                            if (segment.length < 2) {
-                                // remove the last slash as we could be at the end
-                                if (path.endsWith('/'))
-                                    path = path.slice(0, -1);
-                                // do not append a slash on the next iteration
-                                else
-                                    avoidDuplicatedSlash = true;
-                            }
-                        }
-                        else
-                            throw new Error(`Missing required param "${value}"`);
-                    }
-                    path += text;
-                }
-            }
-        }
-        return path;
-    }
-    return {
-        re,
-        score,
-        keys,
-        parse,
-        stringify,
-    };
-}
-/**
- * Compares an array of numbers as used in PathParser.score and returns a
- * number. This function can be used to `sort` an array
- *
- * @param a - first array of numbers
- * @param b - second array of numbers
- * @returns 0 if both are equal, < 0 if a should be sorted first, > 0 if b
- * should be sorted first
- */
-function compareScoreArray(a, b) {
-    let i = 0;
-    while (i < a.length && i < b.length) {
-        const diff = b[i] - a[i];
-        // only keep going if diff === 0
-        if (diff)
-            return diff;
-        i++;
-    }
-    // if the last subsegment was Static, the shorter segments should be sorted first
-    // otherwise sort the longest segment first
-    if (a.length < b.length) {
-        return a.length === 1 && a[0] === 40 /* Static */ + 40 /* Segment */
-            ? -1
-            : 1;
-    }
-    else if (a.length > b.length) {
-        return b.length === 1 && b[0] === 40 /* Static */ + 40 /* Segment */
-            ? 1
-            : -1;
-    }
-    return 0;
-}
-/**
- * Compare function that can be used with `sort` to sort an array of PathParser
- *
- * @param a - first PathParser
- * @param b - second PathParser
- * @returns 0 if both are equal, < 0 if a should be sorted first, > 0 if b
- */
-function comparePathParserScore(a, b) {
-    let i = 0;
-    const aScore = a.score;
-    const bScore = b.score;
-    while (i < aScore.length && i < bScore.length) {
-        const comp = compareScoreArray(aScore[i], bScore[i]);
-        // do not return if both are equal
-        if (comp)
-            return comp;
-        i++;
-    }
-    // if a and b share the same score entries but b has more, sort b first
-    return bScore.length - aScore.length;
-    // this is the ternary version
-    // return aScore.length < bScore.length
-    //   ? 1
-    //   : aScore.length > bScore.length
-    //   ? -1
-    //   : 0
-}
-
-const ROOT_TOKEN = {
-    type: 0 /* Static */,
-    value: '',
-};
-const VALID_PARAM_RE = /[a-zA-Z0-9_]/;
-// After some profiling, the cache seems to be unnecessary because tokenizePath
-// (the slowest part of adding a route) is very fast
-// const tokenCache = new Map<string, Token[][]>()
-function tokenizePath(path) {
-    if (!path)
-        return [[]];
-    if (path === '/')
-        return [[ROOT_TOKEN]];
-    if (!path.startsWith('/')) {
-        throw new Error(( true)
-            ? `Route paths should start with a "/": "${path}" should be "/${path}".`
-            : 0);
-    }
-    // if (tokenCache.has(path)) return tokenCache.get(path)!
-    function crash(message) {
-        throw new Error(`ERR (${state})/"${buffer}": ${message}`);
-    }
-    let state = 0 /* Static */;
-    let previousState = state;
-    const tokens = [];
-    // the segment will always be valid because we get into the initial state
-    // with the leading /
-    let segment;
-    function finalizeSegment() {
-        if (segment)
-            tokens.push(segment);
-        segment = [];
-    }
-    // index on the path
-    let i = 0;
-    // char at index
-    let char;
-    // buffer of the value read
-    let buffer = '';
-    // custom regexp for a param
-    let customRe = '';
-    function consumeBuffer() {
-        if (!buffer)
-            return;
-        if (state === 0 /* Static */) {
-            segment.push({
-                type: 0 /* Static */,
-                value: buffer,
-            });
-        }
-        else if (state === 1 /* Param */ ||
-            state === 2 /* ParamRegExp */ ||
-            state === 3 /* ParamRegExpEnd */) {
-            if (segment.length > 1 && (char === '*' || char === '+'))
-                crash(`A repeatable param (${buffer}) must be alone in its segment. eg: '/:ids+.`);
-            segment.push({
-                type: 1 /* Param */,
-                value: buffer,
-                regexp: customRe,
-                repeatable: char === '*' || char === '+',
-                optional: char === '*' || char === '?',
-            });
-        }
-        else {
-            crash('Invalid state to consume buffer');
-        }
-        buffer = '';
-    }
-    function addCharToBuffer() {
-        buffer += char;
-    }
-    while (i < path.length) {
-        char = path[i++];
-        if (char === '\\' && state !== 2 /* ParamRegExp */) {
-            previousState = state;
-            state = 4 /* EscapeNext */;
-            continue;
-        }
-        switch (state) {
-            case 0 /* Static */:
-                if (char === '/') {
-                    if (buffer) {
-                        consumeBuffer();
-                    }
-                    finalizeSegment();
-                }
-                else if (char === ':') {
-                    consumeBuffer();
-                    state = 1 /* Param */;
-                }
-                else {
-                    addCharToBuffer();
-                }
-                break;
-            case 4 /* EscapeNext */:
-                addCharToBuffer();
-                state = previousState;
-                break;
-            case 1 /* Param */:
-                if (char === '(') {
-                    state = 2 /* ParamRegExp */;
-                }
-                else if (VALID_PARAM_RE.test(char)) {
-                    addCharToBuffer();
-                }
-                else {
-                    consumeBuffer();
-                    state = 0 /* Static */;
-                    // go back one character if we were not modifying
-                    if (char !== '*' && char !== '?' && char !== '+')
-                        i--;
-                }
-                break;
-            case 2 /* ParamRegExp */:
-                // TODO: is it worth handling nested regexp? like :p(?:prefix_([^/]+)_suffix)
-                // it already works by escaping the closing )
-                // https://paths.esm.dev/?p=AAMeJbiAwQEcDKbAoAAkP60PG2R6QAvgNaA6AFACM2ABuQBB#
-                // is this really something people need since you can also write
-                // /prefix_:p()_suffix
-                if (char === ')') {
-                    // handle the escaped )
-                    if (customRe[customRe.length - 1] == '\\')
-                        customRe = customRe.slice(0, -1) + char;
-                    else
-                        state = 3 /* ParamRegExpEnd */;
-                }
-                else {
-                    customRe += char;
-                }
-                break;
-            case 3 /* ParamRegExpEnd */:
-                // same as finalizing a param
-                consumeBuffer();
-                state = 0 /* Static */;
-                // go back one character if we were not modifying
-                if (char !== '*' && char !== '?' && char !== '+')
-                    i--;
-                customRe = '';
-                break;
-            default:
-                crash('Unknown state');
-                break;
-        }
-    }
-    if (state === 2 /* ParamRegExp */)
-        crash(`Unfinished custom RegExp for param "${buffer}"`);
-    consumeBuffer();
-    finalizeSegment();
-    // tokenCache.set(path, tokens)
-    return tokens;
-}
-
-function createRouteRecordMatcher(record, parent, options) {
-    const parser = tokensToParser(tokenizePath(record.path), options);
-    // warn against params with the same name
-    if ((true)) {
-        const existingKeys = new Set();
-        for (const key of parser.keys) {
-            if (existingKeys.has(key.name))
-                warn(`Found duplicated params with name "${key.name}" for path "${record.path}". Only the last one will be available on "$route.params".`);
-            existingKeys.add(key.name);
-        }
-    }
-    const matcher = assign(parser, {
-        record,
-        parent,
-        // these needs to be populated by the parent
-        children: [],
-        alias: [],
-    });
-    if (parent) {
-        // both are aliases or both are not aliases
-        // we don't want to mix them because the order is used when
-        // passing originalRecord in Matcher.addRoute
-        if (!matcher.record.aliasOf === !parent.record.aliasOf)
-            parent.children.push(matcher);
-    }
-    return matcher;
-}
-
-/**
- * Creates a Router Matcher.
- *
- * @internal
- * @param routes - array of initial routes
- * @param globalOptions - global route options
- */
-function createRouterMatcher(routes, globalOptions) {
-    // normalized ordered array of matchers
-    const matchers = [];
-    const matcherMap = new Map();
-    globalOptions = mergeOptions({ strict: false, end: true, sensitive: false }, globalOptions);
-    function getRecordMatcher(name) {
-        return matcherMap.get(name);
-    }
-    function addRoute(record, parent, originalRecord) {
-        // used later on to remove by name
-        const isRootAdd = !originalRecord;
-        const mainNormalizedRecord = normalizeRouteRecord(record);
-        // we might be the child of an alias
-        mainNormalizedRecord.aliasOf = originalRecord && originalRecord.record;
-        const options = mergeOptions(globalOptions, record);
-        // generate an array of records to correctly handle aliases
-        const normalizedRecords = [
-            mainNormalizedRecord,
-        ];
-        if ('alias' in record) {
-            const aliases = typeof record.alias === 'string' ? [record.alias] : record.alias;
-            for (const alias of aliases) {
-                normalizedRecords.push(assign({}, mainNormalizedRecord, {
-                    // this allows us to hold a copy of the `components` option
-                    // so that async components cache is hold on the original record
-                    components: originalRecord
-                        ? originalRecord.record.components
-                        : mainNormalizedRecord.components,
-                    path: alias,
-                    // we might be the child of an alias
-                    aliasOf: originalRecord
-                        ? originalRecord.record
-                        : mainNormalizedRecord,
-                    // the aliases are always of the same kind as the original since they
-                    // are defined on the same record
-                }));
-            }
-        }
-        let matcher;
-        let originalMatcher;
-        for (const normalizedRecord of normalizedRecords) {
-            const { path } = normalizedRecord;
-            // Build up the path for nested routes if the child isn't an absolute
-            // route. Only add the / delimiter if the child path isn't empty and if the
-            // parent path doesn't have a trailing slash
-            if (parent && path[0] !== '/') {
-                const parentPath = parent.record.path;
-                const connectingSlash = parentPath[parentPath.length - 1] === '/' ? '' : '/';
-                normalizedRecord.path =
-                    parent.record.path + (path && connectingSlash + path);
-            }
-            if (( true) && normalizedRecord.path === '*') {
-                throw new Error('Catch all routes ("*") must now be defined using a param with a custom regexp.\n' +
-                    'See more at https://next.router.vuejs.org/guide/migration/#removed-star-or-catch-all-routes.');
-            }
-            // create the object before hand so it can be passed to children
-            matcher = createRouteRecordMatcher(normalizedRecord, parent, options);
-            if (( true) && parent && path[0] === '/')
-                checkMissingParamsInAbsolutePath(matcher, parent);
-            // if we are an alias we must tell the original record that we exist
-            // so we can be removed
-            if (originalRecord) {
-                originalRecord.alias.push(matcher);
-                if ((true)) {
-                    checkSameParams(originalRecord, matcher);
-                }
-            }
-            else {
-                // otherwise, the first record is the original and others are aliases
-                originalMatcher = originalMatcher || matcher;
-                if (originalMatcher !== matcher)
-                    originalMatcher.alias.push(matcher);
-                // remove the route if named and only for the top record (avoid in nested calls)
-                // this works because the original record is the first one
-                if (isRootAdd && record.name && !isAliasRecord(matcher))
-                    removeRoute(record.name);
-            }
-            if ('children' in mainNormalizedRecord) {
-                const children = mainNormalizedRecord.children;
-                for (let i = 0; i < children.length; i++) {
-                    addRoute(children[i], matcher, originalRecord && originalRecord.children[i]);
-                }
-            }
-            // if there was no original record, then the first one was not an alias and all
-            // other alias (if any) need to reference this record when adding children
-            originalRecord = originalRecord || matcher;
-            // TODO: add normalized records for more flexibility
-            // if (parent && isAliasRecord(originalRecord)) {
-            //   parent.children.push(originalRecord)
-            // }
-            insertMatcher(matcher);
-        }
-        return originalMatcher
-            ? () => {
-                // since other matchers are aliases, they should be removed by the original matcher
-                removeRoute(originalMatcher);
-            }
-            : noop;
-    }
-    function removeRoute(matcherRef) {
-        if (isRouteName(matcherRef)) {
-            const matcher = matcherMap.get(matcherRef);
-            if (matcher) {
-                matcherMap.delete(matcherRef);
-                matchers.splice(matchers.indexOf(matcher), 1);
-                matcher.children.forEach(removeRoute);
-                matcher.alias.forEach(removeRoute);
-            }
-        }
-        else {
-            const index = matchers.indexOf(matcherRef);
-            if (index > -1) {
-                matchers.splice(index, 1);
-                if (matcherRef.record.name)
-                    matcherMap.delete(matcherRef.record.name);
-                matcherRef.children.forEach(removeRoute);
-                matcherRef.alias.forEach(removeRoute);
-            }
-        }
-    }
-    function getRoutes() {
-        return matchers;
-    }
-    function insertMatcher(matcher) {
-        let i = 0;
-        while (i < matchers.length &&
-            comparePathParserScore(matcher, matchers[i]) >= 0 &&
-            // Adding children with empty path should still appear before the parent
-            // https://github.com/vuejs/router/issues/1124
-            (matcher.record.path !== matchers[i].record.path ||
-                !isRecordChildOf(matcher, matchers[i])))
-            i++;
-        matchers.splice(i, 0, matcher);
-        // only add the original record to the name map
-        if (matcher.record.name && !isAliasRecord(matcher))
-            matcherMap.set(matcher.record.name, matcher);
-    }
-    function resolve(location, currentLocation) {
-        let matcher;
-        let params = {};
-        let path;
-        let name;
-        if ('name' in location && location.name) {
-            matcher = matcherMap.get(location.name);
-            if (!matcher)
-                throw createRouterError(1 /* MATCHER_NOT_FOUND */, {
-                    location,
-                });
-            name = matcher.record.name;
-            params = assign(
-            // paramsFromLocation is a new object
-            paramsFromLocation(currentLocation.params, 
-            // only keep params that exist in the resolved location
-            // TODO: only keep optional params coming from a parent record
-            matcher.keys.filter(k => !k.optional).map(k => k.name)), location.params);
-            // throws if cannot be stringified
-            path = matcher.stringify(params);
-        }
-        else if ('path' in location) {
-            // no need to resolve the path with the matcher as it was provided
-            // this also allows the user to control the encoding
-            path = location.path;
-            if (( true) && !path.startsWith('/')) {
-                warn(`The Matcher cannot resolve relative paths but received "${path}". Unless you directly called \`matcher.resolve("${path}")\`, this is probably a bug in vue-router. Please open an issue at https://new-issue.vuejs.org/?repo=vuejs/router.`);
-            }
-            matcher = matchers.find(m => m.re.test(path));
-            // matcher should have a value after the loop
-            if (matcher) {
-                // TODO: dev warning of unused params if provided
-                // we know the matcher works because we tested the regexp
-                params = matcher.parse(path);
-                name = matcher.record.name;
-            }
-            // location is a relative path
-        }
-        else {
-            // match by name or path of current route
-            matcher = currentLocation.name
-                ? matcherMap.get(currentLocation.name)
-                : matchers.find(m => m.re.test(currentLocation.path));
-            if (!matcher)
-                throw createRouterError(1 /* MATCHER_NOT_FOUND */, {
-                    location,
-                    currentLocation,
-                });
-            name = matcher.record.name;
-            // since we are navigating to the same location, we don't need to pick the
-            // params like when `name` is provided
-            params = assign({}, currentLocation.params, location.params);
-            path = matcher.stringify(params);
-        }
-        const matched = [];
-        let parentMatcher = matcher;
-        while (parentMatcher) {
-            // reversed order so parents are at the beginning
-            matched.unshift(parentMatcher.record);
-            parentMatcher = parentMatcher.parent;
-        }
-        return {
-            name,
-            path,
-            params,
-            matched,
-            meta: mergeMetaFields(matched),
-        };
-    }
-    // add initial routes
-    routes.forEach(route => addRoute(route));
-    return { addRoute, resolve, removeRoute, getRoutes, getRecordMatcher };
-}
-function paramsFromLocation(params, keys) {
-    const newParams = {};
-    for (const key of keys) {
-        if (key in params)
-            newParams[key] = params[key];
-    }
-    return newParams;
-}
-/**
- * Normalizes a RouteRecordRaw. Creates a copy
- *
- * @param record
- * @returns the normalized version
- */
-function normalizeRouteRecord(record) {
-    return {
-        path: record.path,
-        redirect: record.redirect,
-        name: record.name,
-        meta: record.meta || {},
-        aliasOf: undefined,
-        beforeEnter: record.beforeEnter,
-        props: normalizeRecordProps(record),
-        children: record.children || [],
-        instances: {},
-        leaveGuards: new Set(),
-        updateGuards: new Set(),
-        enterCallbacks: {},
-        components: 'components' in record
-            ? record.components || {}
-            : { default: record.component },
-    };
-}
-/**
- * Normalize the optional `props` in a record to always be an object similar to
- * components. Also accept a boolean for components.
- * @param record
- */
-function normalizeRecordProps(record) {
-    const propsObject = {};
-    // props does not exist on redirect records but we can set false directly
-    const props = record.props || false;
-    if ('component' in record) {
-        propsObject.default = props;
-    }
-    else {
-        // NOTE: we could also allow a function to be applied to every component.
-        // Would need user feedback for use cases
-        for (const name in record.components)
-            propsObject[name] = typeof props === 'boolean' ? props : props[name];
-    }
-    return propsObject;
-}
-/**
- * Checks if a record or any of its parent is an alias
- * @param record
- */
-function isAliasRecord(record) {
-    while (record) {
-        if (record.record.aliasOf)
-            return true;
-        record = record.parent;
-    }
-    return false;
-}
-/**
- * Merge meta fields of an array of records
- *
- * @param matched - array of matched records
- */
-function mergeMetaFields(matched) {
-    return matched.reduce((meta, record) => assign(meta, record.meta), {});
-}
-function mergeOptions(defaults, partialOptions) {
-    const options = {};
-    for (const key in defaults) {
-        options[key] = key in partialOptions ? partialOptions[key] : defaults[key];
-    }
-    return options;
-}
-function isSameParam(a, b) {
-    return (a.name === b.name &&
-        a.optional === b.optional &&
-        a.repeatable === b.repeatable);
-}
-/**
- * Check if a path and its alias have the same required params
- *
- * @param a - original record
- * @param b - alias record
- */
-function checkSameParams(a, b) {
-    for (const key of a.keys) {
-        if (!key.optional && !b.keys.find(isSameParam.bind(null, key)))
-            return warn(`Alias "${b.record.path}" and the original record: "${a.record.path}" should have the exact same param named "${key.name}"`);
-    }
-    for (const key of b.keys) {
-        if (!key.optional && !a.keys.find(isSameParam.bind(null, key)))
-            return warn(`Alias "${b.record.path}" and the original record: "${a.record.path}" should have the exact same param named "${key.name}"`);
-    }
-}
-function checkMissingParamsInAbsolutePath(record, parent) {
-    for (const key of parent.keys) {
-        if (!record.keys.find(isSameParam.bind(null, key)))
-            return warn(`Absolute path "${record.record.path}" should have the exact same param named "${key.name}" as its parent "${parent.record.path}".`);
-    }
-}
-function isRecordChildOf(record, parent) {
-    return parent.children.some(child => child === record || isRecordChildOf(record, child));
-}
-
-/**
- * Encoding Rules ␣ = Space Path: ␣ " < > # ? { } Query: ␣ " < > # & = Hash: ␣ "
- * < > `
- *
- * On top of that, the RFC3986 (https://tools.ietf.org/html/rfc3986#section-2.2)
- * defines some extra characters to be encoded. Most browsers do not encode them
- * in encodeURI https://github.com/whatwg/url/issues/369, so it may be safer to
- * also encode `!'()*`. Leaving unencoded only ASCII alphanumeric(`a-zA-Z0-9`)
- * plus `-._~`. This extra safety should be applied to query by patching the
- * string returned by encodeURIComponent encodeURI also encodes `[\]^`. `\`
- * should be encoded to avoid ambiguity. Browsers (IE, FF, C) transform a `\`
- * into a `/` if directly typed in. The _backtick_ (`````) should also be
- * encoded everywhere because some browsers like FF encode it when directly
- * written while others don't. Safari and IE don't encode ``"<>{}``` in hash.
- */
-// const EXTRA_RESERVED_RE = /[!'()*]/g
-// const encodeReservedReplacer = (c: string) => '%' + c.charCodeAt(0).toString(16)
-const HASH_RE = /#/g; // %23
-const AMPERSAND_RE = /&/g; // %26
-const SLASH_RE = /\//g; // %2F
-const EQUAL_RE = /=/g; // %3D
-const IM_RE = /\?/g; // %3F
-const PLUS_RE = /\+/g; // %2B
-/**
- * NOTE: It's not clear to me if we should encode the + symbol in queries, it
- * seems to be less flexible than not doing so and I can't find out the legacy
- * systems requiring this for regular requests like text/html. In the standard,
- * the encoding of the plus character is only mentioned for
- * application/x-www-form-urlencoded
- * (https://url.spec.whatwg.org/#urlencoded-parsing) and most browsers seems lo
- * leave the plus character as is in queries. To be more flexible, we allow the
- * plus character on the query but it can also be manually encoded by the user.
- *
- * Resources:
- * - https://url.spec.whatwg.org/#urlencoded-parsing
- * - https://stackoverflow.com/questions/1634271/url-encoding-the-space-character-or-20
- */
-const ENC_BRACKET_OPEN_RE = /%5B/g; // [
-const ENC_BRACKET_CLOSE_RE = /%5D/g; // ]
-const ENC_CARET_RE = /%5E/g; // ^
-const ENC_BACKTICK_RE = /%60/g; // `
-const ENC_CURLY_OPEN_RE = /%7B/g; // {
-const ENC_PIPE_RE = /%7C/g; // |
-const ENC_CURLY_CLOSE_RE = /%7D/g; // }
-const ENC_SPACE_RE = /%20/g; // }
-/**
- * Encode characters that need to be encoded on the path, search and hash
- * sections of the URL.
- *
- * @internal
- * @param text - string to encode
- * @returns encoded string
- */
-function commonEncode(text) {
-    return encodeURI('' + text)
-        .replace(ENC_PIPE_RE, '|')
-        .replace(ENC_BRACKET_OPEN_RE, '[')
-        .replace(ENC_BRACKET_CLOSE_RE, ']');
-}
-/**
- * Encode characters that need to be encoded on the hash section of the URL.
- *
- * @param text - string to encode
- * @returns encoded string
- */
-function encodeHash(text) {
-    return commonEncode(text)
-        .replace(ENC_CURLY_OPEN_RE, '{')
-        .replace(ENC_CURLY_CLOSE_RE, '}')
-        .replace(ENC_CARET_RE, '^');
-}
-/**
- * Encode characters that need to be encoded query values on the query
- * section of the URL.
- *
- * @param text - string to encode
- * @returns encoded string
- */
-function encodeQueryValue(text) {
-    return (commonEncode(text)
-        // Encode the space as +, encode the + to differentiate it from the space
-        .replace(PLUS_RE, '%2B')
-        .replace(ENC_SPACE_RE, '+')
-        .replace(HASH_RE, '%23')
-        .replace(AMPERSAND_RE, '%26')
-        .replace(ENC_BACKTICK_RE, '`')
-        .replace(ENC_CURLY_OPEN_RE, '{')
-        .replace(ENC_CURLY_CLOSE_RE, '}')
-        .replace(ENC_CARET_RE, '^'));
-}
-/**
- * Like `encodeQueryValue` but also encodes the `=` character.
- *
- * @param text - string to encode
- */
-function encodeQueryKey(text) {
-    return encodeQueryValue(text).replace(EQUAL_RE, '%3D');
-}
-/**
- * Encode characters that need to be encoded on the path section of the URL.
- *
- * @param text - string to encode
- * @returns encoded string
- */
-function encodePath(text) {
-    return commonEncode(text).replace(HASH_RE, '%23').replace(IM_RE, '%3F');
-}
-/**
- * Encode characters that need to be encoded on the path section of the URL as a
- * param. This function encodes everything {@link encodePath} does plus the
- * slash (`/`) character. If `text` is `null` or `undefined`, returns an empty
- * string instead.
- *
- * @param text - string to encode
- * @returns encoded string
- */
-function encodeParam(text) {
-    return text == null ? '' : encodePath(text).replace(SLASH_RE, '%2F');
-}
-/**
- * Decode text using `decodeURIComponent`. Returns the original text if it
- * fails.
- *
- * @param text - string to decode
- * @returns decoded string
- */
-function decode(text) {
-    try {
-        return decodeURIComponent('' + text);
-    }
-    catch (err) {
-        ( true) && warn(`Error decoding "${text}". Using original value`);
-    }
-    return '' + text;
-}
-
-/**
- * Transforms a queryString into a {@link LocationQuery} object. Accept both, a
- * version with the leading `?` and without Should work as URLSearchParams
-
- * @internal
- *
- * @param search - search string to parse
- * @returns a query object
- */
-function parseQuery(search) {
-    const query = {};
-    // avoid creating an object with an empty key and empty value
-    // because of split('&')
-    if (search === '' || search === '?')
-        return query;
-    const hasLeadingIM = search[0] === '?';
-    const searchParams = (hasLeadingIM ? search.slice(1) : search).split('&');
-    for (let i = 0; i < searchParams.length; ++i) {
-        // pre decode the + into space
-        const searchParam = searchParams[i].replace(PLUS_RE, ' ');
-        // allow the = character
-        const eqPos = searchParam.indexOf('=');
-        const key = decode(eqPos < 0 ? searchParam : searchParam.slice(0, eqPos));
-        const value = eqPos < 0 ? null : decode(searchParam.slice(eqPos + 1));
-        if (key in query) {
-            // an extra variable for ts types
-            let currentValue = query[key];
-            if (!Array.isArray(currentValue)) {
-                currentValue = query[key] = [currentValue];
-            }
-            currentValue.push(value);
-        }
-        else {
-            query[key] = value;
-        }
-    }
-    return query;
-}
-/**
- * Stringifies a {@link LocationQueryRaw} object. Like `URLSearchParams`, it
- * doesn't prepend a `?`
- *
- * @internal
- *
- * @param query - query object to stringify
- * @returns string version of the query without the leading `?`
- */
-function stringifyQuery(query) {
-    let search = '';
-    for (let key in query) {
-        const value = query[key];
-        key = encodeQueryKey(key);
-        if (value == null) {
-            // only null adds the value
-            if (value !== undefined) {
-                search += (search.length ? '&' : '') + key;
-            }
-            continue;
-        }
-        // keep null values
-        const values = Array.isArray(value)
-            ? value.map(v => v && encodeQueryValue(v))
-            : [value && encodeQueryValue(value)];
-        values.forEach(value => {
-            // skip undefined values in arrays as if they were not present
-            // smaller code than using filter
-            if (value !== undefined) {
-                // only append & with non-empty search
-                search += (search.length ? '&' : '') + key;
-                if (value != null)
-                    search += '=' + value;
-            }
-        });
-    }
-    return search;
-}
-/**
- * Transforms a {@link LocationQueryRaw} into a {@link LocationQuery} by casting
- * numbers into strings, removing keys with an undefined value and replacing
- * undefined with null in arrays
- *
- * @param query - query object to normalize
- * @returns a normalized query object
- */
-function normalizeQuery(query) {
-    const normalizedQuery = {};
-    for (const key in query) {
-        const value = query[key];
-        if (value !== undefined) {
-            normalizedQuery[key] = Array.isArray(value)
-                ? value.map(v => (v == null ? null : '' + v))
-                : value == null
-                    ? value
-                    : '' + value;
-        }
-    }
-    return normalizedQuery;
-}
-
-/**
- * Create a list of callbacks that can be reset. Used to create before and after navigation guards list
- */
-function useCallbacks() {
-    let handlers = [];
-    function add(handler) {
-        handlers.push(handler);
-        return () => {
-            const i = handlers.indexOf(handler);
-            if (i > -1)
-                handlers.splice(i, 1);
-        };
-    }
-    function reset() {
-        handlers = [];
-    }
-    return {
-        add,
-        list: () => handlers,
-        reset,
-    };
-}
-
-function registerGuard(record, name, guard) {
-    const removeFromList = () => {
-        record[name].delete(guard);
-    };
-    (0,vue__WEBPACK_IMPORTED_MODULE_0__.onUnmounted)(removeFromList);
-    (0,vue__WEBPACK_IMPORTED_MODULE_0__.onDeactivated)(removeFromList);
-    (0,vue__WEBPACK_IMPORTED_MODULE_0__.onActivated)(() => {
-        record[name].add(guard);
-    });
-    record[name].add(guard);
-}
-/**
- * Add a navigation guard that triggers whenever the component for the current
- * location is about to be left. Similar to {@link beforeRouteLeave} but can be
- * used in any component. The guard is removed when the component is unmounted.
- *
- * @param leaveGuard - {@link NavigationGuard}
- */
-function onBeforeRouteLeave(leaveGuard) {
-    if (( true) && !(0,vue__WEBPACK_IMPORTED_MODULE_0__.getCurrentInstance)()) {
-        warn('getCurrentInstance() returned null. onBeforeRouteLeave() must be called at the top of a setup function');
-        return;
-    }
-    const activeRecord = (0,vue__WEBPACK_IMPORTED_MODULE_0__.inject)(matchedRouteKey, 
-    // to avoid warning
-    {}).value;
-    if (!activeRecord) {
-        ( true) &&
-            warn('No active route record was found when calling `onBeforeRouteLeave()`. Make sure you call this function inside of a component child of <router-view>. Maybe you called it inside of App.vue?');
-        return;
-    }
-    registerGuard(activeRecord, 'leaveGuards', leaveGuard);
-}
-/**
- * Add a navigation guard that triggers whenever the current location is about
- * to be updated. Similar to {@link beforeRouteUpdate} but can be used in any
- * component. The guard is removed when the component is unmounted.
- *
- * @param updateGuard - {@link NavigationGuard}
- */
-function onBeforeRouteUpdate(updateGuard) {
-    if (( true) && !(0,vue__WEBPACK_IMPORTED_MODULE_0__.getCurrentInstance)()) {
-        warn('getCurrentInstance() returned null. onBeforeRouteUpdate() must be called at the top of a setup function');
-        return;
-    }
-    const activeRecord = (0,vue__WEBPACK_IMPORTED_MODULE_0__.inject)(matchedRouteKey, 
-    // to avoid warning
-    {}).value;
-    if (!activeRecord) {
-        ( true) &&
-            warn('No active route record was found when calling `onBeforeRouteUpdate()`. Make sure you call this function inside of a component child of <router-view>. Maybe you called it inside of App.vue?');
-        return;
-    }
-    registerGuard(activeRecord, 'updateGuards', updateGuard);
-}
-function guardToPromiseFn(guard, to, from, record, name) {
-    // keep a reference to the enterCallbackArray to prevent pushing callbacks if a new navigation took place
-    const enterCallbackArray = record &&
-        // name is defined if record is because of the function overload
-        (record.enterCallbacks[name] = record.enterCallbacks[name] || []);
-    return () => new Promise((resolve, reject) => {
-        const next = (valid) => {
-            if (valid === false)
-                reject(createRouterError(4 /* NAVIGATION_ABORTED */, {
-                    from,
-                    to,
-                }));
-            else if (valid instanceof Error) {
-                reject(valid);
-            }
-            else if (isRouteLocation(valid)) {
-                reject(createRouterError(2 /* NAVIGATION_GUARD_REDIRECT */, {
-                    from: to,
-                    to: valid,
-                }));
-            }
-            else {
-                if (enterCallbackArray &&
-                    // since enterCallbackArray is truthy, both record and name also are
-                    record.enterCallbacks[name] === enterCallbackArray &&
-                    typeof valid === 'function')
-                    enterCallbackArray.push(valid);
-                resolve();
-            }
-        };
-        // wrapping with Promise.resolve allows it to work with both async and sync guards
-        const guardReturn = guard.call(record && record.instances[name], to, from, ( true) ? canOnlyBeCalledOnce(next, to, from) : 0);
-        let guardCall = Promise.resolve(guardReturn);
-        if (guard.length < 3)
-            guardCall = guardCall.then(next);
-        if (( true) && guard.length > 2) {
-            const message = `The "next" callback was never called inside of ${guard.name ? '"' + guard.name + '"' : ''}:\n${guard.toString()}\n. If you are returning a value instead of calling "next", make sure to remove the "next" parameter from your function.`;
-            if (typeof guardReturn === 'object' && 'then' in guardReturn) {
-                guardCall = guardCall.then(resolvedValue => {
-                    // @ts-expect-error: _called is added at canOnlyBeCalledOnce
-                    if (!next._called) {
-                        warn(message);
-                        return Promise.reject(new Error('Invalid navigation guard'));
-                    }
-                    return resolvedValue;
-                });
-                // TODO: test me!
-            }
-            else if (guardReturn !== undefined) {
-                // @ts-expect-error: _called is added at canOnlyBeCalledOnce
-                if (!next._called) {
-                    warn(message);
-                    reject(new Error('Invalid navigation guard'));
-                    return;
-                }
-            }
-        }
-        guardCall.catch(err => reject(err));
-    });
-}
-function canOnlyBeCalledOnce(next, to, from) {
-    let called = 0;
-    return function () {
-        if (called++ === 1)
-            warn(`The "next" callback was called more than once in one navigation guard when going from "${from.fullPath}" to "${to.fullPath}". It should be called exactly one time in each navigation guard. This will fail in production.`);
-        // @ts-expect-error: we put it in the original one because it's easier to check
-        next._called = true;
-        if (called === 1)
-            next.apply(null, arguments);
-    };
-}
-function extractComponentsGuards(matched, guardType, to, from) {
-    const guards = [];
-    for (const record of matched) {
-        for (const name in record.components) {
-            let rawComponent = record.components[name];
-            if ((true)) {
-                if (!rawComponent ||
-                    (typeof rawComponent !== 'object' &&
-                        typeof rawComponent !== 'function')) {
-                    warn(`Component "${name}" in record with path "${record.path}" is not` +
-                        ` a valid component. Received "${String(rawComponent)}".`);
-                    // throw to ensure we stop here but warn to ensure the message isn't
-                    // missed by the user
-                    throw new Error('Invalid route component');
-                }
-                else if ('then' in rawComponent) {
-                    // warn if user wrote import('/component.vue') instead of () =>
-                    // import('./component.vue')
-                    warn(`Component "${name}" in record with path "${record.path}" is a ` +
-                        `Promise instead of a function that returns a Promise. Did you ` +
-                        `write "import('./MyPage.vue')" instead of ` +
-                        `"() => import('./MyPage.vue')" ? This will break in ` +
-                        `production if not fixed.`);
-                    const promise = rawComponent;
-                    rawComponent = () => promise;
-                }
-                else if (rawComponent.__asyncLoader &&
-                    // warn only once per component
-                    !rawComponent.__warnedDefineAsync) {
-                    rawComponent.__warnedDefineAsync = true;
-                    warn(`Component "${name}" in record with path "${record.path}" is defined ` +
-                        `using "defineAsyncComponent()". ` +
-                        `Write "() => import('./MyPage.vue')" instead of ` +
-                        `"defineAsyncComponent(() => import('./MyPage.vue'))".`);
-                }
-            }
-            // skip update and leave guards if the route component is not mounted
-            if (guardType !== 'beforeRouteEnter' && !record.instances[name])
-                continue;
-            if (isRouteComponent(rawComponent)) {
-                // __vccOpts is added by vue-class-component and contain the regular options
-                const options = rawComponent.__vccOpts || rawComponent;
-                const guard = options[guardType];
-                guard && guards.push(guardToPromiseFn(guard, to, from, record, name));
-            }
-            else {
-                // start requesting the chunk already
-                let componentPromise = rawComponent();
-                if (( true) && !('catch' in componentPromise)) {
-                    warn(`Component "${name}" in record with path "${record.path}" is a function that does not return a Promise. If you were passing a functional component, make sure to add a "displayName" to the component. This will break in production if not fixed.`);
-                    componentPromise = Promise.resolve(componentPromise);
-                }
-                guards.push(() => componentPromise.then(resolved => {
-                    if (!resolved)
-                        return Promise.reject(new Error(`Couldn't resolve component "${name}" at "${record.path}"`));
-                    const resolvedComponent = isESModule(resolved)
-                        ? resolved.default
-                        : resolved;
-                    // replace the function with the resolved component
-                    record.components[name] = resolvedComponent;
-                    // __vccOpts is added by vue-class-component and contain the regular options
-                    const options = resolvedComponent.__vccOpts || resolvedComponent;
-                    const guard = options[guardType];
-                    return guard && guardToPromiseFn(guard, to, from, record, name)();
-                }));
-            }
-        }
-    }
-    return guards;
-}
-/**
- * Allows differentiating lazy components from functional components and vue-class-component
- *
- * @param component
- */
-function isRouteComponent(component) {
-    return (typeof component === 'object' ||
-        'displayName' in component ||
-        'props' in component ||
-        '__vccOpts' in component);
-}
-
-// TODO: we could allow currentRoute as a prop to expose `isActive` and
-// `isExactActive` behavior should go through an RFC
-function useLink(props) {
-    const router = (0,vue__WEBPACK_IMPORTED_MODULE_0__.inject)(routerKey);
-    const currentRoute = (0,vue__WEBPACK_IMPORTED_MODULE_0__.inject)(routeLocationKey);
-    const route = (0,vue__WEBPACK_IMPORTED_MODULE_0__.computed)(() => router.resolve((0,vue__WEBPACK_IMPORTED_MODULE_0__.unref)(props.to)));
-    const activeRecordIndex = (0,vue__WEBPACK_IMPORTED_MODULE_0__.computed)(() => {
-        const { matched } = route.value;
-        const { length } = matched;
-        const routeMatched = matched[length - 1];
-        const currentMatched = currentRoute.matched;
-        if (!routeMatched || !currentMatched.length)
-            return -1;
-        const index = currentMatched.findIndex(isSameRouteRecord.bind(null, routeMatched));
-        if (index > -1)
-            return index;
-        // possible parent record
-        const parentRecordPath = getOriginalPath(matched[length - 2]);
-        return (
-        // we are dealing with nested routes
-        length > 1 &&
-            // if the parent and matched route have the same path, this link is
-            // referring to the empty child. Or we currently are on a different
-            // child of the same parent
-            getOriginalPath(routeMatched) === parentRecordPath &&
-            // avoid comparing the child with its parent
-            currentMatched[currentMatched.length - 1].path !== parentRecordPath
-            ? currentMatched.findIndex(isSameRouteRecord.bind(null, matched[length - 2]))
-            : index);
-    });
-    const isActive = (0,vue__WEBPACK_IMPORTED_MODULE_0__.computed)(() => activeRecordIndex.value > -1 &&
-        includesParams(currentRoute.params, route.value.params));
-    const isExactActive = (0,vue__WEBPACK_IMPORTED_MODULE_0__.computed)(() => activeRecordIndex.value > -1 &&
-        activeRecordIndex.value === currentRoute.matched.length - 1 &&
-        isSameRouteLocationParams(currentRoute.params, route.value.params));
-    function navigate(e = {}) {
-        if (guardEvent(e)) {
-            return router[(0,vue__WEBPACK_IMPORTED_MODULE_0__.unref)(props.replace) ? 'replace' : 'push']((0,vue__WEBPACK_IMPORTED_MODULE_0__.unref)(props.to)
-            // avoid uncaught errors are they are logged anyway
-            ).catch(noop);
-        }
-        return Promise.resolve();
-    }
-    // devtools only
-    if (( true) && isBrowser) {
-        const instance = (0,vue__WEBPACK_IMPORTED_MODULE_0__.getCurrentInstance)();
-        if (instance) {
-            const linkContextDevtools = {
-                route: route.value,
-                isActive: isActive.value,
-                isExactActive: isExactActive.value,
-            };
-            // @ts-expect-error: this is internal
-            instance.__vrl_devtools = instance.__vrl_devtools || [];
-            // @ts-expect-error: this is internal
-            instance.__vrl_devtools.push(linkContextDevtools);
-            (0,vue__WEBPACK_IMPORTED_MODULE_0__.watchEffect)(() => {
-                linkContextDevtools.route = route.value;
-                linkContextDevtools.isActive = isActive.value;
-                linkContextDevtools.isExactActive = isExactActive.value;
-            }, { flush: 'post' });
-        }
-    }
-    return {
-        route,
-        href: (0,vue__WEBPACK_IMPORTED_MODULE_0__.computed)(() => route.value.href),
-        isActive,
-        isExactActive,
-        navigate,
-    };
-}
-const RouterLinkImpl = /*#__PURE__*/ (0,vue__WEBPACK_IMPORTED_MODULE_0__.defineComponent)({
-    name: 'RouterLink',
-    props: {
-        to: {
-            type: [String, Object],
-            required: true,
-        },
-        replace: Boolean,
-        activeClass: String,
-        // inactiveClass: String,
-        exactActiveClass: String,
-        custom: Boolean,
-        ariaCurrentValue: {
-            type: String,
-            default: 'page',
-        },
-    },
-    useLink,
-    setup(props, { slots }) {
-        const link = (0,vue__WEBPACK_IMPORTED_MODULE_0__.reactive)(useLink(props));
-        const { options } = (0,vue__WEBPACK_IMPORTED_MODULE_0__.inject)(routerKey);
-        const elClass = (0,vue__WEBPACK_IMPORTED_MODULE_0__.computed)(() => ({
-            [getLinkClass(props.activeClass, options.linkActiveClass, 'router-link-active')]: link.isActive,
-            // [getLinkClass(
-            //   props.inactiveClass,
-            //   options.linkInactiveClass,
-            //   'router-link-inactive'
-            // )]: !link.isExactActive,
-            [getLinkClass(props.exactActiveClass, options.linkExactActiveClass, 'router-link-exact-active')]: link.isExactActive,
-        }));
-        return () => {
-            const children = slots.default && slots.default(link);
-            return props.custom
-                ? children
-                : (0,vue__WEBPACK_IMPORTED_MODULE_0__.h)('a', {
-                    'aria-current': link.isExactActive
-                        ? props.ariaCurrentValue
-                        : null,
-                    href: link.href,
-                    // this would override user added attrs but Vue will still add
-                    // the listener so we end up triggering both
-                    onClick: link.navigate,
-                    class: elClass.value,
-                }, children);
-        };
-    },
-});
-// export the public type for h/tsx inference
-// also to avoid inline import() in generated d.ts files
-/**
- * Component to render a link that triggers a navigation on click.
- */
-const RouterLink = RouterLinkImpl;
-function guardEvent(e) {
-    // don't redirect with control keys
-    if (e.metaKey || e.altKey || e.ctrlKey || e.shiftKey)
-        return;
-    // don't redirect when preventDefault called
-    if (e.defaultPrevented)
-        return;
-    // don't redirect on right click
-    if (e.button !== undefined && e.button !== 0)
-        return;
-    // don't redirect if `target="_blank"`
-    // @ts-expect-error getAttribute does exist
-    if (e.currentTarget && e.currentTarget.getAttribute) {
-        // @ts-expect-error getAttribute exists
-        const target = e.currentTarget.getAttribute('target');
-        if (/\b_blank\b/i.test(target))
-            return;
-    }
-    // this may be a Weex event which doesn't have this method
-    if (e.preventDefault)
-        e.preventDefault();
-    return true;
-}
-function includesParams(outer, inner) {
-    for (const key in inner) {
-        const innerValue = inner[key];
-        const outerValue = outer[key];
-        if (typeof innerValue === 'string') {
-            if (innerValue !== outerValue)
-                return false;
-        }
-        else {
-            if (!Array.isArray(outerValue) ||
-                outerValue.length !== innerValue.length ||
-                innerValue.some((value, i) => value !== outerValue[i]))
-                return false;
-        }
-    }
-    return true;
-}
-/**
- * Get the original path value of a record by following its aliasOf
- * @param record
- */
-function getOriginalPath(record) {
-    return record ? (record.aliasOf ? record.aliasOf.path : record.path) : '';
-}
-/**
- * Utility class to get the active class based on defaults.
- * @param propClass
- * @param globalClass
- * @param defaultClass
- */
-const getLinkClass = (propClass, globalClass, defaultClass) => propClass != null
-    ? propClass
-    : globalClass != null
-        ? globalClass
-        : defaultClass;
-
-const RouterViewImpl = /*#__PURE__*/ (0,vue__WEBPACK_IMPORTED_MODULE_0__.defineComponent)({
-    name: 'RouterView',
-    // #674 we manually inherit them
-    inheritAttrs: false,
-    props: {
-        name: {
-            type: String,
-            default: 'default',
-        },
-        route: Object,
-    },
-    setup(props, { attrs, slots }) {
-        ( true) && warnDeprecatedUsage();
-        const injectedRoute = (0,vue__WEBPACK_IMPORTED_MODULE_0__.inject)(routerViewLocationKey);
-        const routeToDisplay = (0,vue__WEBPACK_IMPORTED_MODULE_0__.computed)(() => props.route || injectedRoute.value);
-        const depth = (0,vue__WEBPACK_IMPORTED_MODULE_0__.inject)(viewDepthKey, 0);
-        const matchedRouteRef = (0,vue__WEBPACK_IMPORTED_MODULE_0__.computed)(() => routeToDisplay.value.matched[depth]);
-        (0,vue__WEBPACK_IMPORTED_MODULE_0__.provide)(viewDepthKey, depth + 1);
-        (0,vue__WEBPACK_IMPORTED_MODULE_0__.provide)(matchedRouteKey, matchedRouteRef);
-        (0,vue__WEBPACK_IMPORTED_MODULE_0__.provide)(routerViewLocationKey, routeToDisplay);
-        const viewRef = (0,vue__WEBPACK_IMPORTED_MODULE_0__.ref)();
-        // watch at the same time the component instance, the route record we are
-        // rendering, and the name
-        (0,vue__WEBPACK_IMPORTED_MODULE_0__.watch)(() => [viewRef.value, matchedRouteRef.value, props.name], ([instance, to, name], [oldInstance, from, oldName]) => {
-            // copy reused instances
-            if (to) {
-                // this will update the instance for new instances as well as reused
-                // instances when navigating to a new route
-                to.instances[name] = instance;
-                // the component instance is reused for a different route or name so
-                // we copy any saved update or leave guards. With async setup, the
-                // mounting component will mount before the matchedRoute changes,
-                // making instance === oldInstance, so we check if guards have been
-                // added before. This works because we remove guards when
-                // unmounting/deactivating components
-                if (from && from !== to && instance && instance === oldInstance) {
-                    if (!to.leaveGuards.size) {
-                        to.leaveGuards = from.leaveGuards;
-                    }
-                    if (!to.updateGuards.size) {
-                        to.updateGuards = from.updateGuards;
-                    }
-                }
-            }
-            // trigger beforeRouteEnter next callbacks
-            if (instance &&
-                to &&
-                // if there is no instance but to and from are the same this might be
-                // the first visit
-                (!from || !isSameRouteRecord(to, from) || !oldInstance)) {
-                (to.enterCallbacks[name] || []).forEach(callback => callback(instance));
-            }
-        }, { flush: 'post' });
-        return () => {
-            const route = routeToDisplay.value;
-            const matchedRoute = matchedRouteRef.value;
-            const ViewComponent = matchedRoute && matchedRoute.components[props.name];
-            // we need the value at the time we render because when we unmount, we
-            // navigated to a different location so the value is different
-            const currentName = props.name;
-            if (!ViewComponent) {
-                return normalizeSlot(slots.default, { Component: ViewComponent, route });
-            }
-            // props from route configuration
-            const routePropsOption = matchedRoute.props[props.name];
-            const routeProps = routePropsOption
-                ? routePropsOption === true
-                    ? route.params
-                    : typeof routePropsOption === 'function'
-                        ? routePropsOption(route)
-                        : routePropsOption
-                : null;
-            const onVnodeUnmounted = vnode => {
-                // remove the instance reference to prevent leak
-                if (vnode.component.isUnmounted) {
-                    matchedRoute.instances[currentName] = null;
-                }
-            };
-            const component = (0,vue__WEBPACK_IMPORTED_MODULE_0__.h)(ViewComponent, assign({}, routeProps, attrs, {
-                onVnodeUnmounted,
-                ref: viewRef,
-            }));
-            if (( true) &&
-                isBrowser &&
-                component.ref) {
-                // TODO: can display if it's an alias, its props
-                const info = {
-                    depth,
-                    name: matchedRoute.name,
-                    path: matchedRoute.path,
-                    meta: matchedRoute.meta,
-                };
-                const internalInstances = Array.isArray(component.ref)
-                    ? component.ref.map(r => r.i)
-                    : [component.ref.i];
-                internalInstances.forEach(instance => {
-                    // @ts-expect-error
-                    instance.__vrv_devtools = info;
-                });
-            }
-            return (
-            // pass the vnode to the slot as a prop.
-            // h and <component :is="..."> both accept vnodes
-            normalizeSlot(slots.default, { Component: component, route }) ||
-                component);
-        };
-    },
-});
-function normalizeSlot(slot, data) {
-    if (!slot)
-        return null;
-    const slotContent = slot(data);
-    return slotContent.length === 1 ? slotContent[0] : slotContent;
-}
-// export the public type for h/tsx inference
-// also to avoid inline import() in generated d.ts files
-/**
- * Component to display the current route the user is at.
- */
-const RouterView = RouterViewImpl;
-// warn against deprecated usage with <transition> & <keep-alive>
-// due to functional component being no longer eager in Vue 3
-function warnDeprecatedUsage() {
-    const instance = (0,vue__WEBPACK_IMPORTED_MODULE_0__.getCurrentInstance)();
-    const parentName = instance.parent && instance.parent.type.name;
-    if (parentName &&
-        (parentName === 'KeepAlive' || parentName.includes('Transition'))) {
-        const comp = parentName === 'KeepAlive' ? 'keep-alive' : 'transition';
-        warn(`<router-view> can no longer be used directly inside <transition> or <keep-alive>.\n` +
-            `Use slot props instead:\n\n` +
-            `<router-view v-slot="{ Component }">\n` +
-            `  <${comp}>\n` +
-            `    <component :is="Component" />\n` +
-            `  </${comp}>\n` +
-            `</router-view>`);
-    }
-}
-
-function formatRouteLocation(routeLocation, tooltip) {
-    const copy = assign({}, routeLocation, {
-        // remove variables that can contain vue instances
-        matched: routeLocation.matched.map(matched => omit(matched, ['instances', 'children', 'aliasOf'])),
-    });
-    return {
-        _custom: {
-            type: null,
-            readOnly: true,
-            display: routeLocation.fullPath,
-            tooltip,
-            value: copy,
-        },
-    };
-}
-function formatDisplay(display) {
-    return {
-        _custom: {
-            display,
-        },
-    };
-}
-// to support multiple router instances
-let routerId = 0;
-function addDevtools(app, router, matcher) {
-    // Take over router.beforeEach and afterEach
-    // make sure we are not registering the devtool twice
-    if (router.__hasDevtools)
-        return;
-    router.__hasDevtools = true;
-    // increment to support multiple router instances
-    const id = routerId++;
-    (0,_vue_devtools_api__WEBPACK_IMPORTED_MODULE_1__.setupDevtoolsPlugin)({
-        id: 'org.vuejs.router' + (id ? '.' + id : ''),
-        label: 'Vue Router',
-        packageName: 'vue-router',
-        homepage: 'https://router.vuejs.org',
-        logo: 'https://router.vuejs.org/logo.png',
-        componentStateTypes: ['Routing'],
-        app,
-    }, api => {
-        // display state added by the router
-        api.on.inspectComponent((payload, ctx) => {
-            if (payload.instanceData) {
-                payload.instanceData.state.push({
-                    type: 'Routing',
-                    key: '$route',
-                    editable: false,
-                    value: formatRouteLocation(router.currentRoute.value, 'Current Route'),
-                });
-            }
-        });
-        // mark router-link as active and display tags on router views
-        api.on.visitComponentTree(({ treeNode: node, componentInstance }) => {
-            if (componentInstance.__vrv_devtools) {
-                const info = componentInstance.__vrv_devtools;
-                node.tags.push({
-                    label: (info.name ? `${info.name.toString()}: ` : '') + info.path,
-                    textColor: 0,
-                    tooltip: 'This component is rendered by &lt;router-view&gt;',
-                    backgroundColor: PINK_500,
-                });
-            }
-            // if multiple useLink are used
-            if (Array.isArray(componentInstance.__vrl_devtools)) {
-                componentInstance.__devtoolsApi = api;
-                componentInstance.__vrl_devtools.forEach(devtoolsData => {
-                    let backgroundColor = ORANGE_400;
-                    let tooltip = '';
-                    if (devtoolsData.isExactActive) {
-                        backgroundColor = LIME_500;
-                        tooltip = 'This is exactly active';
-                    }
-                    else if (devtoolsData.isActive) {
-                        backgroundColor = BLUE_600;
-                        tooltip = 'This link is active';
-                    }
-                    node.tags.push({
-                        label: devtoolsData.route.path,
-                        textColor: 0,
-                        tooltip,
-                        backgroundColor,
-                    });
-                });
-            }
-        });
-        (0,vue__WEBPACK_IMPORTED_MODULE_0__.watch)(router.currentRoute, () => {
-            // refresh active state
-            refreshRoutesView();
-            api.notifyComponentUpdate();
-            api.sendInspectorTree(routerInspectorId);
-            api.sendInspectorState(routerInspectorId);
-        });
-        const navigationsLayerId = 'router:navigations:' + id;
-        api.addTimelineLayer({
-            id: navigationsLayerId,
-            label: `Router${id ? ' ' + id : ''} Navigations`,
-            color: 0x40a8c4,
-        });
-        // const errorsLayerId = 'router:errors'
-        // api.addTimelineLayer({
-        //   id: errorsLayerId,
-        //   label: 'Router Errors',
-        //   color: 0xea5455,
-        // })
-        router.onError((error, to) => {
-            api.addTimelineEvent({
-                layerId: navigationsLayerId,
-                event: {
-                    title: 'Error during Navigation',
-                    subtitle: to.fullPath,
-                    logType: 'error',
-                    time: Date.now(),
-                    data: { error },
-                    groupId: to.meta.__navigationId,
-                },
-            });
-        });
-        // attached to `meta` and used to group events
-        let navigationId = 0;
-        router.beforeEach((to, from) => {
-            const data = {
-                guard: formatDisplay('beforeEach'),
-                from: formatRouteLocation(from, 'Current Location during this navigation'),
-                to: formatRouteLocation(to, 'Target location'),
-            };
-            // Used to group navigations together, hide from devtools
-            Object.defineProperty(to.meta, '__navigationId', {
-                value: navigationId++,
-            });
-            api.addTimelineEvent({
-                layerId: navigationsLayerId,
-                event: {
-                    time: Date.now(),
-                    title: 'Start of navigation',
-                    subtitle: to.fullPath,
-                    data,
-                    groupId: to.meta.__navigationId,
-                },
-            });
-        });
-        router.afterEach((to, from, failure) => {
-            const data = {
-                guard: formatDisplay('afterEach'),
-            };
-            if (failure) {
-                data.failure = {
-                    _custom: {
-                        type: Error,
-                        readOnly: true,
-                        display: failure ? failure.message : '',
-                        tooltip: 'Navigation Failure',
-                        value: failure,
-                    },
-                };
-                data.status = formatDisplay('❌');
-            }
-            else {
-                data.status = formatDisplay('✅');
-            }
-            // we set here to have the right order
-            data.from = formatRouteLocation(from, 'Current Location during this navigation');
-            data.to = formatRouteLocation(to, 'Target location');
-            api.addTimelineEvent({
-                layerId: navigationsLayerId,
-                event: {
-                    title: 'End of navigation',
-                    subtitle: to.fullPath,
-                    time: Date.now(),
-                    data,
-                    logType: failure ? 'warning' : 'default',
-                    groupId: to.meta.__navigationId,
-                },
-            });
-        });
-        /**
-         * Inspector of Existing routes
-         */
-        const routerInspectorId = 'router-inspector:' + id;
-        api.addInspector({
-            id: routerInspectorId,
-            label: 'Routes' + (id ? ' ' + id : ''),
-            icon: 'book',
-            treeFilterPlaceholder: 'Search routes',
-        });
-        function refreshRoutesView() {
-            // the routes view isn't active
-            if (!activeRoutesPayload)
-                return;
-            const payload = activeRoutesPayload;
-            // children routes will appear as nested
-            let routes = matcher.getRoutes().filter(route => !route.parent);
-            // reset match state to false
-            routes.forEach(resetMatchStateOnRouteRecord);
-            // apply a match state if there is a payload
-            if (payload.filter) {
-                routes = routes.filter(route => 
-                // save matches state based on the payload
-                isRouteMatching(route, payload.filter.toLowerCase()));
-            }
-            // mark active routes
-            routes.forEach(route => markRouteRecordActive(route, router.currentRoute.value));
-            payload.rootNodes = routes.map(formatRouteRecordForInspector);
-        }
-        let activeRoutesPayload;
-        api.on.getInspectorTree(payload => {
-            activeRoutesPayload = payload;
-            if (payload.app === app && payload.inspectorId === routerInspectorId) {
-                refreshRoutesView();
-            }
-        });
-        /**
-         * Display information about the currently selected route record
-         */
-        api.on.getInspectorState(payload => {
-            if (payload.app === app && payload.inspectorId === routerInspectorId) {
-                const routes = matcher.getRoutes();
-                const route = routes.find(route => route.record.__vd_id === payload.nodeId);
-                if (route) {
-                    payload.state = {
-                        options: formatRouteRecordMatcherForStateInspector(route),
-                    };
-                }
-            }
-        });
-        api.sendInspectorTree(routerInspectorId);
-        api.sendInspectorState(routerInspectorId);
-    });
-}
-function modifierForKey(key) {
-    if (key.optional) {
-        return key.repeatable ? '*' : '?';
-    }
-    else {
-        return key.repeatable ? '+' : '';
-    }
-}
-function formatRouteRecordMatcherForStateInspector(route) {
-    const { record } = route;
-    const fields = [
-        { editable: false, key: 'path', value: record.path },
-    ];
-    if (record.name != null) {
-        fields.push({
-            editable: false,
-            key: 'name',
-            value: record.name,
-        });
-    }
-    fields.push({ editable: false, key: 'regexp', value: route.re });
-    if (route.keys.length) {
-        fields.push({
-            editable: false,
-            key: 'keys',
-            value: {
-                _custom: {
-                    type: null,
-                    readOnly: true,
-                    display: route.keys
-                        .map(key => `${key.name}${modifierForKey(key)}`)
-                        .join(' '),
-                    tooltip: 'Param keys',
-                    value: route.keys,
-                },
-            },
-        });
-    }
-    if (record.redirect != null) {
-        fields.push({
-            editable: false,
-            key: 'redirect',
-            value: record.redirect,
-        });
-    }
-    if (route.alias.length) {
-        fields.push({
-            editable: false,
-            key: 'aliases',
-            value: route.alias.map(alias => alias.record.path),
-        });
-    }
-    fields.push({
-        key: 'score',
-        editable: false,
-        value: {
-            _custom: {
-                type: null,
-                readOnly: true,
-                display: route.score.map(score => score.join(', ')).join(' | '),
-                tooltip: 'Score used to sort routes',
-                value: route.score,
-            },
-        },
-    });
-    return fields;
-}
-/**
- * Extracted from tailwind palette
- */
-const PINK_500 = 0xec4899;
-const BLUE_600 = 0x2563eb;
-const LIME_500 = 0x84cc16;
-const CYAN_400 = 0x22d3ee;
-const ORANGE_400 = 0xfb923c;
-// const GRAY_100 = 0xf4f4f5
-const DARK = 0x666666;
-function formatRouteRecordForInspector(route) {
-    const tags = [];
-    const { record } = route;
-    if (record.name != null) {
-        tags.push({
-            label: String(record.name),
-            textColor: 0,
-            backgroundColor: CYAN_400,
-        });
-    }
-    if (record.aliasOf) {
-        tags.push({
-            label: 'alias',
-            textColor: 0,
-            backgroundColor: ORANGE_400,
-        });
-    }
-    if (route.__vd_match) {
-        tags.push({
-            label: 'matches',
-            textColor: 0,
-            backgroundColor: PINK_500,
-        });
-    }
-    if (route.__vd_exactActive) {
-        tags.push({
-            label: 'exact',
-            textColor: 0,
-            backgroundColor: LIME_500,
-        });
-    }
-    if (route.__vd_active) {
-        tags.push({
-            label: 'active',
-            textColor: 0,
-            backgroundColor: BLUE_600,
-        });
-    }
-    if (record.redirect) {
-        tags.push({
-            label: 'redirect: ' +
-                (typeof record.redirect === 'string' ? record.redirect : 'Object'),
-            textColor: 0xffffff,
-            backgroundColor: DARK,
-        });
-    }
-    // add an id to be able to select it. Using the `path` is not possible because
-    // empty path children would collide with their parents
-    let id = record.__vd_id;
-    if (id == null) {
-        id = String(routeRecordId++);
-        record.__vd_id = id;
-    }
-    return {
-        id,
-        label: record.path,
-        tags,
-        children: route.children.map(formatRouteRecordForInspector),
-    };
-}
-//  incremental id for route records and inspector state
-let routeRecordId = 0;
-const EXTRACT_REGEXP_RE = /^\/(.*)\/([a-z]*)$/;
-function markRouteRecordActive(route, currentRoute) {
-    // no route will be active if matched is empty
-    // reset the matching state
-    const isExactActive = currentRoute.matched.length &&
-        isSameRouteRecord(currentRoute.matched[currentRoute.matched.length - 1], route.record);
-    route.__vd_exactActive = route.__vd_active = isExactActive;
-    if (!isExactActive) {
-        route.__vd_active = currentRoute.matched.some(match => isSameRouteRecord(match, route.record));
-    }
-    route.children.forEach(childRoute => markRouteRecordActive(childRoute, currentRoute));
-}
-function resetMatchStateOnRouteRecord(route) {
-    route.__vd_match = false;
-    route.children.forEach(resetMatchStateOnRouteRecord);
-}
-function isRouteMatching(route, filter) {
-    const found = String(route.re).match(EXTRACT_REGEXP_RE);
-    route.__vd_match = false;
-    if (!found || found.length < 3) {
-        return false;
-    }
-    // use a regexp without $ at the end to match nested routes better
-    const nonEndingRE = new RegExp(found[1].replace(/\$$/, ''), found[2]);
-    if (nonEndingRE.test(filter)) {
-        // mark children as matches
-        route.children.forEach(child => isRouteMatching(child, filter));
-        // exception case: `/`
-        if (route.record.path !== '/' || filter === '/') {
-            route.__vd_match = route.re.test(filter);
-            return true;
-        }
-        // hide the / route
-        return false;
-    }
-    const path = route.record.path.toLowerCase();
-    const decodedPath = decode(path);
-    // also allow partial matching on the path
-    if (!filter.startsWith('/') &&
-        (decodedPath.includes(filter) || path.includes(filter)))
-        return true;
-    if (decodedPath.startsWith(filter) || path.startsWith(filter))
-        return true;
-    if (route.record.name && String(route.record.name).includes(filter))
-        return true;
-    return route.children.some(child => isRouteMatching(child, filter));
-}
-function omit(obj, keys) {
-    const ret = {};
-    for (const key in obj) {
-        if (!keys.includes(key)) {
-            // @ts-expect-error
-            ret[key] = obj[key];
-        }
-    }
-    return ret;
-}
-
-/**
- * Creates a Router instance that can be used by a Vue app.
- *
- * @param options - {@link RouterOptions}
- */
-function createRouter(options) {
-    const matcher = createRouterMatcher(options.routes, options);
-    const parseQuery$1 = options.parseQuery || parseQuery;
-    const stringifyQuery$1 = options.stringifyQuery || stringifyQuery;
-    const routerHistory = options.history;
-    if (( true) && !routerHistory)
-        throw new Error('Provide the "history" option when calling "createRouter()":' +
-            ' https://next.router.vuejs.org/api/#history.');
-    const beforeGuards = useCallbacks();
-    const beforeResolveGuards = useCallbacks();
-    const afterGuards = useCallbacks();
-    const currentRoute = (0,vue__WEBPACK_IMPORTED_MODULE_0__.shallowRef)(START_LOCATION_NORMALIZED);
-    let pendingLocation = START_LOCATION_NORMALIZED;
-    // leave the scrollRestoration if no scrollBehavior is provided
-    if (isBrowser && options.scrollBehavior && 'scrollRestoration' in history) {
-        history.scrollRestoration = 'manual';
-    }
-    const normalizeParams = applyToParams.bind(null, paramValue => '' + paramValue);
-    const encodeParams = applyToParams.bind(null, encodeParam);
-    const decodeParams = 
-    // @ts-expect-error: intentionally avoid the type check
-    applyToParams.bind(null, decode);
-    function addRoute(parentOrRoute, route) {
-        let parent;
-        let record;
-        if (isRouteName(parentOrRoute)) {
-            parent = matcher.getRecordMatcher(parentOrRoute);
-            record = route;
-        }
-        else {
-            record = parentOrRoute;
-        }
-        return matcher.addRoute(record, parent);
-    }
-    function removeRoute(name) {
-        const recordMatcher = matcher.getRecordMatcher(name);
-        if (recordMatcher) {
-            matcher.removeRoute(recordMatcher);
-        }
-        else if ((true)) {
-            warn(`Cannot remove non-existent route "${String(name)}"`);
-        }
-    }
-    function getRoutes() {
-        return matcher.getRoutes().map(routeMatcher => routeMatcher.record);
-    }
-    function hasRoute(name) {
-        return !!matcher.getRecordMatcher(name);
-    }
-    function resolve(rawLocation, currentLocation) {
-        // const objectLocation = routerLocationAsObject(rawLocation)
-        // we create a copy to modify it later
-        currentLocation = assign({}, currentLocation || currentRoute.value);
-        if (typeof rawLocation === 'string') {
-            const locationNormalized = parseURL(parseQuery$1, rawLocation, currentLocation.path);
-            const matchedRoute = matcher.resolve({ path: locationNormalized.path }, currentLocation);
-            const href = routerHistory.createHref(locationNormalized.fullPath);
-            if ((true)) {
-                if (href.startsWith('//'))
-                    warn(`Location "${rawLocation}" resolved to "${href}". A resolved location cannot start with multiple slashes.`);
-                else if (!matchedRoute.matched.length) {
-                    warn(`No match found for location with path "${rawLocation}"`);
-                }
-            }
-            // locationNormalized is always a new object
-            return assign(locationNormalized, matchedRoute, {
-                params: decodeParams(matchedRoute.params),
-                hash: decode(locationNormalized.hash),
-                redirectedFrom: undefined,
-                href,
-            });
-        }
-        let matcherLocation;
-        // path could be relative in object as well
-        if ('path' in rawLocation) {
-            if (( true) &&
-                'params' in rawLocation &&
-                !('name' in rawLocation) &&
-                // @ts-expect-error: the type is never
-                Object.keys(rawLocation.params).length) {
-                warn(`Path "${
-                // @ts-expect-error: the type is never
-                rawLocation.path}" was passed with params but they will be ignored. Use a named route alongside params instead.`);
-            }
-            matcherLocation = assign({}, rawLocation, {
-                path: parseURL(parseQuery$1, rawLocation.path, currentLocation.path).path,
-            });
-        }
-        else {
-            // remove any nullish param
-            const targetParams = assign({}, rawLocation.params);
-            for (const key in targetParams) {
-                if (targetParams[key] == null) {
-                    delete targetParams[key];
-                }
-            }
-            // pass encoded values to the matcher so it can produce encoded path and fullPath
-            matcherLocation = assign({}, rawLocation, {
-                params: encodeParams(rawLocation.params),
-            });
-            // current location params are decoded, we need to encode them in case the
-            // matcher merges the params
-            currentLocation.params = encodeParams(currentLocation.params);
-        }
-        const matchedRoute = matcher.resolve(matcherLocation, currentLocation);
-        const hash = rawLocation.hash || '';
-        if (( true) && hash && !hash.startsWith('#')) {
-            warn(`A \`hash\` should always start with the character "#". Replace "${hash}" with "#${hash}".`);
-        }
-        // decoding them) the matcher might have merged current location params so
-        // we need to run the decoding again
-        matchedRoute.params = normalizeParams(decodeParams(matchedRoute.params));
-        const fullPath = stringifyURL(stringifyQuery$1, assign({}, rawLocation, {
-            hash: encodeHash(hash),
-            path: matchedRoute.path,
-        }));
-        const href = routerHistory.createHref(fullPath);
-        if ((true)) {
-            if (href.startsWith('//')) {
-                warn(`Location "${rawLocation}" resolved to "${href}". A resolved location cannot start with multiple slashes.`);
-            }
-            else if (!matchedRoute.matched.length) {
-                warn(`No match found for location with path "${'path' in rawLocation ? rawLocation.path : rawLocation}"`);
-            }
-        }
-        return assign({
-            fullPath,
-            // keep the hash encoded so fullPath is effectively path + encodedQuery +
-            // hash
-            hash,
-            query: 
-            // if the user is using a custom query lib like qs, we might have
-            // nested objects, so we keep the query as is, meaning it can contain
-            // numbers at `$route.query`, but at the point, the user will have to
-            // use their own type anyway.
-            // https://github.com/vuejs/router/issues/328#issuecomment-649481567
-            stringifyQuery$1 === stringifyQuery
-                ? normalizeQuery(rawLocation.query)
-                : (rawLocation.query || {}),
-        }, matchedRoute, {
-            redirectedFrom: undefined,
-            href,
-        });
-    }
-    function locationAsObject(to) {
-        return typeof to === 'string'
-            ? parseURL(parseQuery$1, to, currentRoute.value.path)
-            : assign({}, to);
-    }
-    function checkCanceledNavigation(to, from) {
-        if (pendingLocation !== to) {
-            return createRouterError(8 /* NAVIGATION_CANCELLED */, {
-                from,
-                to,
-            });
-        }
-    }
-    function push(to) {
-        return pushWithRedirect(to);
-    }
-    function replace(to) {
-        return push(assign(locationAsObject(to), { replace: true }));
-    }
-    function handleRedirectRecord(to) {
-        const lastMatched = to.matched[to.matched.length - 1];
-        if (lastMatched && lastMatched.redirect) {
-            const { redirect } = lastMatched;
-            let newTargetLocation = typeof redirect === 'function' ? redirect(to) : redirect;
-            if (typeof newTargetLocation === 'string') {
-                newTargetLocation =
-                    newTargetLocation.includes('?') || newTargetLocation.includes('#')
-                        ? (newTargetLocation = locationAsObject(newTargetLocation))
-                        : // force empty params
-                            { path: newTargetLocation };
-                // @ts-expect-error: force empty params when a string is passed to let
-                // the router parse them again
-                newTargetLocation.params = {};
-            }
-            if (( true) &&
-                !('path' in newTargetLocation) &&
-                !('name' in newTargetLocation)) {
-                warn(`Invalid redirect found:\n${JSON.stringify(newTargetLocation, null, 2)}\n when navigating to "${to.fullPath}". A redirect must contain a name or path. This will break in production.`);
-                throw new Error('Invalid redirect');
-            }
-            return assign({
-                query: to.query,
-                hash: to.hash,
-                params: to.params,
-            }, newTargetLocation);
-        }
-    }
-    function pushWithRedirect(to, redirectedFrom) {
-        const targetLocation = (pendingLocation = resolve(to));
-        const from = currentRoute.value;
-        const data = to.state;
-        const force = to.force;
-        // to could be a string where `replace` is a function
-        const replace = to.replace === true;
-        const shouldRedirect = handleRedirectRecord(targetLocation);
-        if (shouldRedirect)
-            return pushWithRedirect(assign(locationAsObject(shouldRedirect), {
-                state: data,
-                force,
-                replace,
-            }), 
-            // keep original redirectedFrom if it exists
-            redirectedFrom || targetLocation);
-        // if it was a redirect we already called `pushWithRedirect` above
-        const toLocation = targetLocation;
-        toLocation.redirectedFrom = redirectedFrom;
-        let failure;
-        if (!force && isSameRouteLocation(stringifyQuery$1, from, targetLocation)) {
-            failure = createRouterError(16 /* NAVIGATION_DUPLICATED */, { to: toLocation, from });
-            // trigger scroll to allow scrolling to the same anchor
-            handleScroll(from, from, 
-            // this is a push, the only way for it to be triggered from a
-            // history.listen is with a redirect, which makes it become a push
-            true, 
-            // This cannot be the first navigation because the initial location
-            // cannot be manually navigated to
-            false);
-        }
-        return (failure ? Promise.resolve(failure) : navigate(toLocation, from))
-            .catch((error) => isNavigationFailure(error)
-            ? // navigation redirects still mark the router as ready
-                isNavigationFailure(error, 2 /* NAVIGATION_GUARD_REDIRECT */)
-                    ? error
-                    : markAsReady(error) // also returns the error
-            : // reject any unknown error
-                triggerError(error, toLocation, from))
-            .then((failure) => {
-            if (failure) {
-                if (isNavigationFailure(failure, 2 /* NAVIGATION_GUARD_REDIRECT */)) {
-                    if (( true) &&
-                        // we are redirecting to the same location we were already at
-                        isSameRouteLocation(stringifyQuery$1, resolve(failure.to), toLocation) &&
-                        // and we have done it a couple of times
-                        redirectedFrom &&
-                        // @ts-expect-error: added only in dev
-                        (redirectedFrom._count = redirectedFrom._count
-                            ? // @ts-expect-error
-                                redirectedFrom._count + 1
-                            : 1) > 10) {
-                        warn(`Detected an infinite redirection in a navigation guard when going from "${from.fullPath}" to "${toLocation.fullPath}". Aborting to avoid a Stack Overflow. This will break in production if not fixed.`);
-                        return Promise.reject(new Error('Infinite redirect in navigation guard'));
-                    }
-                    return pushWithRedirect(
-                    // keep options
-                    assign(locationAsObject(failure.to), {
-                        state: data,
-                        force,
-                        replace,
-                    }), 
-                    // preserve the original redirectedFrom if any
-                    redirectedFrom || toLocation);
-                }
-            }
-            else {
-                // if we fail we don't finalize the navigation
-                failure = finalizeNavigation(toLocation, from, true, replace, data);
-            }
-            triggerAfterEach(toLocation, from, failure);
-            return failure;
-        });
-    }
-    /**
-     * Helper to reject and skip all navigation guards if a new navigation happened
-     * @param to
-     * @param from
-     */
-    function checkCanceledNavigationAndReject(to, from) {
-        const error = checkCanceledNavigation(to, from);
-        return error ? Promise.reject(error) : Promise.resolve();
-    }
-    // TODO: refactor the whole before guards by internally using router.beforeEach
-    function navigate(to, from) {
-        let guards;
-        const [leavingRecords, updatingRecords, enteringRecords] = extractChangingRecords(to, from);
-        // all components here have been resolved once because we are leaving
-        guards = extractComponentsGuards(leavingRecords.reverse(), 'beforeRouteLeave', to, from);
-        // leavingRecords is already reversed
-        for (const record of leavingRecords) {
-            record.leaveGuards.forEach(guard => {
-                guards.push(guardToPromiseFn(guard, to, from));
-            });
-        }
-        const canceledNavigationCheck = checkCanceledNavigationAndReject.bind(null, to, from);
-        guards.push(canceledNavigationCheck);
-        // run the queue of per route beforeRouteLeave guards
-        return (runGuardQueue(guards)
-            .then(() => {
-            // check global guards beforeEach
-            guards = [];
-            for (const guard of beforeGuards.list()) {
-                guards.push(guardToPromiseFn(guard, to, from));
-            }
-            guards.push(canceledNavigationCheck);
-            return runGuardQueue(guards);
-        })
-            .then(() => {
-            // check in components beforeRouteUpdate
-            guards = extractComponentsGuards(updatingRecords, 'beforeRouteUpdate', to, from);
-            for (const record of updatingRecords) {
-                record.updateGuards.forEach(guard => {
-                    guards.push(guardToPromiseFn(guard, to, from));
-                });
-            }
-            guards.push(canceledNavigationCheck);
-            // run the queue of per route beforeEnter guards
-            return runGuardQueue(guards);
-        })
-            .then(() => {
-            // check the route beforeEnter
-            guards = [];
-            for (const record of to.matched) {
-                // do not trigger beforeEnter on reused views
-                if (record.beforeEnter && !from.matched.includes(record)) {
-                    if (Array.isArray(record.beforeEnter)) {
-                        for (const beforeEnter of record.beforeEnter)
-                            guards.push(guardToPromiseFn(beforeEnter, to, from));
-                    }
-                    else {
-                        guards.push(guardToPromiseFn(record.beforeEnter, to, from));
-                    }
-                }
-            }
-            guards.push(canceledNavigationCheck);
-            // run the queue of per route beforeEnter guards
-            return runGuardQueue(guards);
-        })
-            .then(() => {
-            // NOTE: at this point to.matched is normalized and does not contain any () => Promise<Component>
-            // clear existing enterCallbacks, these are added by extractComponentsGuards
-            to.matched.forEach(record => (record.enterCallbacks = {}));
-            // check in-component beforeRouteEnter
-            guards = extractComponentsGuards(enteringRecords, 'beforeRouteEnter', to, from);
-            guards.push(canceledNavigationCheck);
-            // run the queue of per route beforeEnter guards
-            return runGuardQueue(guards);
-        })
-            .then(() => {
-            // check global guards beforeResolve
-            guards = [];
-            for (const guard of beforeResolveGuards.list()) {
-                guards.push(guardToPromiseFn(guard, to, from));
-            }
-            guards.push(canceledNavigationCheck);
-            return runGuardQueue(guards);
-        })
-            // catch any navigation canceled
-            .catch(err => isNavigationFailure(err, 8 /* NAVIGATION_CANCELLED */)
-            ? err
-            : Promise.reject(err)));
-    }
-    function triggerAfterEach(to, from, failure) {
-        // navigation is confirmed, call afterGuards
-        // TODO: wrap with error handlers
-        for (const guard of afterGuards.list())
-            guard(to, from, failure);
-    }
-    /**
-     * - Cleans up any navigation guards
-     * - Changes the url if necessary
-     * - Calls the scrollBehavior
-     */
-    function finalizeNavigation(toLocation, from, isPush, replace, data) {
-        // a more recent navigation took place
-        const error = checkCanceledNavigation(toLocation, from);
-        if (error)
-            return error;
-        // only consider as push if it's not the first navigation
-        const isFirstNavigation = from === START_LOCATION_NORMALIZED;
-        const state = !isBrowser ? {} : history.state;
-        // change URL only if the user did a push/replace and if it's not the initial navigation because
-        // it's just reflecting the url
-        if (isPush) {
-            // on the initial navigation, we want to reuse the scroll position from
-            // history state if it exists
-            if (replace || isFirstNavigation)
-                routerHistory.replace(toLocation.fullPath, assign({
-                    scroll: isFirstNavigation && state && state.scroll,
-                }, data));
-            else
-                routerHistory.push(toLocation.fullPath, data);
-        }
-        // accept current navigation
-        currentRoute.value = toLocation;
-        handleScroll(toLocation, from, isPush, isFirstNavigation);
-        markAsReady();
-    }
-    let removeHistoryListener;
-    // attach listener to history to trigger navigations
-    function setupListeners() {
-        removeHistoryListener = routerHistory.listen((to, _from, info) => {
-            // cannot be a redirect route because it was in history
-            const toLocation = resolve(to);
-            // due to dynamic routing, and to hash history with manual navigation
-            // (manually changing the url or calling history.hash = '#/somewhere'),
-            // there could be a redirect record in history
-            const shouldRedirect = handleRedirectRecord(toLocation);
-            if (shouldRedirect) {
-                pushWithRedirect(assign(shouldRedirect, { replace: true }), toLocation).catch(noop);
-                return;
-            }
-            pendingLocation = toLocation;
-            const from = currentRoute.value;
-            // TODO: should be moved to web history?
-            if (isBrowser) {
-                saveScrollPosition(getScrollKey(from.fullPath, info.delta), computeScrollPosition());
-            }
-            navigate(toLocation, from)
-                .catch((error) => {
-                if (isNavigationFailure(error, 4 /* NAVIGATION_ABORTED */ | 8 /* NAVIGATION_CANCELLED */)) {
-                    return error;
-                }
-                if (isNavigationFailure(error, 2 /* NAVIGATION_GUARD_REDIRECT */)) {
-                    // Here we could call if (info.delta) routerHistory.go(-info.delta,
-                    // false) but this is bug prone as we have no way to wait the
-                    // navigation to be finished before calling pushWithRedirect. Using
-                    // a setTimeout of 16ms seems to work but there is not guarantee for
-                    // it to work on every browser. So Instead we do not restore the
-                    // history entry and trigger a new navigation as requested by the
-                    // navigation guard.
-                    // the error is already handled by router.push we just want to avoid
-                    // logging the error
-                    pushWithRedirect(error.to, toLocation
-                    // avoid an uncaught rejection, let push call triggerError
-                    )
-                        .then(failure => {
-                        // manual change in hash history #916 ending up in the URL not
-                        // changing but it was changed by the manual url change, so we
-                        // need to manually change it ourselves
-                        if (isNavigationFailure(failure, 4 /* NAVIGATION_ABORTED */ |
-                            16 /* NAVIGATION_DUPLICATED */) &&
-                            !info.delta &&
-                            info.type === NavigationType.pop) {
-                            routerHistory.go(-1, false);
-                        }
-                    })
-                        .catch(noop);
-                    // avoid the then branch
-                    return Promise.reject();
-                }
-                // do not restore history on unknown direction
-                if (info.delta)
-                    routerHistory.go(-info.delta, false);
-                // unrecognized error, transfer to the global handler
-                return triggerError(error, toLocation, from);
-            })
-                .then((failure) => {
-                failure =
-                    failure ||
-                        finalizeNavigation(
-                        // after navigation, all matched components are resolved
-                        toLocation, from, false);
-                // revert the navigation
-                if (failure) {
-                    if (info.delta) {
-                        routerHistory.go(-info.delta, false);
-                    }
-                    else if (info.type === NavigationType.pop &&
-                        isNavigationFailure(failure, 4 /* NAVIGATION_ABORTED */ | 16 /* NAVIGATION_DUPLICATED */)) {
-                        // manual change in hash history #916
-                        // it's like a push but lacks the information of the direction
-                        routerHistory.go(-1, false);
-                    }
-                }
-                triggerAfterEach(toLocation, from, failure);
-            })
-                .catch(noop);
-        });
-    }
-    // Initialization and Errors
-    let readyHandlers = useCallbacks();
-    let errorHandlers = useCallbacks();
-    let ready;
-    /**
-     * Trigger errorHandlers added via onError and throws the error as well
-     *
-     * @param error - error to throw
-     * @param to - location we were navigating to when the error happened
-     * @param from - location we were navigating from when the error happened
-     * @returns the error as a rejected promise
-     */
-    function triggerError(error, to, from) {
-        markAsReady(error);
-        const list = errorHandlers.list();
-        if (list.length) {
-            list.forEach(handler => handler(error, to, from));
-        }
-        else {
-            if ((true)) {
-                warn('uncaught error during route navigation:');
-            }
-            console.error(error);
-        }
-        return Promise.reject(error);
-    }
-    function isReady() {
-        if (ready && currentRoute.value !== START_LOCATION_NORMALIZED)
-            return Promise.resolve();
-        return new Promise((resolve, reject) => {
-            readyHandlers.add([resolve, reject]);
-        });
-    }
-    function markAsReady(err) {
-        if (!ready) {
-            // still not ready if an error happened
-            ready = !err;
-            setupListeners();
-            readyHandlers
-                .list()
-                .forEach(([resolve, reject]) => (err ? reject(err) : resolve()));
-            readyHandlers.reset();
-        }
-        return err;
-    }
-    // Scroll behavior
-    function handleScroll(to, from, isPush, isFirstNavigation) {
-        const { scrollBehavior } = options;
-        if (!isBrowser || !scrollBehavior)
-            return Promise.resolve();
-        const scrollPosition = (!isPush && getSavedScrollPosition(getScrollKey(to.fullPath, 0))) ||
-            ((isFirstNavigation || !isPush) &&
-                history.state &&
-                history.state.scroll) ||
-            null;
-        return (0,vue__WEBPACK_IMPORTED_MODULE_0__.nextTick)()
-            .then(() => scrollBehavior(to, from, scrollPosition))
-            .then(position => position && scrollToPosition(position))
-            .catch(err => triggerError(err, to, from));
-    }
-    const go = (delta) => routerHistory.go(delta);
-    let started;
-    const installedApps = new Set();
-    const router = {
-        currentRoute,
-        addRoute,
-        removeRoute,
-        hasRoute,
-        getRoutes,
-        resolve,
-        options,
-        push,
-        replace,
-        go,
-        back: () => go(-1),
-        forward: () => go(1),
-        beforeEach: beforeGuards.add,
-        beforeResolve: beforeResolveGuards.add,
-        afterEach: afterGuards.add,
-        onError: errorHandlers.add,
-        isReady,
-        install(app) {
-            const router = this;
-            app.component('RouterLink', RouterLink);
-            app.component('RouterView', RouterView);
-            app.config.globalProperties.$router = router;
-            Object.defineProperty(app.config.globalProperties, '$route', {
-                enumerable: true,
-                get: () => (0,vue__WEBPACK_IMPORTED_MODULE_0__.unref)(currentRoute),
-            });
-            // this initial navigation is only necessary on client, on server it doesn't
-            // make sense because it will create an extra unnecessary navigation and could
-            // lead to problems
-            if (isBrowser &&
-                // used for the initial navigation client side to avoid pushing
-                // multiple times when the router is used in multiple apps
-                !started &&
-                currentRoute.value === START_LOCATION_NORMALIZED) {
-                // see above
-                started = true;
-                push(routerHistory.location).catch(err => {
-                    if ((true))
-                        warn('Unexpected error when starting the router:', err);
-                });
-            }
-            const reactiveRoute = {};
-            for (const key in START_LOCATION_NORMALIZED) {
-                // @ts-expect-error: the key matches
-                reactiveRoute[key] = (0,vue__WEBPACK_IMPORTED_MODULE_0__.computed)(() => currentRoute.value[key]);
-            }
-            app.provide(routerKey, router);
-            app.provide(routeLocationKey, (0,vue__WEBPACK_IMPORTED_MODULE_0__.reactive)(reactiveRoute));
-            app.provide(routerViewLocationKey, currentRoute);
-            const unmountApp = app.unmount;
-            installedApps.add(app);
-            app.unmount = function () {
-                installedApps.delete(app);
-                // the router is not attached to an app anymore
-                if (installedApps.size < 1) {
-                    // invalidate the current navigation
-                    pendingLocation = START_LOCATION_NORMALIZED;
-                    removeHistoryListener && removeHistoryListener();
-                    currentRoute.value = START_LOCATION_NORMALIZED;
-                    started = false;
-                    ready = false;
-                }
-                unmountApp();
-            };
-            if (( true) && isBrowser) {
-                addDevtools(app, router, matcher);
-            }
-        },
-    };
-    return router;
-}
-function runGuardQueue(guards) {
-    return guards.reduce((promise, guard) => promise.then(() => guard()), Promise.resolve());
-}
-function extractChangingRecords(to, from) {
-    const leavingRecords = [];
-    const updatingRecords = [];
-    const enteringRecords = [];
-    const len = Math.max(from.matched.length, to.matched.length);
-    for (let i = 0; i < len; i++) {
-        const recordFrom = from.matched[i];
-        if (recordFrom) {
-            if (to.matched.find(record => isSameRouteRecord(record, recordFrom)))
-                updatingRecords.push(recordFrom);
-            else
-                leavingRecords.push(recordFrom);
-        }
-        const recordTo = to.matched[i];
-        if (recordTo) {
-            // the type doesn't matter because we are comparing per reference
-            if (!from.matched.find(record => isSameRouteRecord(record, recordTo))) {
-                enteringRecords.push(recordTo);
-            }
-        }
-    }
-    return [leavingRecords, updatingRecords, enteringRecords];
-}
-
-/**
- * Returns the router instance. Equivalent to using `$router` inside
- * templates.
- */
-function useRouter() {
-    return (0,vue__WEBPACK_IMPORTED_MODULE_0__.inject)(routerKey);
-}
-/**
- * Returns the current route location. Equivalent to using `$route` inside
- * templates.
- */
-function useRoute() {
-    return (0,vue__WEBPACK_IMPORTED_MODULE_0__.inject)(routeLocationKey);
-}
-
-
 
 
 /***/ }),
@@ -30547,6 +31926,3729 @@ const isThenable = (thing) =>
   isThenable
 });
 
+
+/***/ }),
+
+/***/ "./node_modules/vue-router/dist/vue-router.mjs":
+/*!*****************************************************!*\
+  !*** ./node_modules/vue-router/dist/vue-router.mjs ***!
+  \*****************************************************/
+/***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   NavigationFailureType: () => (/* binding */ NavigationFailureType),
+/* harmony export */   RouterLink: () => (/* binding */ RouterLink),
+/* harmony export */   RouterView: () => (/* binding */ RouterView),
+/* harmony export */   START_LOCATION: () => (/* binding */ START_LOCATION_NORMALIZED),
+/* harmony export */   createMemoryHistory: () => (/* binding */ createMemoryHistory),
+/* harmony export */   createRouter: () => (/* binding */ createRouter),
+/* harmony export */   createRouterMatcher: () => (/* binding */ createRouterMatcher),
+/* harmony export */   createWebHashHistory: () => (/* binding */ createWebHashHistory),
+/* harmony export */   createWebHistory: () => (/* binding */ createWebHistory),
+/* harmony export */   isNavigationFailure: () => (/* binding */ isNavigationFailure),
+/* harmony export */   loadRouteLocation: () => (/* binding */ loadRouteLocation),
+/* harmony export */   matchedRouteKey: () => (/* binding */ matchedRouteKey),
+/* harmony export */   onBeforeRouteLeave: () => (/* binding */ onBeforeRouteLeave),
+/* harmony export */   onBeforeRouteUpdate: () => (/* binding */ onBeforeRouteUpdate),
+/* harmony export */   parseQuery: () => (/* binding */ parseQuery),
+/* harmony export */   routeLocationKey: () => (/* binding */ routeLocationKey),
+/* harmony export */   routerKey: () => (/* binding */ routerKey),
+/* harmony export */   routerViewLocationKey: () => (/* binding */ routerViewLocationKey),
+/* harmony export */   stringifyQuery: () => (/* binding */ stringifyQuery),
+/* harmony export */   useLink: () => (/* binding */ useLink),
+/* harmony export */   useRoute: () => (/* binding */ useRoute),
+/* harmony export */   useRouter: () => (/* binding */ useRouter),
+/* harmony export */   viewDepthKey: () => (/* binding */ viewDepthKey)
+/* harmony export */ });
+/* harmony import */ var vue__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! vue */ "./node_modules/vue/dist/vue.esm-bundler.js");
+/* harmony import */ var _vue_devtools_api__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @vue/devtools-api */ "./node_modules/@vue/devtools-api/lib/esm/index.js");
+/*!
+  * vue-router v4.3.2
+  * (c) 2024 Eduardo San Martin Morote
+  * @license MIT
+  */
+
+
+
+const isBrowser = typeof document !== 'undefined';
+
+function isESModule(obj) {
+    return obj.__esModule || obj[Symbol.toStringTag] === 'Module';
+}
+const assign = Object.assign;
+function applyToParams(fn, params) {
+    const newParams = {};
+    for (const key in params) {
+        const value = params[key];
+        newParams[key] = isArray(value)
+            ? value.map(fn)
+            : fn(value);
+    }
+    return newParams;
+}
+const noop = () => { };
+/**
+ * Typesafe alternative to Array.isArray
+ * https://github.com/microsoft/TypeScript/pull/48228
+ */
+const isArray = Array.isArray;
+
+function warn(msg) {
+    // avoid using ...args as it breaks in older Edge builds
+    const args = Array.from(arguments).slice(1);
+    console.warn.apply(console, ['[Vue Router warn]: ' + msg].concat(args));
+}
+
+/**
+ * Encoding Rules (␣ = Space)
+ * - Path: ␣ " < > # ? { }
+ * - Query: ␣ " < > # & =
+ * - Hash: ␣ " < > `
+ *
+ * On top of that, the RFC3986 (https://tools.ietf.org/html/rfc3986#section-2.2)
+ * defines some extra characters to be encoded. Most browsers do not encode them
+ * in encodeURI https://github.com/whatwg/url/issues/369, so it may be safer to
+ * also encode `!'()*`. Leaving un-encoded only ASCII alphanumeric(`a-zA-Z0-9`)
+ * plus `-._~`. This extra safety should be applied to query by patching the
+ * string returned by encodeURIComponent encodeURI also encodes `[\]^`. `\`
+ * should be encoded to avoid ambiguity. Browsers (IE, FF, C) transform a `\`
+ * into a `/` if directly typed in. The _backtick_ (`````) should also be
+ * encoded everywhere because some browsers like FF encode it when directly
+ * written while others don't. Safari and IE don't encode ``"<>{}``` in hash.
+ */
+// const EXTRA_RESERVED_RE = /[!'()*]/g
+// const encodeReservedReplacer = (c: string) => '%' + c.charCodeAt(0).toString(16)
+const HASH_RE = /#/g; // %23
+const AMPERSAND_RE = /&/g; // %26
+const SLASH_RE = /\//g; // %2F
+const EQUAL_RE = /=/g; // %3D
+const IM_RE = /\?/g; // %3F
+const PLUS_RE = /\+/g; // %2B
+/**
+ * NOTE: It's not clear to me if we should encode the + symbol in queries, it
+ * seems to be less flexible than not doing so and I can't find out the legacy
+ * systems requiring this for regular requests like text/html. In the standard,
+ * the encoding of the plus character is only mentioned for
+ * application/x-www-form-urlencoded
+ * (https://url.spec.whatwg.org/#urlencoded-parsing) and most browsers seems lo
+ * leave the plus character as is in queries. To be more flexible, we allow the
+ * plus character on the query, but it can also be manually encoded by the user.
+ *
+ * Resources:
+ * - https://url.spec.whatwg.org/#urlencoded-parsing
+ * - https://stackoverflow.com/questions/1634271/url-encoding-the-space-character-or-20
+ */
+const ENC_BRACKET_OPEN_RE = /%5B/g; // [
+const ENC_BRACKET_CLOSE_RE = /%5D/g; // ]
+const ENC_CARET_RE = /%5E/g; // ^
+const ENC_BACKTICK_RE = /%60/g; // `
+const ENC_CURLY_OPEN_RE = /%7B/g; // {
+const ENC_PIPE_RE = /%7C/g; // |
+const ENC_CURLY_CLOSE_RE = /%7D/g; // }
+const ENC_SPACE_RE = /%20/g; // }
+/**
+ * Encode characters that need to be encoded on the path, search and hash
+ * sections of the URL.
+ *
+ * @internal
+ * @param text - string to encode
+ * @returns encoded string
+ */
+function commonEncode(text) {
+    return encodeURI('' + text)
+        .replace(ENC_PIPE_RE, '|')
+        .replace(ENC_BRACKET_OPEN_RE, '[')
+        .replace(ENC_BRACKET_CLOSE_RE, ']');
+}
+/**
+ * Encode characters that need to be encoded on the hash section of the URL.
+ *
+ * @param text - string to encode
+ * @returns encoded string
+ */
+function encodeHash(text) {
+    return commonEncode(text)
+        .replace(ENC_CURLY_OPEN_RE, '{')
+        .replace(ENC_CURLY_CLOSE_RE, '}')
+        .replace(ENC_CARET_RE, '^');
+}
+/**
+ * Encode characters that need to be encoded query values on the query
+ * section of the URL.
+ *
+ * @param text - string to encode
+ * @returns encoded string
+ */
+function encodeQueryValue(text) {
+    return (commonEncode(text)
+        // Encode the space as +, encode the + to differentiate it from the space
+        .replace(PLUS_RE, '%2B')
+        .replace(ENC_SPACE_RE, '+')
+        .replace(HASH_RE, '%23')
+        .replace(AMPERSAND_RE, '%26')
+        .replace(ENC_BACKTICK_RE, '`')
+        .replace(ENC_CURLY_OPEN_RE, '{')
+        .replace(ENC_CURLY_CLOSE_RE, '}')
+        .replace(ENC_CARET_RE, '^'));
+}
+/**
+ * Like `encodeQueryValue` but also encodes the `=` character.
+ *
+ * @param text - string to encode
+ */
+function encodeQueryKey(text) {
+    return encodeQueryValue(text).replace(EQUAL_RE, '%3D');
+}
+/**
+ * Encode characters that need to be encoded on the path section of the URL.
+ *
+ * @param text - string to encode
+ * @returns encoded string
+ */
+function encodePath(text) {
+    return commonEncode(text).replace(HASH_RE, '%23').replace(IM_RE, '%3F');
+}
+/**
+ * Encode characters that need to be encoded on the path section of the URL as a
+ * param. This function encodes everything {@link encodePath} does plus the
+ * slash (`/`) character. If `text` is `null` or `undefined`, returns an empty
+ * string instead.
+ *
+ * @param text - string to encode
+ * @returns encoded string
+ */
+function encodeParam(text) {
+    return text == null ? '' : encodePath(text).replace(SLASH_RE, '%2F');
+}
+/**
+ * Decode text using `decodeURIComponent`. Returns the original text if it
+ * fails.
+ *
+ * @param text - string to decode
+ * @returns decoded string
+ */
+function decode(text) {
+    try {
+        return decodeURIComponent('' + text);
+    }
+    catch (err) {
+        ( true) && warn(`Error decoding "${text}". Using original value`);
+    }
+    return '' + text;
+}
+
+const TRAILING_SLASH_RE = /\/$/;
+const removeTrailingSlash = (path) => path.replace(TRAILING_SLASH_RE, '');
+/**
+ * Transforms a URI into a normalized history location
+ *
+ * @param parseQuery
+ * @param location - URI to normalize
+ * @param currentLocation - current absolute location. Allows resolving relative
+ * paths. Must start with `/`. Defaults to `/`
+ * @returns a normalized history location
+ */
+function parseURL(parseQuery, location, currentLocation = '/') {
+    let path, query = {}, searchString = '', hash = '';
+    // Could use URL and URLSearchParams but IE 11 doesn't support it
+    // TODO: move to new URL()
+    const hashPos = location.indexOf('#');
+    let searchPos = location.indexOf('?');
+    // the hash appears before the search, so it's not part of the search string
+    if (hashPos < searchPos && hashPos >= 0) {
+        searchPos = -1;
+    }
+    if (searchPos > -1) {
+        path = location.slice(0, searchPos);
+        searchString = location.slice(searchPos + 1, hashPos > -1 ? hashPos : location.length);
+        query = parseQuery(searchString);
+    }
+    if (hashPos > -1) {
+        path = path || location.slice(0, hashPos);
+        // keep the # character
+        hash = location.slice(hashPos, location.length);
+    }
+    // no search and no query
+    path = resolveRelativePath(path != null ? path : location, currentLocation);
+    // empty path means a relative query or hash `?foo=f`, `#thing`
+    return {
+        fullPath: path + (searchString && '?') + searchString + hash,
+        path,
+        query,
+        hash: decode(hash),
+    };
+}
+/**
+ * Stringifies a URL object
+ *
+ * @param stringifyQuery
+ * @param location
+ */
+function stringifyURL(stringifyQuery, location) {
+    const query = location.query ? stringifyQuery(location.query) : '';
+    return location.path + (query && '?') + query + (location.hash || '');
+}
+/**
+ * Strips off the base from the beginning of a location.pathname in a non-case-sensitive way.
+ *
+ * @param pathname - location.pathname
+ * @param base - base to strip off
+ */
+function stripBase(pathname, base) {
+    // no base or base is not found at the beginning
+    if (!base || !pathname.toLowerCase().startsWith(base.toLowerCase()))
+        return pathname;
+    return pathname.slice(base.length) || '/';
+}
+/**
+ * Checks if two RouteLocation are equal. This means that both locations are
+ * pointing towards the same {@link RouteRecord} and that all `params`, `query`
+ * parameters and `hash` are the same
+ *
+ * @param stringifyQuery - A function that takes a query object of type LocationQueryRaw and returns a string representation of it.
+ * @param a - first {@link RouteLocation}
+ * @param b - second {@link RouteLocation}
+ */
+function isSameRouteLocation(stringifyQuery, a, b) {
+    const aLastIndex = a.matched.length - 1;
+    const bLastIndex = b.matched.length - 1;
+    return (aLastIndex > -1 &&
+        aLastIndex === bLastIndex &&
+        isSameRouteRecord(a.matched[aLastIndex], b.matched[bLastIndex]) &&
+        isSameRouteLocationParams(a.params, b.params) &&
+        stringifyQuery(a.query) === stringifyQuery(b.query) &&
+        a.hash === b.hash);
+}
+/**
+ * Check if two `RouteRecords` are equal. Takes into account aliases: they are
+ * considered equal to the `RouteRecord` they are aliasing.
+ *
+ * @param a - first {@link RouteRecord}
+ * @param b - second {@link RouteRecord}
+ */
+function isSameRouteRecord(a, b) {
+    // since the original record has an undefined value for aliasOf
+    // but all aliases point to the original record, this will always compare
+    // the original record
+    return (a.aliasOf || a) === (b.aliasOf || b);
+}
+function isSameRouteLocationParams(a, b) {
+    if (Object.keys(a).length !== Object.keys(b).length)
+        return false;
+    for (const key in a) {
+        if (!isSameRouteLocationParamsValue(a[key], b[key]))
+            return false;
+    }
+    return true;
+}
+function isSameRouteLocationParamsValue(a, b) {
+    return isArray(a)
+        ? isEquivalentArray(a, b)
+        : isArray(b)
+            ? isEquivalentArray(b, a)
+            : a === b;
+}
+/**
+ * Check if two arrays are the same or if an array with one single entry is the
+ * same as another primitive value. Used to check query and parameters
+ *
+ * @param a - array of values
+ * @param b - array of values or a single value
+ */
+function isEquivalentArray(a, b) {
+    return isArray(b)
+        ? a.length === b.length && a.every((value, i) => value === b[i])
+        : a.length === 1 && a[0] === b;
+}
+/**
+ * Resolves a relative path that starts with `.`.
+ *
+ * @param to - path location we are resolving
+ * @param from - currentLocation.path, should start with `/`
+ */
+function resolveRelativePath(to, from) {
+    if (to.startsWith('/'))
+        return to;
+    if (( true) && !from.startsWith('/')) {
+        warn(`Cannot resolve a relative location without an absolute path. Trying to resolve "${to}" from "${from}". It should look like "/${from}".`);
+        return to;
+    }
+    if (!to)
+        return from;
+    const fromSegments = from.split('/');
+    const toSegments = to.split('/');
+    const lastToSegment = toSegments[toSegments.length - 1];
+    // make . and ./ the same (../ === .., ../../ === ../..)
+    // this is the same behavior as new URL()
+    if (lastToSegment === '..' || lastToSegment === '.') {
+        toSegments.push('');
+    }
+    let position = fromSegments.length - 1;
+    let toPosition;
+    let segment;
+    for (toPosition = 0; toPosition < toSegments.length; toPosition++) {
+        segment = toSegments[toPosition];
+        // we stay on the same position
+        if (segment === '.')
+            continue;
+        // go up in the from array
+        if (segment === '..') {
+            // we can't go below zero, but we still need to increment toPosition
+            if (position > 1)
+                position--;
+            // continue
+        }
+        // we reached a non-relative path, we stop here
+        else
+            break;
+    }
+    return (fromSegments.slice(0, position).join('/') +
+        '/' +
+        toSegments.slice(toPosition).join('/'));
+}
+
+var NavigationType;
+(function (NavigationType) {
+    NavigationType["pop"] = "pop";
+    NavigationType["push"] = "push";
+})(NavigationType || (NavigationType = {}));
+var NavigationDirection;
+(function (NavigationDirection) {
+    NavigationDirection["back"] = "back";
+    NavigationDirection["forward"] = "forward";
+    NavigationDirection["unknown"] = "";
+})(NavigationDirection || (NavigationDirection = {}));
+/**
+ * Starting location for Histories
+ */
+const START = '';
+// Generic utils
+/**
+ * Normalizes a base by removing any trailing slash and reading the base tag if
+ * present.
+ *
+ * @param base - base to normalize
+ */
+function normalizeBase(base) {
+    if (!base) {
+        if (isBrowser) {
+            // respect <base> tag
+            const baseEl = document.querySelector('base');
+            base = (baseEl && baseEl.getAttribute('href')) || '/';
+            // strip full URL origin
+            base = base.replace(/^\w+:\/\/[^\/]+/, '');
+        }
+        else {
+            base = '/';
+        }
+    }
+    // ensure leading slash when it was removed by the regex above avoid leading
+    // slash with hash because the file could be read from the disk like file://
+    // and the leading slash would cause problems
+    if (base[0] !== '/' && base[0] !== '#')
+        base = '/' + base;
+    // remove the trailing slash so all other method can just do `base + fullPath`
+    // to build an href
+    return removeTrailingSlash(base);
+}
+// remove any character before the hash
+const BEFORE_HASH_RE = /^[^#]+#/;
+function createHref(base, location) {
+    return base.replace(BEFORE_HASH_RE, '#') + location;
+}
+
+function getElementPosition(el, offset) {
+    const docRect = document.documentElement.getBoundingClientRect();
+    const elRect = el.getBoundingClientRect();
+    return {
+        behavior: offset.behavior,
+        left: elRect.left - docRect.left - (offset.left || 0),
+        top: elRect.top - docRect.top - (offset.top || 0),
+    };
+}
+const computeScrollPosition = () => ({
+    left: window.scrollX,
+    top: window.scrollY,
+});
+function scrollToPosition(position) {
+    let scrollToOptions;
+    if ('el' in position) {
+        const positionEl = position.el;
+        const isIdSelector = typeof positionEl === 'string' && positionEl.startsWith('#');
+        /**
+         * `id`s can accept pretty much any characters, including CSS combinators
+         * like `>` or `~`. It's still possible to retrieve elements using
+         * `document.getElementById('~')` but it needs to be escaped when using
+         * `document.querySelector('#\\~')` for it to be valid. The only
+         * requirements for `id`s are them to be unique on the page and to not be
+         * empty (`id=""`). Because of that, when passing an id selector, it should
+         * be properly escaped for it to work with `querySelector`. We could check
+         * for the id selector to be simple (no CSS combinators `+ >~`) but that
+         * would make things inconsistent since they are valid characters for an
+         * `id` but would need to be escaped when using `querySelector`, breaking
+         * their usage and ending up in no selector returned. Selectors need to be
+         * escaped:
+         *
+         * - `#1-thing` becomes `#\31 -thing`
+         * - `#with~symbols` becomes `#with\\~symbols`
+         *
+         * - More information about  the topic can be found at
+         *   https://mathiasbynens.be/notes/html5-id-class.
+         * - Practical example: https://mathiasbynens.be/demo/html5-id
+         */
+        if (( true) && typeof position.el === 'string') {
+            if (!isIdSelector || !document.getElementById(position.el.slice(1))) {
+                try {
+                    const foundEl = document.querySelector(position.el);
+                    if (isIdSelector && foundEl) {
+                        warn(`The selector "${position.el}" should be passed as "el: document.querySelector('${position.el}')" because it starts with "#".`);
+                        // return to avoid other warnings
+                        return;
+                    }
+                }
+                catch (err) {
+                    warn(`The selector "${position.el}" is invalid. If you are using an id selector, make sure to escape it. You can find more information about escaping characters in selectors at https://mathiasbynens.be/notes/css-escapes or use CSS.escape (https://developer.mozilla.org/en-US/docs/Web/API/CSS/escape).`);
+                    // return to avoid other warnings
+                    return;
+                }
+            }
+        }
+        const el = typeof positionEl === 'string'
+            ? isIdSelector
+                ? document.getElementById(positionEl.slice(1))
+                : document.querySelector(positionEl)
+            : positionEl;
+        if (!el) {
+            ( true) &&
+                warn(`Couldn't find element using selector "${position.el}" returned by scrollBehavior.`);
+            return;
+        }
+        scrollToOptions = getElementPosition(el, position);
+    }
+    else {
+        scrollToOptions = position;
+    }
+    if ('scrollBehavior' in document.documentElement.style)
+        window.scrollTo(scrollToOptions);
+    else {
+        window.scrollTo(scrollToOptions.left != null ? scrollToOptions.left : window.scrollX, scrollToOptions.top != null ? scrollToOptions.top : window.scrollY);
+    }
+}
+function getScrollKey(path, delta) {
+    const position = history.state ? history.state.position - delta : -1;
+    return position + path;
+}
+const scrollPositions = new Map();
+function saveScrollPosition(key, scrollPosition) {
+    scrollPositions.set(key, scrollPosition);
+}
+function getSavedScrollPosition(key) {
+    const scroll = scrollPositions.get(key);
+    // consume it so it's not used again
+    scrollPositions.delete(key);
+    return scroll;
+}
+// TODO: RFC about how to save scroll position
+/**
+ * ScrollBehavior instance used by the router to compute and restore the scroll
+ * position when navigating.
+ */
+// export interface ScrollHandler<ScrollPositionEntry extends HistoryStateValue, ScrollPosition extends ScrollPositionEntry> {
+//   // returns a scroll position that can be saved in history
+//   compute(): ScrollPositionEntry
+//   // can take an extended ScrollPositionEntry
+//   scroll(position: ScrollPosition): void
+// }
+// export const scrollHandler: ScrollHandler<ScrollPosition> = {
+//   compute: computeScroll,
+//   scroll: scrollToPosition,
+// }
+
+let createBaseLocation = () => location.protocol + '//' + location.host;
+/**
+ * Creates a normalized history location from a window.location object
+ * @param base - The base path
+ * @param location - The window.location object
+ */
+function createCurrentLocation(base, location) {
+    const { pathname, search, hash } = location;
+    // allows hash bases like #, /#, #/, #!, #!/, /#!/, or even /folder#end
+    const hashPos = base.indexOf('#');
+    if (hashPos > -1) {
+        let slicePos = hash.includes(base.slice(hashPos))
+            ? base.slice(hashPos).length
+            : 1;
+        let pathFromHash = hash.slice(slicePos);
+        // prepend the starting slash to hash so the url starts with /#
+        if (pathFromHash[0] !== '/')
+            pathFromHash = '/' + pathFromHash;
+        return stripBase(pathFromHash, '');
+    }
+    const path = stripBase(pathname, base);
+    return path + search + hash;
+}
+function useHistoryListeners(base, historyState, currentLocation, replace) {
+    let listeners = [];
+    let teardowns = [];
+    // TODO: should it be a stack? a Dict. Check if the popstate listener
+    // can trigger twice
+    let pauseState = null;
+    const popStateHandler = ({ state, }) => {
+        const to = createCurrentLocation(base, location);
+        const from = currentLocation.value;
+        const fromState = historyState.value;
+        let delta = 0;
+        if (state) {
+            currentLocation.value = to;
+            historyState.value = state;
+            // ignore the popstate and reset the pauseState
+            if (pauseState && pauseState === from) {
+                pauseState = null;
+                return;
+            }
+            delta = fromState ? state.position - fromState.position : 0;
+        }
+        else {
+            replace(to);
+        }
+        // Here we could also revert the navigation by calling history.go(-delta)
+        // this listener will have to be adapted to not trigger again and to wait for the url
+        // to be updated before triggering the listeners. Some kind of validation function would also
+        // need to be passed to the listeners so the navigation can be accepted
+        // call all listeners
+        listeners.forEach(listener => {
+            listener(currentLocation.value, from, {
+                delta,
+                type: NavigationType.pop,
+                direction: delta
+                    ? delta > 0
+                        ? NavigationDirection.forward
+                        : NavigationDirection.back
+                    : NavigationDirection.unknown,
+            });
+        });
+    };
+    function pauseListeners() {
+        pauseState = currentLocation.value;
+    }
+    function listen(callback) {
+        // set up the listener and prepare teardown callbacks
+        listeners.push(callback);
+        const teardown = () => {
+            const index = listeners.indexOf(callback);
+            if (index > -1)
+                listeners.splice(index, 1);
+        };
+        teardowns.push(teardown);
+        return teardown;
+    }
+    function beforeUnloadListener() {
+        const { history } = window;
+        if (!history.state)
+            return;
+        history.replaceState(assign({}, history.state, { scroll: computeScrollPosition() }), '');
+    }
+    function destroy() {
+        for (const teardown of teardowns)
+            teardown();
+        teardowns = [];
+        window.removeEventListener('popstate', popStateHandler);
+        window.removeEventListener('beforeunload', beforeUnloadListener);
+    }
+    // set up the listeners and prepare teardown callbacks
+    window.addEventListener('popstate', popStateHandler);
+    // TODO: could we use 'pagehide' or 'visibilitychange' instead?
+    // https://developer.chrome.com/blog/page-lifecycle-api/
+    window.addEventListener('beforeunload', beforeUnloadListener, {
+        passive: true,
+    });
+    return {
+        pauseListeners,
+        listen,
+        destroy,
+    };
+}
+/**
+ * Creates a state object
+ */
+function buildState(back, current, forward, replaced = false, computeScroll = false) {
+    return {
+        back,
+        current,
+        forward,
+        replaced,
+        position: window.history.length,
+        scroll: computeScroll ? computeScrollPosition() : null,
+    };
+}
+function useHistoryStateNavigation(base) {
+    const { history, location } = window;
+    // private variables
+    const currentLocation = {
+        value: createCurrentLocation(base, location),
+    };
+    const historyState = { value: history.state };
+    // build current history entry as this is a fresh navigation
+    if (!historyState.value) {
+        changeLocation(currentLocation.value, {
+            back: null,
+            current: currentLocation.value,
+            forward: null,
+            // the length is off by one, we need to decrease it
+            position: history.length - 1,
+            replaced: true,
+            // don't add a scroll as the user may have an anchor, and we want
+            // scrollBehavior to be triggered without a saved position
+            scroll: null,
+        }, true);
+    }
+    function changeLocation(to, state, replace) {
+        /**
+         * if a base tag is provided, and we are on a normal domain, we have to
+         * respect the provided `base` attribute because pushState() will use it and
+         * potentially erase anything before the `#` like at
+         * https://github.com/vuejs/router/issues/685 where a base of
+         * `/folder/#` but a base of `/` would erase the `/folder/` section. If
+         * there is no host, the `<base>` tag makes no sense and if there isn't a
+         * base tag we can just use everything after the `#`.
+         */
+        const hashIndex = base.indexOf('#');
+        const url = hashIndex > -1
+            ? (location.host && document.querySelector('base')
+                ? base
+                : base.slice(hashIndex)) + to
+            : createBaseLocation() + base + to;
+        try {
+            // BROWSER QUIRK
+            // NOTE: Safari throws a SecurityError when calling this function 100 times in 30 seconds
+            history[replace ? 'replaceState' : 'pushState'](state, '', url);
+            historyState.value = state;
+        }
+        catch (err) {
+            if ((true)) {
+                warn('Error with push/replace State', err);
+            }
+            else {}
+            // Force the navigation, this also resets the call count
+            location[replace ? 'replace' : 'assign'](url);
+        }
+    }
+    function replace(to, data) {
+        const state = assign({}, history.state, buildState(historyState.value.back, 
+        // keep back and forward entries but override current position
+        to, historyState.value.forward, true), data, { position: historyState.value.position });
+        changeLocation(to, state, true);
+        currentLocation.value = to;
+    }
+    function push(to, data) {
+        // Add to current entry the information of where we are going
+        // as well as saving the current position
+        const currentState = assign({}, 
+        // use current history state to gracefully handle a wrong call to
+        // history.replaceState
+        // https://github.com/vuejs/router/issues/366
+        historyState.value, history.state, {
+            forward: to,
+            scroll: computeScrollPosition(),
+        });
+        if (( true) && !history.state) {
+            warn(`history.state seems to have been manually replaced without preserving the necessary values. Make sure to preserve existing history state if you are manually calling history.replaceState:\n\n` +
+                `history.replaceState(history.state, '', url)\n\n` +
+                `You can find more information at https://next.router.vuejs.org/guide/migration/#usage-of-history-state.`);
+        }
+        changeLocation(currentState.current, currentState, true);
+        const state = assign({}, buildState(currentLocation.value, to, null), { position: currentState.position + 1 }, data);
+        changeLocation(to, state, false);
+        currentLocation.value = to;
+    }
+    return {
+        location: currentLocation,
+        state: historyState,
+        push,
+        replace,
+    };
+}
+/**
+ * Creates an HTML5 history. Most common history for single page applications.
+ *
+ * @param base -
+ */
+function createWebHistory(base) {
+    base = normalizeBase(base);
+    const historyNavigation = useHistoryStateNavigation(base);
+    const historyListeners = useHistoryListeners(base, historyNavigation.state, historyNavigation.location, historyNavigation.replace);
+    function go(delta, triggerListeners = true) {
+        if (!triggerListeners)
+            historyListeners.pauseListeners();
+        history.go(delta);
+    }
+    const routerHistory = assign({
+        // it's overridden right after
+        location: '',
+        base,
+        go,
+        createHref: createHref.bind(null, base),
+    }, historyNavigation, historyListeners);
+    Object.defineProperty(routerHistory, 'location', {
+        enumerable: true,
+        get: () => historyNavigation.location.value,
+    });
+    Object.defineProperty(routerHistory, 'state', {
+        enumerable: true,
+        get: () => historyNavigation.state.value,
+    });
+    return routerHistory;
+}
+
+/**
+ * Creates an in-memory based history. The main purpose of this history is to handle SSR. It starts in a special location that is nowhere.
+ * It's up to the user to replace that location with the starter location by either calling `router.push` or `router.replace`.
+ *
+ * @param base - Base applied to all urls, defaults to '/'
+ * @returns a history object that can be passed to the router constructor
+ */
+function createMemoryHistory(base = '') {
+    let listeners = [];
+    let queue = [START];
+    let position = 0;
+    base = normalizeBase(base);
+    function setLocation(location) {
+        position++;
+        if (position !== queue.length) {
+            // we are in the middle, we remove everything from here in the queue
+            queue.splice(position);
+        }
+        queue.push(location);
+    }
+    function triggerListeners(to, from, { direction, delta }) {
+        const info = {
+            direction,
+            delta,
+            type: NavigationType.pop,
+        };
+        for (const callback of listeners) {
+            callback(to, from, info);
+        }
+    }
+    const routerHistory = {
+        // rewritten by Object.defineProperty
+        location: START,
+        // TODO: should be kept in queue
+        state: {},
+        base,
+        createHref: createHref.bind(null, base),
+        replace(to) {
+            // remove current entry and decrement position
+            queue.splice(position--, 1);
+            setLocation(to);
+        },
+        push(to, data) {
+            setLocation(to);
+        },
+        listen(callback) {
+            listeners.push(callback);
+            return () => {
+                const index = listeners.indexOf(callback);
+                if (index > -1)
+                    listeners.splice(index, 1);
+            };
+        },
+        destroy() {
+            listeners = [];
+            queue = [START];
+            position = 0;
+        },
+        go(delta, shouldTrigger = true) {
+            const from = this.location;
+            const direction = 
+            // we are considering delta === 0 going forward, but in abstract mode
+            // using 0 for the delta doesn't make sense like it does in html5 where
+            // it reloads the page
+            delta < 0 ? NavigationDirection.back : NavigationDirection.forward;
+            position = Math.max(0, Math.min(position + delta, queue.length - 1));
+            if (shouldTrigger) {
+                triggerListeners(this.location, from, {
+                    direction,
+                    delta,
+                });
+            }
+        },
+    };
+    Object.defineProperty(routerHistory, 'location', {
+        enumerable: true,
+        get: () => queue[position],
+    });
+    return routerHistory;
+}
+
+/**
+ * Creates a hash history. Useful for web applications with no host (e.g. `file://`) or when configuring a server to
+ * handle any URL is not possible.
+ *
+ * @param base - optional base to provide. Defaults to `location.pathname + location.search` If there is a `<base>` tag
+ * in the `head`, its value will be ignored in favor of this parameter **but note it affects all the history.pushState()
+ * calls**, meaning that if you use a `<base>` tag, it's `href` value **has to match this parameter** (ignoring anything
+ * after the `#`).
+ *
+ * @example
+ * ```js
+ * // at https://example.com/folder
+ * createWebHashHistory() // gives a url of `https://example.com/folder#`
+ * createWebHashHistory('/folder/') // gives a url of `https://example.com/folder/#`
+ * // if the `#` is provided in the base, it won't be added by `createWebHashHistory`
+ * createWebHashHistory('/folder/#/app/') // gives a url of `https://example.com/folder/#/app/`
+ * // you should avoid doing this because it changes the original url and breaks copying urls
+ * createWebHashHistory('/other-folder/') // gives a url of `https://example.com/other-folder/#`
+ *
+ * // at file:///usr/etc/folder/index.html
+ * // for locations with no `host`, the base is ignored
+ * createWebHashHistory('/iAmIgnored') // gives a url of `file:///usr/etc/folder/index.html#`
+ * ```
+ */
+function createWebHashHistory(base) {
+    // Make sure this implementation is fine in terms of encoding, specially for IE11
+    // for `file://`, directly use the pathname and ignore the base
+    // location.pathname contains an initial `/` even at the root: `https://example.com`
+    base = location.host ? base || location.pathname + location.search : '';
+    // allow the user to provide a `#` in the middle: `/base/#/app`
+    if (!base.includes('#'))
+        base += '#';
+    if (( true) && !base.endsWith('#/') && !base.endsWith('#')) {
+        warn(`A hash base must end with a "#":\n"${base}" should be "${base.replace(/#.*$/, '#')}".`);
+    }
+    return createWebHistory(base);
+}
+
+function isRouteLocation(route) {
+    return typeof route === 'string' || (route && typeof route === 'object');
+}
+function isRouteName(name) {
+    return typeof name === 'string' || typeof name === 'symbol';
+}
+
+/**
+ * Initial route location where the router is. Can be used in navigation guards
+ * to differentiate the initial navigation.
+ *
+ * @example
+ * ```js
+ * import { START_LOCATION } from 'vue-router'
+ *
+ * router.beforeEach((to, from) => {
+ *   if (from === START_LOCATION) {
+ *     // initial navigation
+ *   }
+ * })
+ * ```
+ */
+const START_LOCATION_NORMALIZED = {
+    path: '/',
+    name: undefined,
+    params: {},
+    query: {},
+    hash: '',
+    fullPath: '/',
+    matched: [],
+    meta: {},
+    redirectedFrom: undefined,
+};
+
+const NavigationFailureSymbol = Symbol(( true) ? 'navigation failure' : 0);
+/**
+ * Enumeration with all possible types for navigation failures. Can be passed to
+ * {@link isNavigationFailure} to check for specific failures.
+ */
+var NavigationFailureType;
+(function (NavigationFailureType) {
+    /**
+     * An aborted navigation is a navigation that failed because a navigation
+     * guard returned `false` or called `next(false)`
+     */
+    NavigationFailureType[NavigationFailureType["aborted"] = 4] = "aborted";
+    /**
+     * A cancelled navigation is a navigation that failed because a more recent
+     * navigation finished started (not necessarily finished).
+     */
+    NavigationFailureType[NavigationFailureType["cancelled"] = 8] = "cancelled";
+    /**
+     * A duplicated navigation is a navigation that failed because it was
+     * initiated while already being at the exact same location.
+     */
+    NavigationFailureType[NavigationFailureType["duplicated"] = 16] = "duplicated";
+})(NavigationFailureType || (NavigationFailureType = {}));
+// DEV only debug messages
+const ErrorTypeMessages = {
+    [1 /* ErrorTypes.MATCHER_NOT_FOUND */]({ location, currentLocation }) {
+        return `No match for\n ${JSON.stringify(location)}${currentLocation
+            ? '\nwhile being at\n' + JSON.stringify(currentLocation)
+            : ''}`;
+    },
+    [2 /* ErrorTypes.NAVIGATION_GUARD_REDIRECT */]({ from, to, }) {
+        return `Redirected from "${from.fullPath}" to "${stringifyRoute(to)}" via a navigation guard.`;
+    },
+    [4 /* ErrorTypes.NAVIGATION_ABORTED */]({ from, to }) {
+        return `Navigation aborted from "${from.fullPath}" to "${to.fullPath}" via a navigation guard.`;
+    },
+    [8 /* ErrorTypes.NAVIGATION_CANCELLED */]({ from, to }) {
+        return `Navigation cancelled from "${from.fullPath}" to "${to.fullPath}" with a new navigation.`;
+    },
+    [16 /* ErrorTypes.NAVIGATION_DUPLICATED */]({ from, to }) {
+        return `Avoided redundant navigation to current location: "${from.fullPath}".`;
+    },
+};
+/**
+ * Creates a typed NavigationFailure object.
+ * @internal
+ * @param type - NavigationFailureType
+ * @param params - { from, to }
+ */
+function createRouterError(type, params) {
+    // keep full error messages in cjs versions
+    if (true) {
+        return assign(new Error(ErrorTypeMessages[type](params)), {
+            type,
+            [NavigationFailureSymbol]: true,
+        }, params);
+    }
+    else {}
+}
+function isNavigationFailure(error, type) {
+    return (error instanceof Error &&
+        NavigationFailureSymbol in error &&
+        (type == null || !!(error.type & type)));
+}
+const propertiesToLog = ['params', 'query', 'hash'];
+function stringifyRoute(to) {
+    if (typeof to === 'string')
+        return to;
+    if (to.path != null)
+        return to.path;
+    const location = {};
+    for (const key of propertiesToLog) {
+        if (key in to)
+            location[key] = to[key];
+    }
+    return JSON.stringify(location, null, 2);
+}
+
+// default pattern for a param: non-greedy everything but /
+const BASE_PARAM_PATTERN = '[^/]+?';
+const BASE_PATH_PARSER_OPTIONS = {
+    sensitive: false,
+    strict: false,
+    start: true,
+    end: true,
+};
+// Special Regex characters that must be escaped in static tokens
+const REGEX_CHARS_RE = /[.+*?^${}()[\]/\\]/g;
+/**
+ * Creates a path parser from an array of Segments (a segment is an array of Tokens)
+ *
+ * @param segments - array of segments returned by tokenizePath
+ * @param extraOptions - optional options for the regexp
+ * @returns a PathParser
+ */
+function tokensToParser(segments, extraOptions) {
+    const options = assign({}, BASE_PATH_PARSER_OPTIONS, extraOptions);
+    // the amount of scores is the same as the length of segments except for the root segment "/"
+    const score = [];
+    // the regexp as a string
+    let pattern = options.start ? '^' : '';
+    // extracted keys
+    const keys = [];
+    for (const segment of segments) {
+        // the root segment needs special treatment
+        const segmentScores = segment.length ? [] : [90 /* PathScore.Root */];
+        // allow trailing slash
+        if (options.strict && !segment.length)
+            pattern += '/';
+        for (let tokenIndex = 0; tokenIndex < segment.length; tokenIndex++) {
+            const token = segment[tokenIndex];
+            // resets the score if we are inside a sub-segment /:a-other-:b
+            let subSegmentScore = 40 /* PathScore.Segment */ +
+                (options.sensitive ? 0.25 /* PathScore.BonusCaseSensitive */ : 0);
+            if (token.type === 0 /* TokenType.Static */) {
+                // prepend the slash if we are starting a new segment
+                if (!tokenIndex)
+                    pattern += '/';
+                pattern += token.value.replace(REGEX_CHARS_RE, '\\$&');
+                subSegmentScore += 40 /* PathScore.Static */;
+            }
+            else if (token.type === 1 /* TokenType.Param */) {
+                const { value, repeatable, optional, regexp } = token;
+                keys.push({
+                    name: value,
+                    repeatable,
+                    optional,
+                });
+                const re = regexp ? regexp : BASE_PARAM_PATTERN;
+                // the user provided a custom regexp /:id(\\d+)
+                if (re !== BASE_PARAM_PATTERN) {
+                    subSegmentScore += 10 /* PathScore.BonusCustomRegExp */;
+                    // make sure the regexp is valid before using it
+                    try {
+                        new RegExp(`(${re})`);
+                    }
+                    catch (err) {
+                        throw new Error(`Invalid custom RegExp for param "${value}" (${re}): ` +
+                            err.message);
+                    }
+                }
+                // when we repeat we must take care of the repeating leading slash
+                let subPattern = repeatable ? `((?:${re})(?:/(?:${re}))*)` : `(${re})`;
+                // prepend the slash if we are starting a new segment
+                if (!tokenIndex)
+                    subPattern =
+                        // avoid an optional / if there are more segments e.g. /:p?-static
+                        // or /:p?-:p2
+                        optional && segment.length < 2
+                            ? `(?:/${subPattern})`
+                            : '/' + subPattern;
+                if (optional)
+                    subPattern += '?';
+                pattern += subPattern;
+                subSegmentScore += 20 /* PathScore.Dynamic */;
+                if (optional)
+                    subSegmentScore += -8 /* PathScore.BonusOptional */;
+                if (repeatable)
+                    subSegmentScore += -20 /* PathScore.BonusRepeatable */;
+                if (re === '.*')
+                    subSegmentScore += -50 /* PathScore.BonusWildcard */;
+            }
+            segmentScores.push(subSegmentScore);
+        }
+        // an empty array like /home/ -> [[{home}], []]
+        // if (!segment.length) pattern += '/'
+        score.push(segmentScores);
+    }
+    // only apply the strict bonus to the last score
+    if (options.strict && options.end) {
+        const i = score.length - 1;
+        score[i][score[i].length - 1] += 0.7000000000000001 /* PathScore.BonusStrict */;
+    }
+    // TODO: dev only warn double trailing slash
+    if (!options.strict)
+        pattern += '/?';
+    if (options.end)
+        pattern += '$';
+    // allow paths like /dynamic to only match dynamic or dynamic/... but not dynamic_something_else
+    else if (options.strict)
+        pattern += '(?:/|$)';
+    const re = new RegExp(pattern, options.sensitive ? '' : 'i');
+    function parse(path) {
+        const match = path.match(re);
+        const params = {};
+        if (!match)
+            return null;
+        for (let i = 1; i < match.length; i++) {
+            const value = match[i] || '';
+            const key = keys[i - 1];
+            params[key.name] = value && key.repeatable ? value.split('/') : value;
+        }
+        return params;
+    }
+    function stringify(params) {
+        let path = '';
+        // for optional parameters to allow to be empty
+        let avoidDuplicatedSlash = false;
+        for (const segment of segments) {
+            if (!avoidDuplicatedSlash || !path.endsWith('/'))
+                path += '/';
+            avoidDuplicatedSlash = false;
+            for (const token of segment) {
+                if (token.type === 0 /* TokenType.Static */) {
+                    path += token.value;
+                }
+                else if (token.type === 1 /* TokenType.Param */) {
+                    const { value, repeatable, optional } = token;
+                    const param = value in params ? params[value] : '';
+                    if (isArray(param) && !repeatable) {
+                        throw new Error(`Provided param "${value}" is an array but it is not repeatable (* or + modifiers)`);
+                    }
+                    const text = isArray(param)
+                        ? param.join('/')
+                        : param;
+                    if (!text) {
+                        if (optional) {
+                            // if we have more than one optional param like /:a?-static we don't need to care about the optional param
+                            if (segment.length < 2) {
+                                // remove the last slash as we could be at the end
+                                if (path.endsWith('/'))
+                                    path = path.slice(0, -1);
+                                // do not append a slash on the next iteration
+                                else
+                                    avoidDuplicatedSlash = true;
+                            }
+                        }
+                        else
+                            throw new Error(`Missing required param "${value}"`);
+                    }
+                    path += text;
+                }
+            }
+        }
+        // avoid empty path when we have multiple optional params
+        return path || '/';
+    }
+    return {
+        re,
+        score,
+        keys,
+        parse,
+        stringify,
+    };
+}
+/**
+ * Compares an array of numbers as used in PathParser.score and returns a
+ * number. This function can be used to `sort` an array
+ *
+ * @param a - first array of numbers
+ * @param b - second array of numbers
+ * @returns 0 if both are equal, < 0 if a should be sorted first, > 0 if b
+ * should be sorted first
+ */
+function compareScoreArray(a, b) {
+    let i = 0;
+    while (i < a.length && i < b.length) {
+        const diff = b[i] - a[i];
+        // only keep going if diff === 0
+        if (diff)
+            return diff;
+        i++;
+    }
+    // if the last subsegment was Static, the shorter segments should be sorted first
+    // otherwise sort the longest segment first
+    if (a.length < b.length) {
+        return a.length === 1 && a[0] === 40 /* PathScore.Static */ + 40 /* PathScore.Segment */
+            ? -1
+            : 1;
+    }
+    else if (a.length > b.length) {
+        return b.length === 1 && b[0] === 40 /* PathScore.Static */ + 40 /* PathScore.Segment */
+            ? 1
+            : -1;
+    }
+    return 0;
+}
+/**
+ * Compare function that can be used with `sort` to sort an array of PathParser
+ *
+ * @param a - first PathParser
+ * @param b - second PathParser
+ * @returns 0 if both are equal, < 0 if a should be sorted first, > 0 if b
+ */
+function comparePathParserScore(a, b) {
+    let i = 0;
+    const aScore = a.score;
+    const bScore = b.score;
+    while (i < aScore.length && i < bScore.length) {
+        const comp = compareScoreArray(aScore[i], bScore[i]);
+        // do not return if both are equal
+        if (comp)
+            return comp;
+        i++;
+    }
+    if (Math.abs(bScore.length - aScore.length) === 1) {
+        if (isLastScoreNegative(aScore))
+            return 1;
+        if (isLastScoreNegative(bScore))
+            return -1;
+    }
+    // if a and b share the same score entries but b has more, sort b first
+    return bScore.length - aScore.length;
+    // this is the ternary version
+    // return aScore.length < bScore.length
+    //   ? 1
+    //   : aScore.length > bScore.length
+    //   ? -1
+    //   : 0
+}
+/**
+ * This allows detecting splats at the end of a path: /home/:id(.*)*
+ *
+ * @param score - score to check
+ * @returns true if the last entry is negative
+ */
+function isLastScoreNegative(score) {
+    const last = score[score.length - 1];
+    return score.length > 0 && last[last.length - 1] < 0;
+}
+
+const ROOT_TOKEN = {
+    type: 0 /* TokenType.Static */,
+    value: '',
+};
+const VALID_PARAM_RE = /[a-zA-Z0-9_]/;
+// After some profiling, the cache seems to be unnecessary because tokenizePath
+// (the slowest part of adding a route) is very fast
+// const tokenCache = new Map<string, Token[][]>()
+function tokenizePath(path) {
+    if (!path)
+        return [[]];
+    if (path === '/')
+        return [[ROOT_TOKEN]];
+    if (!path.startsWith('/')) {
+        throw new Error(( true)
+            ? `Route paths should start with a "/": "${path}" should be "/${path}".`
+            : 0);
+    }
+    // if (tokenCache.has(path)) return tokenCache.get(path)!
+    function crash(message) {
+        throw new Error(`ERR (${state})/"${buffer}": ${message}`);
+    }
+    let state = 0 /* TokenizerState.Static */;
+    let previousState = state;
+    const tokens = [];
+    // the segment will always be valid because we get into the initial state
+    // with the leading /
+    let segment;
+    function finalizeSegment() {
+        if (segment)
+            tokens.push(segment);
+        segment = [];
+    }
+    // index on the path
+    let i = 0;
+    // char at index
+    let char;
+    // buffer of the value read
+    let buffer = '';
+    // custom regexp for a param
+    let customRe = '';
+    function consumeBuffer() {
+        if (!buffer)
+            return;
+        if (state === 0 /* TokenizerState.Static */) {
+            segment.push({
+                type: 0 /* TokenType.Static */,
+                value: buffer,
+            });
+        }
+        else if (state === 1 /* TokenizerState.Param */ ||
+            state === 2 /* TokenizerState.ParamRegExp */ ||
+            state === 3 /* TokenizerState.ParamRegExpEnd */) {
+            if (segment.length > 1 && (char === '*' || char === '+'))
+                crash(`A repeatable param (${buffer}) must be alone in its segment. eg: '/:ids+.`);
+            segment.push({
+                type: 1 /* TokenType.Param */,
+                value: buffer,
+                regexp: customRe,
+                repeatable: char === '*' || char === '+',
+                optional: char === '*' || char === '?',
+            });
+        }
+        else {
+            crash('Invalid state to consume buffer');
+        }
+        buffer = '';
+    }
+    function addCharToBuffer() {
+        buffer += char;
+    }
+    while (i < path.length) {
+        char = path[i++];
+        if (char === '\\' && state !== 2 /* TokenizerState.ParamRegExp */) {
+            previousState = state;
+            state = 4 /* TokenizerState.EscapeNext */;
+            continue;
+        }
+        switch (state) {
+            case 0 /* TokenizerState.Static */:
+                if (char === '/') {
+                    if (buffer) {
+                        consumeBuffer();
+                    }
+                    finalizeSegment();
+                }
+                else if (char === ':') {
+                    consumeBuffer();
+                    state = 1 /* TokenizerState.Param */;
+                }
+                else {
+                    addCharToBuffer();
+                }
+                break;
+            case 4 /* TokenizerState.EscapeNext */:
+                addCharToBuffer();
+                state = previousState;
+                break;
+            case 1 /* TokenizerState.Param */:
+                if (char === '(') {
+                    state = 2 /* TokenizerState.ParamRegExp */;
+                }
+                else if (VALID_PARAM_RE.test(char)) {
+                    addCharToBuffer();
+                }
+                else {
+                    consumeBuffer();
+                    state = 0 /* TokenizerState.Static */;
+                    // go back one character if we were not modifying
+                    if (char !== '*' && char !== '?' && char !== '+')
+                        i--;
+                }
+                break;
+            case 2 /* TokenizerState.ParamRegExp */:
+                // TODO: is it worth handling nested regexp? like :p(?:prefix_([^/]+)_suffix)
+                // it already works by escaping the closing )
+                // https://paths.esm.dev/?p=AAMeJbiAwQEcDKbAoAAkP60PG2R6QAvgNaA6AFACM2ABuQBB#
+                // is this really something people need since you can also write
+                // /prefix_:p()_suffix
+                if (char === ')') {
+                    // handle the escaped )
+                    if (customRe[customRe.length - 1] == '\\')
+                        customRe = customRe.slice(0, -1) + char;
+                    else
+                        state = 3 /* TokenizerState.ParamRegExpEnd */;
+                }
+                else {
+                    customRe += char;
+                }
+                break;
+            case 3 /* TokenizerState.ParamRegExpEnd */:
+                // same as finalizing a param
+                consumeBuffer();
+                state = 0 /* TokenizerState.Static */;
+                // go back one character if we were not modifying
+                if (char !== '*' && char !== '?' && char !== '+')
+                    i--;
+                customRe = '';
+                break;
+            default:
+                crash('Unknown state');
+                break;
+        }
+    }
+    if (state === 2 /* TokenizerState.ParamRegExp */)
+        crash(`Unfinished custom RegExp for param "${buffer}"`);
+    consumeBuffer();
+    finalizeSegment();
+    // tokenCache.set(path, tokens)
+    return tokens;
+}
+
+function createRouteRecordMatcher(record, parent, options) {
+    const parser = tokensToParser(tokenizePath(record.path), options);
+    // warn against params with the same name
+    if ((true)) {
+        const existingKeys = new Set();
+        for (const key of parser.keys) {
+            if (existingKeys.has(key.name))
+                warn(`Found duplicated params with name "${key.name}" for path "${record.path}". Only the last one will be available on "$route.params".`);
+            existingKeys.add(key.name);
+        }
+    }
+    const matcher = assign(parser, {
+        record,
+        parent,
+        // these needs to be populated by the parent
+        children: [],
+        alias: [],
+    });
+    if (parent) {
+        // both are aliases or both are not aliases
+        // we don't want to mix them because the order is used when
+        // passing originalRecord in Matcher.addRoute
+        if (!matcher.record.aliasOf === !parent.record.aliasOf)
+            parent.children.push(matcher);
+    }
+    return matcher;
+}
+
+/**
+ * Creates a Router Matcher.
+ *
+ * @internal
+ * @param routes - array of initial routes
+ * @param globalOptions - global route options
+ */
+function createRouterMatcher(routes, globalOptions) {
+    // normalized ordered array of matchers
+    const matchers = [];
+    const matcherMap = new Map();
+    globalOptions = mergeOptions({ strict: false, end: true, sensitive: false }, globalOptions);
+    function getRecordMatcher(name) {
+        return matcherMap.get(name);
+    }
+    function addRoute(record, parent, originalRecord) {
+        // used later on to remove by name
+        const isRootAdd = !originalRecord;
+        const mainNormalizedRecord = normalizeRouteRecord(record);
+        if ((true)) {
+            checkChildMissingNameWithEmptyPath(mainNormalizedRecord, parent);
+        }
+        // we might be the child of an alias
+        mainNormalizedRecord.aliasOf = originalRecord && originalRecord.record;
+        const options = mergeOptions(globalOptions, record);
+        // generate an array of records to correctly handle aliases
+        const normalizedRecords = [
+            mainNormalizedRecord,
+        ];
+        if ('alias' in record) {
+            const aliases = typeof record.alias === 'string' ? [record.alias] : record.alias;
+            for (const alias of aliases) {
+                normalizedRecords.push(assign({}, mainNormalizedRecord, {
+                    // this allows us to hold a copy of the `components` option
+                    // so that async components cache is hold on the original record
+                    components: originalRecord
+                        ? originalRecord.record.components
+                        : mainNormalizedRecord.components,
+                    path: alias,
+                    // we might be the child of an alias
+                    aliasOf: originalRecord
+                        ? originalRecord.record
+                        : mainNormalizedRecord,
+                    // the aliases are always of the same kind as the original since they
+                    // are defined on the same record
+                }));
+            }
+        }
+        let matcher;
+        let originalMatcher;
+        for (const normalizedRecord of normalizedRecords) {
+            const { path } = normalizedRecord;
+            // Build up the path for nested routes if the child isn't an absolute
+            // route. Only add the / delimiter if the child path isn't empty and if the
+            // parent path doesn't have a trailing slash
+            if (parent && path[0] !== '/') {
+                const parentPath = parent.record.path;
+                const connectingSlash = parentPath[parentPath.length - 1] === '/' ? '' : '/';
+                normalizedRecord.path =
+                    parent.record.path + (path && connectingSlash + path);
+            }
+            if (( true) && normalizedRecord.path === '*') {
+                throw new Error('Catch all routes ("*") must now be defined using a param with a custom regexp.\n' +
+                    'See more at https://next.router.vuejs.org/guide/migration/#removed-star-or-catch-all-routes.');
+            }
+            // create the object beforehand, so it can be passed to children
+            matcher = createRouteRecordMatcher(normalizedRecord, parent, options);
+            if (( true) && parent && path[0] === '/')
+                checkMissingParamsInAbsolutePath(matcher, parent);
+            // if we are an alias we must tell the original record that we exist,
+            // so we can be removed
+            if (originalRecord) {
+                originalRecord.alias.push(matcher);
+                if ((true)) {
+                    checkSameParams(originalRecord, matcher);
+                }
+            }
+            else {
+                // otherwise, the first record is the original and others are aliases
+                originalMatcher = originalMatcher || matcher;
+                if (originalMatcher !== matcher)
+                    originalMatcher.alias.push(matcher);
+                // remove the route if named and only for the top record (avoid in nested calls)
+                // this works because the original record is the first one
+                if (isRootAdd && record.name && !isAliasRecord(matcher))
+                    removeRoute(record.name);
+            }
+            if (mainNormalizedRecord.children) {
+                const children = mainNormalizedRecord.children;
+                for (let i = 0; i < children.length; i++) {
+                    addRoute(children[i], matcher, originalRecord && originalRecord.children[i]);
+                }
+            }
+            // if there was no original record, then the first one was not an alias and all
+            // other aliases (if any) need to reference this record when adding children
+            originalRecord = originalRecord || matcher;
+            // TODO: add normalized records for more flexibility
+            // if (parent && isAliasRecord(originalRecord)) {
+            //   parent.children.push(originalRecord)
+            // }
+            // Avoid adding a record that doesn't display anything. This allows passing through records without a component to
+            // not be reached and pass through the catch all route
+            if ((matcher.record.components &&
+                Object.keys(matcher.record.components).length) ||
+                matcher.record.name ||
+                matcher.record.redirect) {
+                insertMatcher(matcher);
+            }
+        }
+        return originalMatcher
+            ? () => {
+                // since other matchers are aliases, they should be removed by the original matcher
+                removeRoute(originalMatcher);
+            }
+            : noop;
+    }
+    function removeRoute(matcherRef) {
+        if (isRouteName(matcherRef)) {
+            const matcher = matcherMap.get(matcherRef);
+            if (matcher) {
+                matcherMap.delete(matcherRef);
+                matchers.splice(matchers.indexOf(matcher), 1);
+                matcher.children.forEach(removeRoute);
+                matcher.alias.forEach(removeRoute);
+            }
+        }
+        else {
+            const index = matchers.indexOf(matcherRef);
+            if (index > -1) {
+                matchers.splice(index, 1);
+                if (matcherRef.record.name)
+                    matcherMap.delete(matcherRef.record.name);
+                matcherRef.children.forEach(removeRoute);
+                matcherRef.alias.forEach(removeRoute);
+            }
+        }
+    }
+    function getRoutes() {
+        return matchers;
+    }
+    function insertMatcher(matcher) {
+        let i = 0;
+        while (i < matchers.length &&
+            comparePathParserScore(matcher, matchers[i]) >= 0 &&
+            // Adding children with empty path should still appear before the parent
+            // https://github.com/vuejs/router/issues/1124
+            (matcher.record.path !== matchers[i].record.path ||
+                !isRecordChildOf(matcher, matchers[i])))
+            i++;
+        matchers.splice(i, 0, matcher);
+        // only add the original record to the name map
+        if (matcher.record.name && !isAliasRecord(matcher))
+            matcherMap.set(matcher.record.name, matcher);
+    }
+    function resolve(location, currentLocation) {
+        let matcher;
+        let params = {};
+        let path;
+        let name;
+        if ('name' in location && location.name) {
+            matcher = matcherMap.get(location.name);
+            if (!matcher)
+                throw createRouterError(1 /* ErrorTypes.MATCHER_NOT_FOUND */, {
+                    location,
+                });
+            // warn if the user is passing invalid params so they can debug it better when they get removed
+            if ((true)) {
+                const invalidParams = Object.keys(location.params || {}).filter(paramName => !matcher.keys.find(k => k.name === paramName));
+                if (invalidParams.length) {
+                    warn(`Discarded invalid param(s) "${invalidParams.join('", "')}" when navigating. See https://github.com/vuejs/router/blob/main/packages/router/CHANGELOG.md#414-2022-08-22 for more details.`);
+                }
+            }
+            name = matcher.record.name;
+            params = assign(
+            // paramsFromLocation is a new object
+            paramsFromLocation(currentLocation.params, 
+            // only keep params that exist in the resolved location
+            // only keep optional params coming from a parent record
+            matcher.keys
+                .filter(k => !k.optional)
+                .concat(matcher.parent ? matcher.parent.keys.filter(k => k.optional) : [])
+                .map(k => k.name)), 
+            // discard any existing params in the current location that do not exist here
+            // #1497 this ensures better active/exact matching
+            location.params &&
+                paramsFromLocation(location.params, matcher.keys.map(k => k.name)));
+            // throws if cannot be stringified
+            path = matcher.stringify(params);
+        }
+        else if (location.path != null) {
+            // no need to resolve the path with the matcher as it was provided
+            // this also allows the user to control the encoding
+            path = location.path;
+            if (( true) && !path.startsWith('/')) {
+                warn(`The Matcher cannot resolve relative paths but received "${path}". Unless you directly called \`matcher.resolve("${path}")\`, this is probably a bug in vue-router. Please open an issue at https://github.com/vuejs/router/issues/new/choose.`);
+            }
+            matcher = matchers.find(m => m.re.test(path));
+            // matcher should have a value after the loop
+            if (matcher) {
+                // we know the matcher works because we tested the regexp
+                params = matcher.parse(path);
+                name = matcher.record.name;
+            }
+            // location is a relative path
+        }
+        else {
+            // match by name or path of current route
+            matcher = currentLocation.name
+                ? matcherMap.get(currentLocation.name)
+                : matchers.find(m => m.re.test(currentLocation.path));
+            if (!matcher)
+                throw createRouterError(1 /* ErrorTypes.MATCHER_NOT_FOUND */, {
+                    location,
+                    currentLocation,
+                });
+            name = matcher.record.name;
+            // since we are navigating to the same location, we don't need to pick the
+            // params like when `name` is provided
+            params = assign({}, currentLocation.params, location.params);
+            path = matcher.stringify(params);
+        }
+        const matched = [];
+        let parentMatcher = matcher;
+        while (parentMatcher) {
+            // reversed order so parents are at the beginning
+            matched.unshift(parentMatcher.record);
+            parentMatcher = parentMatcher.parent;
+        }
+        return {
+            name,
+            path,
+            params,
+            matched,
+            meta: mergeMetaFields(matched),
+        };
+    }
+    // add initial routes
+    routes.forEach(route => addRoute(route));
+    return { addRoute, resolve, removeRoute, getRoutes, getRecordMatcher };
+}
+function paramsFromLocation(params, keys) {
+    const newParams = {};
+    for (const key of keys) {
+        if (key in params)
+            newParams[key] = params[key];
+    }
+    return newParams;
+}
+/**
+ * Normalizes a RouteRecordRaw. Creates a copy
+ *
+ * @param record
+ * @returns the normalized version
+ */
+function normalizeRouteRecord(record) {
+    return {
+        path: record.path,
+        redirect: record.redirect,
+        name: record.name,
+        meta: record.meta || {},
+        aliasOf: undefined,
+        beforeEnter: record.beforeEnter,
+        props: normalizeRecordProps(record),
+        children: record.children || [],
+        instances: {},
+        leaveGuards: new Set(),
+        updateGuards: new Set(),
+        enterCallbacks: {},
+        components: 'components' in record
+            ? record.components || null
+            : record.component && { default: record.component },
+    };
+}
+/**
+ * Normalize the optional `props` in a record to always be an object similar to
+ * components. Also accept a boolean for components.
+ * @param record
+ */
+function normalizeRecordProps(record) {
+    const propsObject = {};
+    // props does not exist on redirect records, but we can set false directly
+    const props = record.props || false;
+    if ('component' in record) {
+        propsObject.default = props;
+    }
+    else {
+        // NOTE: we could also allow a function to be applied to every component.
+        // Would need user feedback for use cases
+        for (const name in record.components)
+            propsObject[name] = typeof props === 'object' ? props[name] : props;
+    }
+    return propsObject;
+}
+/**
+ * Checks if a record or any of its parent is an alias
+ * @param record
+ */
+function isAliasRecord(record) {
+    while (record) {
+        if (record.record.aliasOf)
+            return true;
+        record = record.parent;
+    }
+    return false;
+}
+/**
+ * Merge meta fields of an array of records
+ *
+ * @param matched - array of matched records
+ */
+function mergeMetaFields(matched) {
+    return matched.reduce((meta, record) => assign(meta, record.meta), {});
+}
+function mergeOptions(defaults, partialOptions) {
+    const options = {};
+    for (const key in defaults) {
+        options[key] = key in partialOptions ? partialOptions[key] : defaults[key];
+    }
+    return options;
+}
+function isSameParam(a, b) {
+    return (a.name === b.name &&
+        a.optional === b.optional &&
+        a.repeatable === b.repeatable);
+}
+/**
+ * Check if a path and its alias have the same required params
+ *
+ * @param a - original record
+ * @param b - alias record
+ */
+function checkSameParams(a, b) {
+    for (const key of a.keys) {
+        if (!key.optional && !b.keys.find(isSameParam.bind(null, key)))
+            return warn(`Alias "${b.record.path}" and the original record: "${a.record.path}" must have the exact same param named "${key.name}"`);
+    }
+    for (const key of b.keys) {
+        if (!key.optional && !a.keys.find(isSameParam.bind(null, key)))
+            return warn(`Alias "${b.record.path}" and the original record: "${a.record.path}" must have the exact same param named "${key.name}"`);
+    }
+}
+/**
+ * A route with a name and a child with an empty path without a name should warn when adding the route
+ *
+ * @param mainNormalizedRecord - RouteRecordNormalized
+ * @param parent - RouteRecordMatcher
+ */
+function checkChildMissingNameWithEmptyPath(mainNormalizedRecord, parent) {
+    if (parent &&
+        parent.record.name &&
+        !mainNormalizedRecord.name &&
+        !mainNormalizedRecord.path) {
+        warn(`The route named "${String(parent.record.name)}" has a child without a name and an empty path. Using that name won't render the empty path child so you probably want to move the name to the child instead. If this is intentional, add a name to the child route to remove the warning.`);
+    }
+}
+function checkMissingParamsInAbsolutePath(record, parent) {
+    for (const key of parent.keys) {
+        if (!record.keys.find(isSameParam.bind(null, key)))
+            return warn(`Absolute path "${record.record.path}" must have the exact same param named "${key.name}" as its parent "${parent.record.path}".`);
+    }
+}
+function isRecordChildOf(record, parent) {
+    return parent.children.some(child => child === record || isRecordChildOf(record, child));
+}
+
+/**
+ * Transforms a queryString into a {@link LocationQuery} object. Accept both, a
+ * version with the leading `?` and without Should work as URLSearchParams
+
+ * @internal
+ *
+ * @param search - search string to parse
+ * @returns a query object
+ */
+function parseQuery(search) {
+    const query = {};
+    // avoid creating an object with an empty key and empty value
+    // because of split('&')
+    if (search === '' || search === '?')
+        return query;
+    const hasLeadingIM = search[0] === '?';
+    const searchParams = (hasLeadingIM ? search.slice(1) : search).split('&');
+    for (let i = 0; i < searchParams.length; ++i) {
+        // pre decode the + into space
+        const searchParam = searchParams[i].replace(PLUS_RE, ' ');
+        // allow the = character
+        const eqPos = searchParam.indexOf('=');
+        const key = decode(eqPos < 0 ? searchParam : searchParam.slice(0, eqPos));
+        const value = eqPos < 0 ? null : decode(searchParam.slice(eqPos + 1));
+        if (key in query) {
+            // an extra variable for ts types
+            let currentValue = query[key];
+            if (!isArray(currentValue)) {
+                currentValue = query[key] = [currentValue];
+            }
+            currentValue.push(value);
+        }
+        else {
+            query[key] = value;
+        }
+    }
+    return query;
+}
+/**
+ * Stringifies a {@link LocationQueryRaw} object. Like `URLSearchParams`, it
+ * doesn't prepend a `?`
+ *
+ * @internal
+ *
+ * @param query - query object to stringify
+ * @returns string version of the query without the leading `?`
+ */
+function stringifyQuery(query) {
+    let search = '';
+    for (let key in query) {
+        const value = query[key];
+        key = encodeQueryKey(key);
+        if (value == null) {
+            // only null adds the value
+            if (value !== undefined) {
+                search += (search.length ? '&' : '') + key;
+            }
+            continue;
+        }
+        // keep null values
+        const values = isArray(value)
+            ? value.map(v => v && encodeQueryValue(v))
+            : [value && encodeQueryValue(value)];
+        values.forEach(value => {
+            // skip undefined values in arrays as if they were not present
+            // smaller code than using filter
+            if (value !== undefined) {
+                // only append & with non-empty search
+                search += (search.length ? '&' : '') + key;
+                if (value != null)
+                    search += '=' + value;
+            }
+        });
+    }
+    return search;
+}
+/**
+ * Transforms a {@link LocationQueryRaw} into a {@link LocationQuery} by casting
+ * numbers into strings, removing keys with an undefined value and replacing
+ * undefined with null in arrays
+ *
+ * @param query - query object to normalize
+ * @returns a normalized query object
+ */
+function normalizeQuery(query) {
+    const normalizedQuery = {};
+    for (const key in query) {
+        const value = query[key];
+        if (value !== undefined) {
+            normalizedQuery[key] = isArray(value)
+                ? value.map(v => (v == null ? null : '' + v))
+                : value == null
+                    ? value
+                    : '' + value;
+        }
+    }
+    return normalizedQuery;
+}
+
+/**
+ * RouteRecord being rendered by the closest ancestor Router View. Used for
+ * `onBeforeRouteUpdate` and `onBeforeRouteLeave`. rvlm stands for Router View
+ * Location Matched
+ *
+ * @internal
+ */
+const matchedRouteKey = Symbol(( true) ? 'router view location matched' : 0);
+/**
+ * Allows overriding the router view depth to control which component in
+ * `matched` is rendered. rvd stands for Router View Depth
+ *
+ * @internal
+ */
+const viewDepthKey = Symbol(( true) ? 'router view depth' : 0);
+/**
+ * Allows overriding the router instance returned by `useRouter` in tests. r
+ * stands for router
+ *
+ * @internal
+ */
+const routerKey = Symbol(( true) ? 'router' : 0);
+/**
+ * Allows overriding the current route returned by `useRoute` in tests. rl
+ * stands for route location
+ *
+ * @internal
+ */
+const routeLocationKey = Symbol(( true) ? 'route location' : 0);
+/**
+ * Allows overriding the current route used by router-view. Internally this is
+ * used when the `route` prop is passed.
+ *
+ * @internal
+ */
+const routerViewLocationKey = Symbol(( true) ? 'router view location' : 0);
+
+/**
+ * Create a list of callbacks that can be reset. Used to create before and after navigation guards list
+ */
+function useCallbacks() {
+    let handlers = [];
+    function add(handler) {
+        handlers.push(handler);
+        return () => {
+            const i = handlers.indexOf(handler);
+            if (i > -1)
+                handlers.splice(i, 1);
+        };
+    }
+    function reset() {
+        handlers = [];
+    }
+    return {
+        add,
+        list: () => handlers.slice(),
+        reset,
+    };
+}
+
+function registerGuard(record, name, guard) {
+    const removeFromList = () => {
+        record[name].delete(guard);
+    };
+    (0,vue__WEBPACK_IMPORTED_MODULE_0__.onUnmounted)(removeFromList);
+    (0,vue__WEBPACK_IMPORTED_MODULE_0__.onDeactivated)(removeFromList);
+    (0,vue__WEBPACK_IMPORTED_MODULE_0__.onActivated)(() => {
+        record[name].add(guard);
+    });
+    record[name].add(guard);
+}
+/**
+ * Add a navigation guard that triggers whenever the component for the current
+ * location is about to be left. Similar to {@link beforeRouteLeave} but can be
+ * used in any component. The guard is removed when the component is unmounted.
+ *
+ * @param leaveGuard - {@link NavigationGuard}
+ */
+function onBeforeRouteLeave(leaveGuard) {
+    if (( true) && !(0,vue__WEBPACK_IMPORTED_MODULE_0__.getCurrentInstance)()) {
+        warn('getCurrentInstance() returned null. onBeforeRouteLeave() must be called at the top of a setup function');
+        return;
+    }
+    const activeRecord = (0,vue__WEBPACK_IMPORTED_MODULE_0__.inject)(matchedRouteKey, 
+    // to avoid warning
+    {}).value;
+    if (!activeRecord) {
+        ( true) &&
+            warn('No active route record was found when calling `onBeforeRouteLeave()`. Make sure you call this function inside a component child of <router-view>. Maybe you called it inside of App.vue?');
+        return;
+    }
+    registerGuard(activeRecord, 'leaveGuards', leaveGuard);
+}
+/**
+ * Add a navigation guard that triggers whenever the current location is about
+ * to be updated. Similar to {@link beforeRouteUpdate} but can be used in any
+ * component. The guard is removed when the component is unmounted.
+ *
+ * @param updateGuard - {@link NavigationGuard}
+ */
+function onBeforeRouteUpdate(updateGuard) {
+    if (( true) && !(0,vue__WEBPACK_IMPORTED_MODULE_0__.getCurrentInstance)()) {
+        warn('getCurrentInstance() returned null. onBeforeRouteUpdate() must be called at the top of a setup function');
+        return;
+    }
+    const activeRecord = (0,vue__WEBPACK_IMPORTED_MODULE_0__.inject)(matchedRouteKey, 
+    // to avoid warning
+    {}).value;
+    if (!activeRecord) {
+        ( true) &&
+            warn('No active route record was found when calling `onBeforeRouteUpdate()`. Make sure you call this function inside a component child of <router-view>. Maybe you called it inside of App.vue?');
+        return;
+    }
+    registerGuard(activeRecord, 'updateGuards', updateGuard);
+}
+function guardToPromiseFn(guard, to, from, record, name, runWithContext = fn => fn()) {
+    // keep a reference to the enterCallbackArray to prevent pushing callbacks if a new navigation took place
+    const enterCallbackArray = record &&
+        // name is defined if record is because of the function overload
+        (record.enterCallbacks[name] = record.enterCallbacks[name] || []);
+    return () => new Promise((resolve, reject) => {
+        const next = (valid) => {
+            if (valid === false) {
+                reject(createRouterError(4 /* ErrorTypes.NAVIGATION_ABORTED */, {
+                    from,
+                    to,
+                }));
+            }
+            else if (valid instanceof Error) {
+                reject(valid);
+            }
+            else if (isRouteLocation(valid)) {
+                reject(createRouterError(2 /* ErrorTypes.NAVIGATION_GUARD_REDIRECT */, {
+                    from: to,
+                    to: valid,
+                }));
+            }
+            else {
+                if (enterCallbackArray &&
+                    // since enterCallbackArray is truthy, both record and name also are
+                    record.enterCallbacks[name] === enterCallbackArray &&
+                    typeof valid === 'function') {
+                    enterCallbackArray.push(valid);
+                }
+                resolve();
+            }
+        };
+        // wrapping with Promise.resolve allows it to work with both async and sync guards
+        const guardReturn = runWithContext(() => guard.call(record && record.instances[name], to, from, ( true) ? canOnlyBeCalledOnce(next, to, from) : 0));
+        let guardCall = Promise.resolve(guardReturn);
+        if (guard.length < 3)
+            guardCall = guardCall.then(next);
+        if (( true) && guard.length > 2) {
+            const message = `The "next" callback was never called inside of ${guard.name ? '"' + guard.name + '"' : ''}:\n${guard.toString()}\n. If you are returning a value instead of calling "next", make sure to remove the "next" parameter from your function.`;
+            if (typeof guardReturn === 'object' && 'then' in guardReturn) {
+                guardCall = guardCall.then(resolvedValue => {
+                    // @ts-expect-error: _called is added at canOnlyBeCalledOnce
+                    if (!next._called) {
+                        warn(message);
+                        return Promise.reject(new Error('Invalid navigation guard'));
+                    }
+                    return resolvedValue;
+                });
+            }
+            else if (guardReturn !== undefined) {
+                // @ts-expect-error: _called is added at canOnlyBeCalledOnce
+                if (!next._called) {
+                    warn(message);
+                    reject(new Error('Invalid navigation guard'));
+                    return;
+                }
+            }
+        }
+        guardCall.catch(err => reject(err));
+    });
+}
+function canOnlyBeCalledOnce(next, to, from) {
+    let called = 0;
+    return function () {
+        if (called++ === 1)
+            warn(`The "next" callback was called more than once in one navigation guard when going from "${from.fullPath}" to "${to.fullPath}". It should be called exactly one time in each navigation guard. This will fail in production.`);
+        // @ts-expect-error: we put it in the original one because it's easier to check
+        next._called = true;
+        if (called === 1)
+            next.apply(null, arguments);
+    };
+}
+function extractComponentsGuards(matched, guardType, to, from, runWithContext = fn => fn()) {
+    const guards = [];
+    for (const record of matched) {
+        if (( true) && !record.components && !record.children.length) {
+            warn(`Record with path "${record.path}" is either missing a "component(s)"` +
+                ` or "children" property.`);
+        }
+        for (const name in record.components) {
+            let rawComponent = record.components[name];
+            if ((true)) {
+                if (!rawComponent ||
+                    (typeof rawComponent !== 'object' &&
+                        typeof rawComponent !== 'function')) {
+                    warn(`Component "${name}" in record with path "${record.path}" is not` +
+                        ` a valid component. Received "${String(rawComponent)}".`);
+                    // throw to ensure we stop here but warn to ensure the message isn't
+                    // missed by the user
+                    throw new Error('Invalid route component');
+                }
+                else if ('then' in rawComponent) {
+                    // warn if user wrote import('/component.vue') instead of () =>
+                    // import('./component.vue')
+                    warn(`Component "${name}" in record with path "${record.path}" is a ` +
+                        `Promise instead of a function that returns a Promise. Did you ` +
+                        `write "import('./MyPage.vue')" instead of ` +
+                        `"() => import('./MyPage.vue')" ? This will break in ` +
+                        `production if not fixed.`);
+                    const promise = rawComponent;
+                    rawComponent = () => promise;
+                }
+                else if (rawComponent.__asyncLoader &&
+                    // warn only once per component
+                    !rawComponent.__warnedDefineAsync) {
+                    rawComponent.__warnedDefineAsync = true;
+                    warn(`Component "${name}" in record with path "${record.path}" is defined ` +
+                        `using "defineAsyncComponent()". ` +
+                        `Write "() => import('./MyPage.vue')" instead of ` +
+                        `"defineAsyncComponent(() => import('./MyPage.vue'))".`);
+                }
+            }
+            // skip update and leave guards if the route component is not mounted
+            if (guardType !== 'beforeRouteEnter' && !record.instances[name])
+                continue;
+            if (isRouteComponent(rawComponent)) {
+                // __vccOpts is added by vue-class-component and contain the regular options
+                const options = rawComponent.__vccOpts || rawComponent;
+                const guard = options[guardType];
+                guard &&
+                    guards.push(guardToPromiseFn(guard, to, from, record, name, runWithContext));
+            }
+            else {
+                // start requesting the chunk already
+                let componentPromise = rawComponent();
+                if (( true) && !('catch' in componentPromise)) {
+                    warn(`Component "${name}" in record with path "${record.path}" is a function that does not return a Promise. If you were passing a functional component, make sure to add a "displayName" to the component. This will break in production if not fixed.`);
+                    componentPromise = Promise.resolve(componentPromise);
+                }
+                guards.push(() => componentPromise.then(resolved => {
+                    if (!resolved)
+                        return Promise.reject(new Error(`Couldn't resolve component "${name}" at "${record.path}"`));
+                    const resolvedComponent = isESModule(resolved)
+                        ? resolved.default
+                        : resolved;
+                    // replace the function with the resolved component
+                    // cannot be null or undefined because we went into the for loop
+                    record.components[name] = resolvedComponent;
+                    // __vccOpts is added by vue-class-component and contain the regular options
+                    const options = resolvedComponent.__vccOpts || resolvedComponent;
+                    const guard = options[guardType];
+                    return (guard &&
+                        guardToPromiseFn(guard, to, from, record, name, runWithContext)());
+                }));
+            }
+        }
+    }
+    return guards;
+}
+/**
+ * Allows differentiating lazy components from functional components and vue-class-component
+ * @internal
+ *
+ * @param component
+ */
+function isRouteComponent(component) {
+    return (typeof component === 'object' ||
+        'displayName' in component ||
+        'props' in component ||
+        '__vccOpts' in component);
+}
+/**
+ * Ensures a route is loaded, so it can be passed as o prop to `<RouterView>`.
+ *
+ * @param route - resolved route to load
+ */
+function loadRouteLocation(route) {
+    return route.matched.every(record => record.redirect)
+        ? Promise.reject(new Error('Cannot load a route that redirects.'))
+        : Promise.all(route.matched.map(record => record.components &&
+            Promise.all(Object.keys(record.components).reduce((promises, name) => {
+                const rawComponent = record.components[name];
+                if (typeof rawComponent === 'function' &&
+                    !('displayName' in rawComponent)) {
+                    promises.push(rawComponent().then(resolved => {
+                        if (!resolved)
+                            return Promise.reject(new Error(`Couldn't resolve component "${name}" at "${record.path}". Ensure you passed a function that returns a promise.`));
+                        const resolvedComponent = isESModule(resolved)
+                            ? resolved.default
+                            : resolved;
+                        // replace the function with the resolved component
+                        // cannot be null or undefined because we went into the for loop
+                        record.components[name] = resolvedComponent;
+                        return;
+                    }));
+                }
+                return promises;
+            }, [])))).then(() => route);
+}
+
+// TODO: we could allow currentRoute as a prop to expose `isActive` and
+// `isExactActive` behavior should go through an RFC
+function useLink(props) {
+    const router = (0,vue__WEBPACK_IMPORTED_MODULE_0__.inject)(routerKey);
+    const currentRoute = (0,vue__WEBPACK_IMPORTED_MODULE_0__.inject)(routeLocationKey);
+    let hasPrevious = false;
+    let previousTo = null;
+    const route = (0,vue__WEBPACK_IMPORTED_MODULE_0__.computed)(() => {
+        const to = (0,vue__WEBPACK_IMPORTED_MODULE_0__.unref)(props.to);
+        if (( true) && (!hasPrevious || to !== previousTo)) {
+            if (!isRouteLocation(to)) {
+                if (hasPrevious) {
+                    warn(`Invalid value for prop "to" in useLink()\n- to:`, to, `\n- previous to:`, previousTo, `\n- props:`, props);
+                }
+                else {
+                    warn(`Invalid value for prop "to" in useLink()\n- to:`, to, `\n- props:`, props);
+                }
+            }
+            previousTo = to;
+            hasPrevious = true;
+        }
+        return router.resolve(to);
+    });
+    const activeRecordIndex = (0,vue__WEBPACK_IMPORTED_MODULE_0__.computed)(() => {
+        const { matched } = route.value;
+        const { length } = matched;
+        const routeMatched = matched[length - 1];
+        const currentMatched = currentRoute.matched;
+        if (!routeMatched || !currentMatched.length)
+            return -1;
+        const index = currentMatched.findIndex(isSameRouteRecord.bind(null, routeMatched));
+        if (index > -1)
+            return index;
+        // possible parent record
+        const parentRecordPath = getOriginalPath(matched[length - 2]);
+        return (
+        // we are dealing with nested routes
+        length > 1 &&
+            // if the parent and matched route have the same path, this link is
+            // referring to the empty child. Or we currently are on a different
+            // child of the same parent
+            getOriginalPath(routeMatched) === parentRecordPath &&
+            // avoid comparing the child with its parent
+            currentMatched[currentMatched.length - 1].path !== parentRecordPath
+            ? currentMatched.findIndex(isSameRouteRecord.bind(null, matched[length - 2]))
+            : index);
+    });
+    const isActive = (0,vue__WEBPACK_IMPORTED_MODULE_0__.computed)(() => activeRecordIndex.value > -1 &&
+        includesParams(currentRoute.params, route.value.params));
+    const isExactActive = (0,vue__WEBPACK_IMPORTED_MODULE_0__.computed)(() => activeRecordIndex.value > -1 &&
+        activeRecordIndex.value === currentRoute.matched.length - 1 &&
+        isSameRouteLocationParams(currentRoute.params, route.value.params));
+    function navigate(e = {}) {
+        if (guardEvent(e)) {
+            return router[(0,vue__WEBPACK_IMPORTED_MODULE_0__.unref)(props.replace) ? 'replace' : 'push']((0,vue__WEBPACK_IMPORTED_MODULE_0__.unref)(props.to)
+            // avoid uncaught errors are they are logged anyway
+            ).catch(noop);
+        }
+        return Promise.resolve();
+    }
+    // devtools only
+    if (( true) && isBrowser) {
+        const instance = (0,vue__WEBPACK_IMPORTED_MODULE_0__.getCurrentInstance)();
+        if (instance) {
+            const linkContextDevtools = {
+                route: route.value,
+                isActive: isActive.value,
+                isExactActive: isExactActive.value,
+                error: null,
+            };
+            // @ts-expect-error: this is internal
+            instance.__vrl_devtools = instance.__vrl_devtools || [];
+            // @ts-expect-error: this is internal
+            instance.__vrl_devtools.push(linkContextDevtools);
+            (0,vue__WEBPACK_IMPORTED_MODULE_0__.watchEffect)(() => {
+                linkContextDevtools.route = route.value;
+                linkContextDevtools.isActive = isActive.value;
+                linkContextDevtools.isExactActive = isExactActive.value;
+                linkContextDevtools.error = isRouteLocation((0,vue__WEBPACK_IMPORTED_MODULE_0__.unref)(props.to))
+                    ? null
+                    : 'Invalid "to" value';
+            }, { flush: 'post' });
+        }
+    }
+    /**
+     * NOTE: update {@link _RouterLinkI}'s `$slots` type when updating this
+     */
+    return {
+        route,
+        href: (0,vue__WEBPACK_IMPORTED_MODULE_0__.computed)(() => route.value.href),
+        isActive,
+        isExactActive,
+        navigate,
+    };
+}
+const RouterLinkImpl = /*#__PURE__*/ (0,vue__WEBPACK_IMPORTED_MODULE_0__.defineComponent)({
+    name: 'RouterLink',
+    compatConfig: { MODE: 3 },
+    props: {
+        to: {
+            type: [String, Object],
+            required: true,
+        },
+        replace: Boolean,
+        activeClass: String,
+        // inactiveClass: String,
+        exactActiveClass: String,
+        custom: Boolean,
+        ariaCurrentValue: {
+            type: String,
+            default: 'page',
+        },
+    },
+    useLink,
+    setup(props, { slots }) {
+        const link = (0,vue__WEBPACK_IMPORTED_MODULE_0__.reactive)(useLink(props));
+        const { options } = (0,vue__WEBPACK_IMPORTED_MODULE_0__.inject)(routerKey);
+        const elClass = (0,vue__WEBPACK_IMPORTED_MODULE_0__.computed)(() => ({
+            [getLinkClass(props.activeClass, options.linkActiveClass, 'router-link-active')]: link.isActive,
+            // [getLinkClass(
+            //   props.inactiveClass,
+            //   options.linkInactiveClass,
+            //   'router-link-inactive'
+            // )]: !link.isExactActive,
+            [getLinkClass(props.exactActiveClass, options.linkExactActiveClass, 'router-link-exact-active')]: link.isExactActive,
+        }));
+        return () => {
+            const children = slots.default && slots.default(link);
+            return props.custom
+                ? children
+                : (0,vue__WEBPACK_IMPORTED_MODULE_0__.h)('a', {
+                    'aria-current': link.isExactActive
+                        ? props.ariaCurrentValue
+                        : null,
+                    href: link.href,
+                    // this would override user added attrs but Vue will still add
+                    // the listener, so we end up triggering both
+                    onClick: link.navigate,
+                    class: elClass.value,
+                }, children);
+        };
+    },
+});
+// export the public type for h/tsx inference
+// also to avoid inline import() in generated d.ts files
+/**
+ * Component to render a link that triggers a navigation on click.
+ */
+const RouterLink = RouterLinkImpl;
+function guardEvent(e) {
+    // don't redirect with control keys
+    if (e.metaKey || e.altKey || e.ctrlKey || e.shiftKey)
+        return;
+    // don't redirect when preventDefault called
+    if (e.defaultPrevented)
+        return;
+    // don't redirect on right click
+    if (e.button !== undefined && e.button !== 0)
+        return;
+    // don't redirect if `target="_blank"`
+    // @ts-expect-error getAttribute does exist
+    if (e.currentTarget && e.currentTarget.getAttribute) {
+        // @ts-expect-error getAttribute exists
+        const target = e.currentTarget.getAttribute('target');
+        if (/\b_blank\b/i.test(target))
+            return;
+    }
+    // this may be a Weex event which doesn't have this method
+    if (e.preventDefault)
+        e.preventDefault();
+    return true;
+}
+function includesParams(outer, inner) {
+    for (const key in inner) {
+        const innerValue = inner[key];
+        const outerValue = outer[key];
+        if (typeof innerValue === 'string') {
+            if (innerValue !== outerValue)
+                return false;
+        }
+        else {
+            if (!isArray(outerValue) ||
+                outerValue.length !== innerValue.length ||
+                innerValue.some((value, i) => value !== outerValue[i]))
+                return false;
+        }
+    }
+    return true;
+}
+/**
+ * Get the original path value of a record by following its aliasOf
+ * @param record
+ */
+function getOriginalPath(record) {
+    return record ? (record.aliasOf ? record.aliasOf.path : record.path) : '';
+}
+/**
+ * Utility class to get the active class based on defaults.
+ * @param propClass
+ * @param globalClass
+ * @param defaultClass
+ */
+const getLinkClass = (propClass, globalClass, defaultClass) => propClass != null
+    ? propClass
+    : globalClass != null
+        ? globalClass
+        : defaultClass;
+
+const RouterViewImpl = /*#__PURE__*/ (0,vue__WEBPACK_IMPORTED_MODULE_0__.defineComponent)({
+    name: 'RouterView',
+    // #674 we manually inherit them
+    inheritAttrs: false,
+    props: {
+        name: {
+            type: String,
+            default: 'default',
+        },
+        route: Object,
+    },
+    // Better compat for @vue/compat users
+    // https://github.com/vuejs/router/issues/1315
+    compatConfig: { MODE: 3 },
+    setup(props, { attrs, slots }) {
+        ( true) && warnDeprecatedUsage();
+        const injectedRoute = (0,vue__WEBPACK_IMPORTED_MODULE_0__.inject)(routerViewLocationKey);
+        const routeToDisplay = (0,vue__WEBPACK_IMPORTED_MODULE_0__.computed)(() => props.route || injectedRoute.value);
+        const injectedDepth = (0,vue__WEBPACK_IMPORTED_MODULE_0__.inject)(viewDepthKey, 0);
+        // The depth changes based on empty components option, which allows passthrough routes e.g. routes with children
+        // that are used to reuse the `path` property
+        const depth = (0,vue__WEBPACK_IMPORTED_MODULE_0__.computed)(() => {
+            let initialDepth = (0,vue__WEBPACK_IMPORTED_MODULE_0__.unref)(injectedDepth);
+            const { matched } = routeToDisplay.value;
+            let matchedRoute;
+            while ((matchedRoute = matched[initialDepth]) &&
+                !matchedRoute.components) {
+                initialDepth++;
+            }
+            return initialDepth;
+        });
+        const matchedRouteRef = (0,vue__WEBPACK_IMPORTED_MODULE_0__.computed)(() => routeToDisplay.value.matched[depth.value]);
+        (0,vue__WEBPACK_IMPORTED_MODULE_0__.provide)(viewDepthKey, (0,vue__WEBPACK_IMPORTED_MODULE_0__.computed)(() => depth.value + 1));
+        (0,vue__WEBPACK_IMPORTED_MODULE_0__.provide)(matchedRouteKey, matchedRouteRef);
+        (0,vue__WEBPACK_IMPORTED_MODULE_0__.provide)(routerViewLocationKey, routeToDisplay);
+        const viewRef = (0,vue__WEBPACK_IMPORTED_MODULE_0__.ref)();
+        // watch at the same time the component instance, the route record we are
+        // rendering, and the name
+        (0,vue__WEBPACK_IMPORTED_MODULE_0__.watch)(() => [viewRef.value, matchedRouteRef.value, props.name], ([instance, to, name], [oldInstance, from, oldName]) => {
+            // copy reused instances
+            if (to) {
+                // this will update the instance for new instances as well as reused
+                // instances when navigating to a new route
+                to.instances[name] = instance;
+                // the component instance is reused for a different route or name, so
+                // we copy any saved update or leave guards. With async setup, the
+                // mounting component will mount before the matchedRoute changes,
+                // making instance === oldInstance, so we check if guards have been
+                // added before. This works because we remove guards when
+                // unmounting/deactivating components
+                if (from && from !== to && instance && instance === oldInstance) {
+                    if (!to.leaveGuards.size) {
+                        to.leaveGuards = from.leaveGuards;
+                    }
+                    if (!to.updateGuards.size) {
+                        to.updateGuards = from.updateGuards;
+                    }
+                }
+            }
+            // trigger beforeRouteEnter next callbacks
+            if (instance &&
+                to &&
+                // if there is no instance but to and from are the same this might be
+                // the first visit
+                (!from || !isSameRouteRecord(to, from) || !oldInstance)) {
+                (to.enterCallbacks[name] || []).forEach(callback => callback(instance));
+            }
+        }, { flush: 'post' });
+        return () => {
+            const route = routeToDisplay.value;
+            // we need the value at the time we render because when we unmount, we
+            // navigated to a different location so the value is different
+            const currentName = props.name;
+            const matchedRoute = matchedRouteRef.value;
+            const ViewComponent = matchedRoute && matchedRoute.components[currentName];
+            if (!ViewComponent) {
+                return normalizeSlot(slots.default, { Component: ViewComponent, route });
+            }
+            // props from route configuration
+            const routePropsOption = matchedRoute.props[currentName];
+            const routeProps = routePropsOption
+                ? routePropsOption === true
+                    ? route.params
+                    : typeof routePropsOption === 'function'
+                        ? routePropsOption(route)
+                        : routePropsOption
+                : null;
+            const onVnodeUnmounted = vnode => {
+                // remove the instance reference to prevent leak
+                if (vnode.component.isUnmounted) {
+                    matchedRoute.instances[currentName] = null;
+                }
+            };
+            const component = (0,vue__WEBPACK_IMPORTED_MODULE_0__.h)(ViewComponent, assign({}, routeProps, attrs, {
+                onVnodeUnmounted,
+                ref: viewRef,
+            }));
+            if (( true) &&
+                isBrowser &&
+                component.ref) {
+                // TODO: can display if it's an alias, its props
+                const info = {
+                    depth: depth.value,
+                    name: matchedRoute.name,
+                    path: matchedRoute.path,
+                    meta: matchedRoute.meta,
+                };
+                const internalInstances = isArray(component.ref)
+                    ? component.ref.map(r => r.i)
+                    : [component.ref.i];
+                internalInstances.forEach(instance => {
+                    // @ts-expect-error
+                    instance.__vrv_devtools = info;
+                });
+            }
+            return (
+            // pass the vnode to the slot as a prop.
+            // h and <component :is="..."> both accept vnodes
+            normalizeSlot(slots.default, { Component: component, route }) ||
+                component);
+        };
+    },
+});
+function normalizeSlot(slot, data) {
+    if (!slot)
+        return null;
+    const slotContent = slot(data);
+    return slotContent.length === 1 ? slotContent[0] : slotContent;
+}
+// export the public type for h/tsx inference
+// also to avoid inline import() in generated d.ts files
+/**
+ * Component to display the current route the user is at.
+ */
+const RouterView = RouterViewImpl;
+// warn against deprecated usage with <transition> & <keep-alive>
+// due to functional component being no longer eager in Vue 3
+function warnDeprecatedUsage() {
+    const instance = (0,vue__WEBPACK_IMPORTED_MODULE_0__.getCurrentInstance)();
+    const parentName = instance.parent && instance.parent.type.name;
+    const parentSubTreeType = instance.parent && instance.parent.subTree && instance.parent.subTree.type;
+    if (parentName &&
+        (parentName === 'KeepAlive' || parentName.includes('Transition')) &&
+        typeof parentSubTreeType === 'object' &&
+        parentSubTreeType.name === 'RouterView') {
+        const comp = parentName === 'KeepAlive' ? 'keep-alive' : 'transition';
+        warn(`<router-view> can no longer be used directly inside <transition> or <keep-alive>.\n` +
+            `Use slot props instead:\n\n` +
+            `<router-view v-slot="{ Component }">\n` +
+            `  <${comp}>\n` +
+            `    <component :is="Component" />\n` +
+            `  </${comp}>\n` +
+            `</router-view>`);
+    }
+}
+
+/**
+ * Copies a route location and removes any problematic properties that cannot be shown in devtools (e.g. Vue instances).
+ *
+ * @param routeLocation - routeLocation to format
+ * @param tooltip - optional tooltip
+ * @returns a copy of the routeLocation
+ */
+function formatRouteLocation(routeLocation, tooltip) {
+    const copy = assign({}, routeLocation, {
+        // remove variables that can contain vue instances
+        matched: routeLocation.matched.map(matched => omit(matched, ['instances', 'children', 'aliasOf'])),
+    });
+    return {
+        _custom: {
+            type: null,
+            readOnly: true,
+            display: routeLocation.fullPath,
+            tooltip,
+            value: copy,
+        },
+    };
+}
+function formatDisplay(display) {
+    return {
+        _custom: {
+            display,
+        },
+    };
+}
+// to support multiple router instances
+let routerId = 0;
+function addDevtools(app, router, matcher) {
+    // Take over router.beforeEach and afterEach
+    // make sure we are not registering the devtool twice
+    if (router.__hasDevtools)
+        return;
+    router.__hasDevtools = true;
+    // increment to support multiple router instances
+    const id = routerId++;
+    (0,_vue_devtools_api__WEBPACK_IMPORTED_MODULE_1__.setupDevtoolsPlugin)({
+        id: 'org.vuejs.router' + (id ? '.' + id : ''),
+        label: 'Vue Router',
+        packageName: 'vue-router',
+        homepage: 'https://router.vuejs.org',
+        logo: 'https://router.vuejs.org/logo.png',
+        componentStateTypes: ['Routing'],
+        app,
+    }, api => {
+        if (typeof api.now !== 'function') {
+            console.warn('[Vue Router]: You seem to be using an outdated version of Vue Devtools. Are you still using the Beta release instead of the stable one? You can find the links at https://devtools.vuejs.org/guide/installation.html.');
+        }
+        // display state added by the router
+        api.on.inspectComponent((payload, ctx) => {
+            if (payload.instanceData) {
+                payload.instanceData.state.push({
+                    type: 'Routing',
+                    key: '$route',
+                    editable: false,
+                    value: formatRouteLocation(router.currentRoute.value, 'Current Route'),
+                });
+            }
+        });
+        // mark router-link as active and display tags on router views
+        api.on.visitComponentTree(({ treeNode: node, componentInstance }) => {
+            if (componentInstance.__vrv_devtools) {
+                const info = componentInstance.__vrv_devtools;
+                node.tags.push({
+                    label: (info.name ? `${info.name.toString()}: ` : '') + info.path,
+                    textColor: 0,
+                    tooltip: 'This component is rendered by &lt;router-view&gt;',
+                    backgroundColor: PINK_500,
+                });
+            }
+            // if multiple useLink are used
+            if (isArray(componentInstance.__vrl_devtools)) {
+                componentInstance.__devtoolsApi = api;
+                componentInstance.__vrl_devtools.forEach(devtoolsData => {
+                    let label = devtoolsData.route.path;
+                    let backgroundColor = ORANGE_400;
+                    let tooltip = '';
+                    let textColor = 0;
+                    if (devtoolsData.error) {
+                        label = devtoolsData.error;
+                        backgroundColor = RED_100;
+                        textColor = RED_700;
+                    }
+                    else if (devtoolsData.isExactActive) {
+                        backgroundColor = LIME_500;
+                        tooltip = 'This is exactly active';
+                    }
+                    else if (devtoolsData.isActive) {
+                        backgroundColor = BLUE_600;
+                        tooltip = 'This link is active';
+                    }
+                    node.tags.push({
+                        label,
+                        textColor,
+                        tooltip,
+                        backgroundColor,
+                    });
+                });
+            }
+        });
+        (0,vue__WEBPACK_IMPORTED_MODULE_0__.watch)(router.currentRoute, () => {
+            // refresh active state
+            refreshRoutesView();
+            api.notifyComponentUpdate();
+            api.sendInspectorTree(routerInspectorId);
+            api.sendInspectorState(routerInspectorId);
+        });
+        const navigationsLayerId = 'router:navigations:' + id;
+        api.addTimelineLayer({
+            id: navigationsLayerId,
+            label: `Router${id ? ' ' + id : ''} Navigations`,
+            color: 0x40a8c4,
+        });
+        // const errorsLayerId = 'router:errors'
+        // api.addTimelineLayer({
+        //   id: errorsLayerId,
+        //   label: 'Router Errors',
+        //   color: 0xea5455,
+        // })
+        router.onError((error, to) => {
+            api.addTimelineEvent({
+                layerId: navigationsLayerId,
+                event: {
+                    title: 'Error during Navigation',
+                    subtitle: to.fullPath,
+                    logType: 'error',
+                    time: api.now(),
+                    data: { error },
+                    groupId: to.meta.__navigationId,
+                },
+            });
+        });
+        // attached to `meta` and used to group events
+        let navigationId = 0;
+        router.beforeEach((to, from) => {
+            const data = {
+                guard: formatDisplay('beforeEach'),
+                from: formatRouteLocation(from, 'Current Location during this navigation'),
+                to: formatRouteLocation(to, 'Target location'),
+            };
+            // Used to group navigations together, hide from devtools
+            Object.defineProperty(to.meta, '__navigationId', {
+                value: navigationId++,
+            });
+            api.addTimelineEvent({
+                layerId: navigationsLayerId,
+                event: {
+                    time: api.now(),
+                    title: 'Start of navigation',
+                    subtitle: to.fullPath,
+                    data,
+                    groupId: to.meta.__navigationId,
+                },
+            });
+        });
+        router.afterEach((to, from, failure) => {
+            const data = {
+                guard: formatDisplay('afterEach'),
+            };
+            if (failure) {
+                data.failure = {
+                    _custom: {
+                        type: Error,
+                        readOnly: true,
+                        display: failure ? failure.message : '',
+                        tooltip: 'Navigation Failure',
+                        value: failure,
+                    },
+                };
+                data.status = formatDisplay('❌');
+            }
+            else {
+                data.status = formatDisplay('✅');
+            }
+            // we set here to have the right order
+            data.from = formatRouteLocation(from, 'Current Location during this navigation');
+            data.to = formatRouteLocation(to, 'Target location');
+            api.addTimelineEvent({
+                layerId: navigationsLayerId,
+                event: {
+                    title: 'End of navigation',
+                    subtitle: to.fullPath,
+                    time: api.now(),
+                    data,
+                    logType: failure ? 'warning' : 'default',
+                    groupId: to.meta.__navigationId,
+                },
+            });
+        });
+        /**
+         * Inspector of Existing routes
+         */
+        const routerInspectorId = 'router-inspector:' + id;
+        api.addInspector({
+            id: routerInspectorId,
+            label: 'Routes' + (id ? ' ' + id : ''),
+            icon: 'book',
+            treeFilterPlaceholder: 'Search routes',
+        });
+        function refreshRoutesView() {
+            // the routes view isn't active
+            if (!activeRoutesPayload)
+                return;
+            const payload = activeRoutesPayload;
+            // children routes will appear as nested
+            let routes = matcher.getRoutes().filter(route => !route.parent ||
+                // these routes have a parent with no component which will not appear in the view
+                // therefore we still need to include them
+                !route.parent.record.components);
+            // reset match state to false
+            routes.forEach(resetMatchStateOnRouteRecord);
+            // apply a match state if there is a payload
+            if (payload.filter) {
+                routes = routes.filter(route => 
+                // save matches state based on the payload
+                isRouteMatching(route, payload.filter.toLowerCase()));
+            }
+            // mark active routes
+            routes.forEach(route => markRouteRecordActive(route, router.currentRoute.value));
+            payload.rootNodes = routes.map(formatRouteRecordForInspector);
+        }
+        let activeRoutesPayload;
+        api.on.getInspectorTree(payload => {
+            activeRoutesPayload = payload;
+            if (payload.app === app && payload.inspectorId === routerInspectorId) {
+                refreshRoutesView();
+            }
+        });
+        /**
+         * Display information about the currently selected route record
+         */
+        api.on.getInspectorState(payload => {
+            if (payload.app === app && payload.inspectorId === routerInspectorId) {
+                const routes = matcher.getRoutes();
+                const route = routes.find(route => route.record.__vd_id === payload.nodeId);
+                if (route) {
+                    payload.state = {
+                        options: formatRouteRecordMatcherForStateInspector(route),
+                    };
+                }
+            }
+        });
+        api.sendInspectorTree(routerInspectorId);
+        api.sendInspectorState(routerInspectorId);
+    });
+}
+function modifierForKey(key) {
+    if (key.optional) {
+        return key.repeatable ? '*' : '?';
+    }
+    else {
+        return key.repeatable ? '+' : '';
+    }
+}
+function formatRouteRecordMatcherForStateInspector(route) {
+    const { record } = route;
+    const fields = [
+        { editable: false, key: 'path', value: record.path },
+    ];
+    if (record.name != null) {
+        fields.push({
+            editable: false,
+            key: 'name',
+            value: record.name,
+        });
+    }
+    fields.push({ editable: false, key: 'regexp', value: route.re });
+    if (route.keys.length) {
+        fields.push({
+            editable: false,
+            key: 'keys',
+            value: {
+                _custom: {
+                    type: null,
+                    readOnly: true,
+                    display: route.keys
+                        .map(key => `${key.name}${modifierForKey(key)}`)
+                        .join(' '),
+                    tooltip: 'Param keys',
+                    value: route.keys,
+                },
+            },
+        });
+    }
+    if (record.redirect != null) {
+        fields.push({
+            editable: false,
+            key: 'redirect',
+            value: record.redirect,
+        });
+    }
+    if (route.alias.length) {
+        fields.push({
+            editable: false,
+            key: 'aliases',
+            value: route.alias.map(alias => alias.record.path),
+        });
+    }
+    if (Object.keys(route.record.meta).length) {
+        fields.push({
+            editable: false,
+            key: 'meta',
+            value: route.record.meta,
+        });
+    }
+    fields.push({
+        key: 'score',
+        editable: false,
+        value: {
+            _custom: {
+                type: null,
+                readOnly: true,
+                display: route.score.map(score => score.join(', ')).join(' | '),
+                tooltip: 'Score used to sort routes',
+                value: route.score,
+            },
+        },
+    });
+    return fields;
+}
+/**
+ * Extracted from tailwind palette
+ */
+const PINK_500 = 0xec4899;
+const BLUE_600 = 0x2563eb;
+const LIME_500 = 0x84cc16;
+const CYAN_400 = 0x22d3ee;
+const ORANGE_400 = 0xfb923c;
+// const GRAY_100 = 0xf4f4f5
+const DARK = 0x666666;
+const RED_100 = 0xfee2e2;
+const RED_700 = 0xb91c1c;
+function formatRouteRecordForInspector(route) {
+    const tags = [];
+    const { record } = route;
+    if (record.name != null) {
+        tags.push({
+            label: String(record.name),
+            textColor: 0,
+            backgroundColor: CYAN_400,
+        });
+    }
+    if (record.aliasOf) {
+        tags.push({
+            label: 'alias',
+            textColor: 0,
+            backgroundColor: ORANGE_400,
+        });
+    }
+    if (route.__vd_match) {
+        tags.push({
+            label: 'matches',
+            textColor: 0,
+            backgroundColor: PINK_500,
+        });
+    }
+    if (route.__vd_exactActive) {
+        tags.push({
+            label: 'exact',
+            textColor: 0,
+            backgroundColor: LIME_500,
+        });
+    }
+    if (route.__vd_active) {
+        tags.push({
+            label: 'active',
+            textColor: 0,
+            backgroundColor: BLUE_600,
+        });
+    }
+    if (record.redirect) {
+        tags.push({
+            label: typeof record.redirect === 'string'
+                ? `redirect: ${record.redirect}`
+                : 'redirects',
+            textColor: 0xffffff,
+            backgroundColor: DARK,
+        });
+    }
+    // add an id to be able to select it. Using the `path` is not possible because
+    // empty path children would collide with their parents
+    let id = record.__vd_id;
+    if (id == null) {
+        id = String(routeRecordId++);
+        record.__vd_id = id;
+    }
+    return {
+        id,
+        label: record.path,
+        tags,
+        children: route.children.map(formatRouteRecordForInspector),
+    };
+}
+//  incremental id for route records and inspector state
+let routeRecordId = 0;
+const EXTRACT_REGEXP_RE = /^\/(.*)\/([a-z]*)$/;
+function markRouteRecordActive(route, currentRoute) {
+    // no route will be active if matched is empty
+    // reset the matching state
+    const isExactActive = currentRoute.matched.length &&
+        isSameRouteRecord(currentRoute.matched[currentRoute.matched.length - 1], route.record);
+    route.__vd_exactActive = route.__vd_active = isExactActive;
+    if (!isExactActive) {
+        route.__vd_active = currentRoute.matched.some(match => isSameRouteRecord(match, route.record));
+    }
+    route.children.forEach(childRoute => markRouteRecordActive(childRoute, currentRoute));
+}
+function resetMatchStateOnRouteRecord(route) {
+    route.__vd_match = false;
+    route.children.forEach(resetMatchStateOnRouteRecord);
+}
+function isRouteMatching(route, filter) {
+    const found = String(route.re).match(EXTRACT_REGEXP_RE);
+    route.__vd_match = false;
+    if (!found || found.length < 3) {
+        return false;
+    }
+    // use a regexp without $ at the end to match nested routes better
+    const nonEndingRE = new RegExp(found[1].replace(/\$$/, ''), found[2]);
+    if (nonEndingRE.test(filter)) {
+        // mark children as matches
+        route.children.forEach(child => isRouteMatching(child, filter));
+        // exception case: `/`
+        if (route.record.path !== '/' || filter === '/') {
+            route.__vd_match = route.re.test(filter);
+            return true;
+        }
+        // hide the / route
+        return false;
+    }
+    const path = route.record.path.toLowerCase();
+    const decodedPath = decode(path);
+    // also allow partial matching on the path
+    if (!filter.startsWith('/') &&
+        (decodedPath.includes(filter) || path.includes(filter)))
+        return true;
+    if (decodedPath.startsWith(filter) || path.startsWith(filter))
+        return true;
+    if (route.record.name && String(route.record.name).includes(filter))
+        return true;
+    return route.children.some(child => isRouteMatching(child, filter));
+}
+function omit(obj, keys) {
+    const ret = {};
+    for (const key in obj) {
+        if (!keys.includes(key)) {
+            // @ts-expect-error
+            ret[key] = obj[key];
+        }
+    }
+    return ret;
+}
+
+/**
+ * Creates a Router instance that can be used by a Vue app.
+ *
+ * @param options - {@link RouterOptions}
+ */
+function createRouter(options) {
+    const matcher = createRouterMatcher(options.routes, options);
+    const parseQuery$1 = options.parseQuery || parseQuery;
+    const stringifyQuery$1 = options.stringifyQuery || stringifyQuery;
+    const routerHistory = options.history;
+    if (( true) && !routerHistory)
+        throw new Error('Provide the "history" option when calling "createRouter()":' +
+            ' https://next.router.vuejs.org/api/#history.');
+    const beforeGuards = useCallbacks();
+    const beforeResolveGuards = useCallbacks();
+    const afterGuards = useCallbacks();
+    const currentRoute = (0,vue__WEBPACK_IMPORTED_MODULE_0__.shallowRef)(START_LOCATION_NORMALIZED);
+    let pendingLocation = START_LOCATION_NORMALIZED;
+    // leave the scrollRestoration if no scrollBehavior is provided
+    if (isBrowser && options.scrollBehavior && 'scrollRestoration' in history) {
+        history.scrollRestoration = 'manual';
+    }
+    const normalizeParams = applyToParams.bind(null, paramValue => '' + paramValue);
+    const encodeParams = applyToParams.bind(null, encodeParam);
+    const decodeParams = 
+    // @ts-expect-error: intentionally avoid the type check
+    applyToParams.bind(null, decode);
+    function addRoute(parentOrRoute, route) {
+        let parent;
+        let record;
+        if (isRouteName(parentOrRoute)) {
+            parent = matcher.getRecordMatcher(parentOrRoute);
+            if (( true) && !parent) {
+                warn(`Parent route "${String(parentOrRoute)}" not found when adding child route`, route);
+            }
+            record = route;
+        }
+        else {
+            record = parentOrRoute;
+        }
+        return matcher.addRoute(record, parent);
+    }
+    function removeRoute(name) {
+        const recordMatcher = matcher.getRecordMatcher(name);
+        if (recordMatcher) {
+            matcher.removeRoute(recordMatcher);
+        }
+        else if ((true)) {
+            warn(`Cannot remove non-existent route "${String(name)}"`);
+        }
+    }
+    function getRoutes() {
+        return matcher.getRoutes().map(routeMatcher => routeMatcher.record);
+    }
+    function hasRoute(name) {
+        return !!matcher.getRecordMatcher(name);
+    }
+    function resolve(rawLocation, currentLocation) {
+        // const objectLocation = routerLocationAsObject(rawLocation)
+        // we create a copy to modify it later
+        currentLocation = assign({}, currentLocation || currentRoute.value);
+        if (typeof rawLocation === 'string') {
+            const locationNormalized = parseURL(parseQuery$1, rawLocation, currentLocation.path);
+            const matchedRoute = matcher.resolve({ path: locationNormalized.path }, currentLocation);
+            const href = routerHistory.createHref(locationNormalized.fullPath);
+            if ((true)) {
+                if (href.startsWith('//'))
+                    warn(`Location "${rawLocation}" resolved to "${href}". A resolved location cannot start with multiple slashes.`);
+                else if (!matchedRoute.matched.length) {
+                    warn(`No match found for location with path "${rawLocation}"`);
+                }
+            }
+            // locationNormalized is always a new object
+            return assign(locationNormalized, matchedRoute, {
+                params: decodeParams(matchedRoute.params),
+                hash: decode(locationNormalized.hash),
+                redirectedFrom: undefined,
+                href,
+            });
+        }
+        if (( true) && !isRouteLocation(rawLocation)) {
+            warn(`router.resolve() was passed an invalid location. This will fail in production.\n- Location:`, rawLocation);
+            rawLocation = {};
+        }
+        let matcherLocation;
+        // path could be relative in object as well
+        if (rawLocation.path != null) {
+            if (( true) &&
+                'params' in rawLocation &&
+                !('name' in rawLocation) &&
+                // @ts-expect-error: the type is never
+                Object.keys(rawLocation.params).length) {
+                warn(`Path "${rawLocation.path}" was passed with params but they will be ignored. Use a named route alongside params instead.`);
+            }
+            matcherLocation = assign({}, rawLocation, {
+                path: parseURL(parseQuery$1, rawLocation.path, currentLocation.path).path,
+            });
+        }
+        else {
+            // remove any nullish param
+            const targetParams = assign({}, rawLocation.params);
+            for (const key in targetParams) {
+                if (targetParams[key] == null) {
+                    delete targetParams[key];
+                }
+            }
+            // pass encoded values to the matcher, so it can produce encoded path and fullPath
+            matcherLocation = assign({}, rawLocation, {
+                params: encodeParams(targetParams),
+            });
+            // current location params are decoded, we need to encode them in case the
+            // matcher merges the params
+            currentLocation.params = encodeParams(currentLocation.params);
+        }
+        const matchedRoute = matcher.resolve(matcherLocation, currentLocation);
+        const hash = rawLocation.hash || '';
+        if (( true) && hash && !hash.startsWith('#')) {
+            warn(`A \`hash\` should always start with the character "#". Replace "${hash}" with "#${hash}".`);
+        }
+        // the matcher might have merged current location params, so
+        // we need to run the decoding again
+        matchedRoute.params = normalizeParams(decodeParams(matchedRoute.params));
+        const fullPath = stringifyURL(stringifyQuery$1, assign({}, rawLocation, {
+            hash: encodeHash(hash),
+            path: matchedRoute.path,
+        }));
+        const href = routerHistory.createHref(fullPath);
+        if ((true)) {
+            if (href.startsWith('//')) {
+                warn(`Location "${rawLocation}" resolved to "${href}". A resolved location cannot start with multiple slashes.`);
+            }
+            else if (!matchedRoute.matched.length) {
+                warn(`No match found for location with path "${rawLocation.path != null ? rawLocation.path : rawLocation}"`);
+            }
+        }
+        return assign({
+            fullPath,
+            // keep the hash encoded so fullPath is effectively path + encodedQuery +
+            // hash
+            hash,
+            query: 
+            // if the user is using a custom query lib like qs, we might have
+            // nested objects, so we keep the query as is, meaning it can contain
+            // numbers at `$route.query`, but at the point, the user will have to
+            // use their own type anyway.
+            // https://github.com/vuejs/router/issues/328#issuecomment-649481567
+            stringifyQuery$1 === stringifyQuery
+                ? normalizeQuery(rawLocation.query)
+                : (rawLocation.query || {}),
+        }, matchedRoute, {
+            redirectedFrom: undefined,
+            href,
+        });
+    }
+    function locationAsObject(to) {
+        return typeof to === 'string'
+            ? parseURL(parseQuery$1, to, currentRoute.value.path)
+            : assign({}, to);
+    }
+    function checkCanceledNavigation(to, from) {
+        if (pendingLocation !== to) {
+            return createRouterError(8 /* ErrorTypes.NAVIGATION_CANCELLED */, {
+                from,
+                to,
+            });
+        }
+    }
+    function push(to) {
+        return pushWithRedirect(to);
+    }
+    function replace(to) {
+        return push(assign(locationAsObject(to), { replace: true }));
+    }
+    function handleRedirectRecord(to) {
+        const lastMatched = to.matched[to.matched.length - 1];
+        if (lastMatched && lastMatched.redirect) {
+            const { redirect } = lastMatched;
+            let newTargetLocation = typeof redirect === 'function' ? redirect(to) : redirect;
+            if (typeof newTargetLocation === 'string') {
+                newTargetLocation =
+                    newTargetLocation.includes('?') || newTargetLocation.includes('#')
+                        ? (newTargetLocation = locationAsObject(newTargetLocation))
+                        : // force empty params
+                            { path: newTargetLocation };
+                // @ts-expect-error: force empty params when a string is passed to let
+                // the router parse them again
+                newTargetLocation.params = {};
+            }
+            if (( true) &&
+                newTargetLocation.path == null &&
+                !('name' in newTargetLocation)) {
+                warn(`Invalid redirect found:\n${JSON.stringify(newTargetLocation, null, 2)}\n when navigating to "${to.fullPath}". A redirect must contain a name or path. This will break in production.`);
+                throw new Error('Invalid redirect');
+            }
+            return assign({
+                query: to.query,
+                hash: to.hash,
+                // avoid transferring params if the redirect has a path
+                params: newTargetLocation.path != null ? {} : to.params,
+            }, newTargetLocation);
+        }
+    }
+    function pushWithRedirect(to, redirectedFrom) {
+        const targetLocation = (pendingLocation = resolve(to));
+        const from = currentRoute.value;
+        const data = to.state;
+        const force = to.force;
+        // to could be a string where `replace` is a function
+        const replace = to.replace === true;
+        const shouldRedirect = handleRedirectRecord(targetLocation);
+        if (shouldRedirect)
+            return pushWithRedirect(assign(locationAsObject(shouldRedirect), {
+                state: typeof shouldRedirect === 'object'
+                    ? assign({}, data, shouldRedirect.state)
+                    : data,
+                force,
+                replace,
+            }), 
+            // keep original redirectedFrom if it exists
+            redirectedFrom || targetLocation);
+        // if it was a redirect we already called `pushWithRedirect` above
+        const toLocation = targetLocation;
+        toLocation.redirectedFrom = redirectedFrom;
+        let failure;
+        if (!force && isSameRouteLocation(stringifyQuery$1, from, targetLocation)) {
+            failure = createRouterError(16 /* ErrorTypes.NAVIGATION_DUPLICATED */, { to: toLocation, from });
+            // trigger scroll to allow scrolling to the same anchor
+            handleScroll(from, from, 
+            // this is a push, the only way for it to be triggered from a
+            // history.listen is with a redirect, which makes it become a push
+            true, 
+            // This cannot be the first navigation because the initial location
+            // cannot be manually navigated to
+            false);
+        }
+        return (failure ? Promise.resolve(failure) : navigate(toLocation, from))
+            .catch((error) => isNavigationFailure(error)
+            ? // navigation redirects still mark the router as ready
+                isNavigationFailure(error, 2 /* ErrorTypes.NAVIGATION_GUARD_REDIRECT */)
+                    ? error
+                    : markAsReady(error) // also returns the error
+            : // reject any unknown error
+                triggerError(error, toLocation, from))
+            .then((failure) => {
+            if (failure) {
+                if (isNavigationFailure(failure, 2 /* ErrorTypes.NAVIGATION_GUARD_REDIRECT */)) {
+                    if (( true) &&
+                        // we are redirecting to the same location we were already at
+                        isSameRouteLocation(stringifyQuery$1, resolve(failure.to), toLocation) &&
+                        // and we have done it a couple of times
+                        redirectedFrom &&
+                        // @ts-expect-error: added only in dev
+                        (redirectedFrom._count = redirectedFrom._count
+                            ? // @ts-expect-error
+                                redirectedFrom._count + 1
+                            : 1) > 30) {
+                        warn(`Detected a possibly infinite redirection in a navigation guard when going from "${from.fullPath}" to "${toLocation.fullPath}". Aborting to avoid a Stack Overflow.\n Are you always returning a new location within a navigation guard? That would lead to this error. Only return when redirecting or aborting, that should fix this. This might break in production if not fixed.`);
+                        return Promise.reject(new Error('Infinite redirect in navigation guard'));
+                    }
+                    return pushWithRedirect(
+                    // keep options
+                    assign({
+                        // preserve an existing replacement but allow the redirect to override it
+                        replace,
+                    }, locationAsObject(failure.to), {
+                        state: typeof failure.to === 'object'
+                            ? assign({}, data, failure.to.state)
+                            : data,
+                        force,
+                    }), 
+                    // preserve the original redirectedFrom if any
+                    redirectedFrom || toLocation);
+                }
+            }
+            else {
+                // if we fail we don't finalize the navigation
+                failure = finalizeNavigation(toLocation, from, true, replace, data);
+            }
+            triggerAfterEach(toLocation, from, failure);
+            return failure;
+        });
+    }
+    /**
+     * Helper to reject and skip all navigation guards if a new navigation happened
+     * @param to
+     * @param from
+     */
+    function checkCanceledNavigationAndReject(to, from) {
+        const error = checkCanceledNavigation(to, from);
+        return error ? Promise.reject(error) : Promise.resolve();
+    }
+    function runWithContext(fn) {
+        const app = installedApps.values().next().value;
+        // support Vue < 3.3
+        return app && typeof app.runWithContext === 'function'
+            ? app.runWithContext(fn)
+            : fn();
+    }
+    // TODO: refactor the whole before guards by internally using router.beforeEach
+    function navigate(to, from) {
+        let guards;
+        const [leavingRecords, updatingRecords, enteringRecords] = extractChangingRecords(to, from);
+        // all components here have been resolved once because we are leaving
+        guards = extractComponentsGuards(leavingRecords.reverse(), 'beforeRouteLeave', to, from);
+        // leavingRecords is already reversed
+        for (const record of leavingRecords) {
+            record.leaveGuards.forEach(guard => {
+                guards.push(guardToPromiseFn(guard, to, from));
+            });
+        }
+        const canceledNavigationCheck = checkCanceledNavigationAndReject.bind(null, to, from);
+        guards.push(canceledNavigationCheck);
+        // run the queue of per route beforeRouteLeave guards
+        return (runGuardQueue(guards)
+            .then(() => {
+            // check global guards beforeEach
+            guards = [];
+            for (const guard of beforeGuards.list()) {
+                guards.push(guardToPromiseFn(guard, to, from));
+            }
+            guards.push(canceledNavigationCheck);
+            return runGuardQueue(guards);
+        })
+            .then(() => {
+            // check in components beforeRouteUpdate
+            guards = extractComponentsGuards(updatingRecords, 'beforeRouteUpdate', to, from);
+            for (const record of updatingRecords) {
+                record.updateGuards.forEach(guard => {
+                    guards.push(guardToPromiseFn(guard, to, from));
+                });
+            }
+            guards.push(canceledNavigationCheck);
+            // run the queue of per route beforeEnter guards
+            return runGuardQueue(guards);
+        })
+            .then(() => {
+            // check the route beforeEnter
+            guards = [];
+            for (const record of enteringRecords) {
+                // do not trigger beforeEnter on reused views
+                if (record.beforeEnter) {
+                    if (isArray(record.beforeEnter)) {
+                        for (const beforeEnter of record.beforeEnter)
+                            guards.push(guardToPromiseFn(beforeEnter, to, from));
+                    }
+                    else {
+                        guards.push(guardToPromiseFn(record.beforeEnter, to, from));
+                    }
+                }
+            }
+            guards.push(canceledNavigationCheck);
+            // run the queue of per route beforeEnter guards
+            return runGuardQueue(guards);
+        })
+            .then(() => {
+            // NOTE: at this point to.matched is normalized and does not contain any () => Promise<Component>
+            // clear existing enterCallbacks, these are added by extractComponentsGuards
+            to.matched.forEach(record => (record.enterCallbacks = {}));
+            // check in-component beforeRouteEnter
+            guards = extractComponentsGuards(enteringRecords, 'beforeRouteEnter', to, from, runWithContext);
+            guards.push(canceledNavigationCheck);
+            // run the queue of per route beforeEnter guards
+            return runGuardQueue(guards);
+        })
+            .then(() => {
+            // check global guards beforeResolve
+            guards = [];
+            for (const guard of beforeResolveGuards.list()) {
+                guards.push(guardToPromiseFn(guard, to, from));
+            }
+            guards.push(canceledNavigationCheck);
+            return runGuardQueue(guards);
+        })
+            // catch any navigation canceled
+            .catch(err => isNavigationFailure(err, 8 /* ErrorTypes.NAVIGATION_CANCELLED */)
+            ? err
+            : Promise.reject(err)));
+    }
+    function triggerAfterEach(to, from, failure) {
+        // navigation is confirmed, call afterGuards
+        // TODO: wrap with error handlers
+        afterGuards
+            .list()
+            .forEach(guard => runWithContext(() => guard(to, from, failure)));
+    }
+    /**
+     * - Cleans up any navigation guards
+     * - Changes the url if necessary
+     * - Calls the scrollBehavior
+     */
+    function finalizeNavigation(toLocation, from, isPush, replace, data) {
+        // a more recent navigation took place
+        const error = checkCanceledNavigation(toLocation, from);
+        if (error)
+            return error;
+        // only consider as push if it's not the first navigation
+        const isFirstNavigation = from === START_LOCATION_NORMALIZED;
+        const state = !isBrowser ? {} : history.state;
+        // change URL only if the user did a push/replace and if it's not the initial navigation because
+        // it's just reflecting the url
+        if (isPush) {
+            // on the initial navigation, we want to reuse the scroll position from
+            // history state if it exists
+            if (replace || isFirstNavigation)
+                routerHistory.replace(toLocation.fullPath, assign({
+                    scroll: isFirstNavigation && state && state.scroll,
+                }, data));
+            else
+                routerHistory.push(toLocation.fullPath, data);
+        }
+        // accept current navigation
+        currentRoute.value = toLocation;
+        handleScroll(toLocation, from, isPush, isFirstNavigation);
+        markAsReady();
+    }
+    let removeHistoryListener;
+    // attach listener to history to trigger navigations
+    function setupListeners() {
+        // avoid setting up listeners twice due to an invalid first navigation
+        if (removeHistoryListener)
+            return;
+        removeHistoryListener = routerHistory.listen((to, _from, info) => {
+            if (!router.listening)
+                return;
+            // cannot be a redirect route because it was in history
+            const toLocation = resolve(to);
+            // due to dynamic routing, and to hash history with manual navigation
+            // (manually changing the url or calling history.hash = '#/somewhere'),
+            // there could be a redirect record in history
+            const shouldRedirect = handleRedirectRecord(toLocation);
+            if (shouldRedirect) {
+                pushWithRedirect(assign(shouldRedirect, { replace: true }), toLocation).catch(noop);
+                return;
+            }
+            pendingLocation = toLocation;
+            const from = currentRoute.value;
+            // TODO: should be moved to web history?
+            if (isBrowser) {
+                saveScrollPosition(getScrollKey(from.fullPath, info.delta), computeScrollPosition());
+            }
+            navigate(toLocation, from)
+                .catch((error) => {
+                if (isNavigationFailure(error, 4 /* ErrorTypes.NAVIGATION_ABORTED */ | 8 /* ErrorTypes.NAVIGATION_CANCELLED */)) {
+                    return error;
+                }
+                if (isNavigationFailure(error, 2 /* ErrorTypes.NAVIGATION_GUARD_REDIRECT */)) {
+                    // Here we could call if (info.delta) routerHistory.go(-info.delta,
+                    // false) but this is bug prone as we have no way to wait the
+                    // navigation to be finished before calling pushWithRedirect. Using
+                    // a setTimeout of 16ms seems to work but there is no guarantee for
+                    // it to work on every browser. So instead we do not restore the
+                    // history entry and trigger a new navigation as requested by the
+                    // navigation guard.
+                    // the error is already handled by router.push we just want to avoid
+                    // logging the error
+                    pushWithRedirect(error.to, toLocation
+                    // avoid an uncaught rejection, let push call triggerError
+                    )
+                        .then(failure => {
+                        // manual change in hash history #916 ending up in the URL not
+                        // changing, but it was changed by the manual url change, so we
+                        // need to manually change it ourselves
+                        if (isNavigationFailure(failure, 4 /* ErrorTypes.NAVIGATION_ABORTED */ |
+                            16 /* ErrorTypes.NAVIGATION_DUPLICATED */) &&
+                            !info.delta &&
+                            info.type === NavigationType.pop) {
+                            routerHistory.go(-1, false);
+                        }
+                    })
+                        .catch(noop);
+                    // avoid the then branch
+                    return Promise.reject();
+                }
+                // do not restore history on unknown direction
+                if (info.delta) {
+                    routerHistory.go(-info.delta, false);
+                }
+                // unrecognized error, transfer to the global handler
+                return triggerError(error, toLocation, from);
+            })
+                .then((failure) => {
+                failure =
+                    failure ||
+                        finalizeNavigation(
+                        // after navigation, all matched components are resolved
+                        toLocation, from, false);
+                // revert the navigation
+                if (failure) {
+                    if (info.delta &&
+                        // a new navigation has been triggered, so we do not want to revert, that will change the current history
+                        // entry while a different route is displayed
+                        !isNavigationFailure(failure, 8 /* ErrorTypes.NAVIGATION_CANCELLED */)) {
+                        routerHistory.go(-info.delta, false);
+                    }
+                    else if (info.type === NavigationType.pop &&
+                        isNavigationFailure(failure, 4 /* ErrorTypes.NAVIGATION_ABORTED */ | 16 /* ErrorTypes.NAVIGATION_DUPLICATED */)) {
+                        // manual change in hash history #916
+                        // it's like a push but lacks the information of the direction
+                        routerHistory.go(-1, false);
+                    }
+                }
+                triggerAfterEach(toLocation, from, failure);
+            })
+                // avoid warnings in the console about uncaught rejections, they are logged by triggerErrors
+                .catch(noop);
+        });
+    }
+    // Initialization and Errors
+    let readyHandlers = useCallbacks();
+    let errorListeners = useCallbacks();
+    let ready;
+    /**
+     * Trigger errorListeners added via onError and throws the error as well
+     *
+     * @param error - error to throw
+     * @param to - location we were navigating to when the error happened
+     * @param from - location we were navigating from when the error happened
+     * @returns the error as a rejected promise
+     */
+    function triggerError(error, to, from) {
+        markAsReady(error);
+        const list = errorListeners.list();
+        if (list.length) {
+            list.forEach(handler => handler(error, to, from));
+        }
+        else {
+            if ((true)) {
+                warn('uncaught error during route navigation:');
+            }
+            console.error(error);
+        }
+        // reject the error no matter there were error listeners or not
+        return Promise.reject(error);
+    }
+    function isReady() {
+        if (ready && currentRoute.value !== START_LOCATION_NORMALIZED)
+            return Promise.resolve();
+        return new Promise((resolve, reject) => {
+            readyHandlers.add([resolve, reject]);
+        });
+    }
+    function markAsReady(err) {
+        if (!ready) {
+            // still not ready if an error happened
+            ready = !err;
+            setupListeners();
+            readyHandlers
+                .list()
+                .forEach(([resolve, reject]) => (err ? reject(err) : resolve()));
+            readyHandlers.reset();
+        }
+        return err;
+    }
+    // Scroll behavior
+    function handleScroll(to, from, isPush, isFirstNavigation) {
+        const { scrollBehavior } = options;
+        if (!isBrowser || !scrollBehavior)
+            return Promise.resolve();
+        const scrollPosition = (!isPush && getSavedScrollPosition(getScrollKey(to.fullPath, 0))) ||
+            ((isFirstNavigation || !isPush) &&
+                history.state &&
+                history.state.scroll) ||
+            null;
+        return (0,vue__WEBPACK_IMPORTED_MODULE_0__.nextTick)()
+            .then(() => scrollBehavior(to, from, scrollPosition))
+            .then(position => position && scrollToPosition(position))
+            .catch(err => triggerError(err, to, from));
+    }
+    const go = (delta) => routerHistory.go(delta);
+    let started;
+    const installedApps = new Set();
+    const router = {
+        currentRoute,
+        listening: true,
+        addRoute,
+        removeRoute,
+        hasRoute,
+        getRoutes,
+        resolve,
+        options,
+        push,
+        replace,
+        go,
+        back: () => go(-1),
+        forward: () => go(1),
+        beforeEach: beforeGuards.add,
+        beforeResolve: beforeResolveGuards.add,
+        afterEach: afterGuards.add,
+        onError: errorListeners.add,
+        isReady,
+        install(app) {
+            const router = this;
+            app.component('RouterLink', RouterLink);
+            app.component('RouterView', RouterView);
+            app.config.globalProperties.$router = router;
+            Object.defineProperty(app.config.globalProperties, '$route', {
+                enumerable: true,
+                get: () => (0,vue__WEBPACK_IMPORTED_MODULE_0__.unref)(currentRoute),
+            });
+            // this initial navigation is only necessary on client, on server it doesn't
+            // make sense because it will create an extra unnecessary navigation and could
+            // lead to problems
+            if (isBrowser &&
+                // used for the initial navigation client side to avoid pushing
+                // multiple times when the router is used in multiple apps
+                !started &&
+                currentRoute.value === START_LOCATION_NORMALIZED) {
+                // see above
+                started = true;
+                push(routerHistory.location).catch(err => {
+                    if ((true))
+                        warn('Unexpected error when starting the router:', err);
+                });
+            }
+            const reactiveRoute = {};
+            for (const key in START_LOCATION_NORMALIZED) {
+                Object.defineProperty(reactiveRoute, key, {
+                    get: () => currentRoute.value[key],
+                    enumerable: true,
+                });
+            }
+            app.provide(routerKey, router);
+            app.provide(routeLocationKey, (0,vue__WEBPACK_IMPORTED_MODULE_0__.shallowReactive)(reactiveRoute));
+            app.provide(routerViewLocationKey, currentRoute);
+            const unmountApp = app.unmount;
+            installedApps.add(app);
+            app.unmount = function () {
+                installedApps.delete(app);
+                // the router is not attached to an app anymore
+                if (installedApps.size < 1) {
+                    // invalidate the current navigation
+                    pendingLocation = START_LOCATION_NORMALIZED;
+                    removeHistoryListener && removeHistoryListener();
+                    removeHistoryListener = null;
+                    currentRoute.value = START_LOCATION_NORMALIZED;
+                    started = false;
+                    ready = false;
+                }
+                unmountApp();
+            };
+            // TODO: this probably needs to be updated so it can be used by vue-termui
+            if (( true) && isBrowser) {
+                addDevtools(app, router, matcher);
+            }
+        },
+    };
+    // TODO: type this as NavigationGuardReturn or similar instead of any
+    function runGuardQueue(guards) {
+        return guards.reduce((promise, guard) => promise.then(() => runWithContext(guard)), Promise.resolve());
+    }
+    return router;
+}
+function extractChangingRecords(to, from) {
+    const leavingRecords = [];
+    const updatingRecords = [];
+    const enteringRecords = [];
+    const len = Math.max(from.matched.length, to.matched.length);
+    for (let i = 0; i < len; i++) {
+        const recordFrom = from.matched[i];
+        if (recordFrom) {
+            if (to.matched.find(record => isSameRouteRecord(record, recordFrom)))
+                updatingRecords.push(recordFrom);
+            else
+                leavingRecords.push(recordFrom);
+        }
+        const recordTo = to.matched[i];
+        if (recordTo) {
+            // the type doesn't matter because we are comparing per reference
+            if (!from.matched.find(record => isSameRouteRecord(record, recordTo))) {
+                enteringRecords.push(recordTo);
+            }
+        }
+    }
+    return [leavingRecords, updatingRecords, enteringRecords];
+}
+
+/**
+ * Returns the router instance. Equivalent to using `$router` inside
+ * templates.
+ */
+function useRouter() {
+    return (0,vue__WEBPACK_IMPORTED_MODULE_0__.inject)(routerKey);
+}
+/**
+ * Returns the current route location. Equivalent to using `$route` inside
+ * templates.
+ */
+function useRoute() {
+    return (0,vue__WEBPACK_IMPORTED_MODULE_0__.inject)(routeLocationKey);
+}
+
+
+
+
+/***/ }),
+
+/***/ "./node_modules/@vee-validate/i18n/dist/locale/es.json":
+/*!*************************************************************!*\
+  !*** ./node_modules/@vee-validate/i18n/dist/locale/es.json ***!
+  \*************************************************************/
+/***/ ((module) => {
+
+"use strict";
+module.exports = /*#__PURE__*/JSON.parse('{"code":"es","messages":{"alpha":"El campo {field} solo debe contener letras","alpha_dash":"El campo {field} solo debe contener letras, números y guiones","alpha_num":"El campo {field} solo debe contener letras y números","alpha_spaces":"El campo {field} solo debe contener letras y espacios","between":"El campo {field} debe estar entre 0:{min} y 1:{max}","confirmed":"El campo {field} no coincide","digits":"El campo {field} debe ser numérico y contener exactamente 0:{length} dígitos","dimensions":"El campo {field} debe ser de 0:{width} píxeles por 1:{height} píxeles","email":"El campo {field} debe ser un correo electrónico válido","not_one_of":"El campo {field} debe ser un valor válido","ext":"El campo {field} debe ser un archivo válido","image":"El campo {field} debe ser una imagen","one_of":"El campo {field} debe ser un valor válido","integer":"El campo {field} debe ser un entero","length":"El largo del campo {field} debe ser 0:{length}","max":"El campo {field} no debe ser mayor a 0:{length} caracteres","max_value":"El campo {field} debe de ser 0:{max} o menor","mimes":"El campo {field} debe ser un tipo de archivo válido","min":"El campo {field} debe tener al menos 0:{length} caracteres","min_value":"El campo {field} debe ser 0:{min} o superior","numeric":"El campo {field} debe contener solo caracteres numéricos","regex":"El formato del campo {field} no es válido","required":"El campo {field} es obligatorio","required_if":"El campo {field} es obligatorio","size":"El campo {field} debe ser menor a 0:{size}KB"}}');
 
 /***/ })
 

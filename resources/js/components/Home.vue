@@ -38,12 +38,23 @@ export default {
     },
     methods: {
         fetchDocumentos() {
-            axios.get('/api/documentos').then(response => {
+            const token = localStorage.getItem('token');
+            axios.get('/api/documentos', {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            })
+            .then(response => {
                 this.documentos = response.data;
+                console.log('resp', response.data)
             });
         },
         eliminarDocumento(id) {
-            axios.delete(`/api/documentos/${id}`).then(response => {
+            axios.delete(`/api/documentos/${id}`, {
+                headers: {
+                    Authorization: 'Bearer ' + localStorage.getItem('token')
+                }
+            }).then(response => {
                 this.fetchDocumentos();
             });
         },
@@ -58,7 +69,7 @@ export default {
                     localStorage.removeItem('token');
 
                     // Redireccionar al usuario a la página de inicio
-                    this.$router.push('/');
+                    this.$router.push('/login');
                 })
                 .catch(error => {
                     console.error(error);
