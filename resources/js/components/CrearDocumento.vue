@@ -1,50 +1,50 @@
 <template>
-  <div>
-    <h1>Crear Documento</h1>
-    <VForm @submit="guardarDocumento">
-      <div>
-        <label>Nombre</label>
-        <VField name="DOC_NOMBRE" rules="required|min:3">
+  <div class="p-6">
+    <h1 class="text-3xl font-bold mb-6">Crear Documento</h1>
+    <VForm @submit="guardarDocumento" class="max-w-lg mx-auto">
+      <div class="mb-6">
+        <label class="block mb-2">Nombre</label>
+        <VField name="DOC_NOMBRE" rules="required|min:3" class="w-full">
           <template #default="{ field, errors }">
-            <input type="text" v-bind="field" />
-            <span>{{ errors[0] }}</span>
+            <input type="text" v-bind="field" class="border border-gray-300 rounded-md px-3 py-2 w-full focus:outline-none focus:border-blue-500" />
+            <span class="text-red-500">{{ errors[0] }}</span>
           </template>
         </VField>
       </div>
-      <div>
-        <label>Tipo</label>
-        <VField name="DOC_ID_TIPO" rules="required">
+      <div class="mb-6">
+        <label class="block mb-2">Tipo</label>
+        <VField name="DOC_ID_TIPO" rules="required" class="w-full">
           <template #default="{ field, errors }">
-            <select v-bind="field">
+            <select v-bind="field" class="border border-gray-300 rounded-md px-3 py-2 w-full focus:outline-none focus:border-blue-500">
               <option value="">Selecciona un tipo</option>
               <option v-for="tipo in tipos" :value="tipo.TIP_ID" :key="tipo.TIP_ID">{{ tipo.TIP_NOMBRE }}</option>
             </select>
-            <span>{{ errors[0] }}</span>
+            <span class="text-red-500">{{ errors[0] }}</span>
           </template>
         </VField>
       </div>
-      <div>
-        <label>Proceso</label>
-        <VField name="DOC_ID_PROCESO" rules="required">
+      <div class="mb-6">
+        <label class="block mb-2">Proceso</label>
+        <VField name="DOC_ID_PROCESO" rules="required" class="w-full">
           <template #default="{ field, errors }">
-            <select v-bind="field">
+            <select v-bind="field" class="border border-gray-300 rounded-md px-3 py-2 w-full focus:outline-none focus:border-blue-500">
               <option value="">Selecciona un proceso</option>
               <option v-for="proceso in procesos" :value="proceso.PRO_ID" :key="proceso.PRO_ID">{{ proceso.PRO_NOMBRE }}</option>
             </select>
-            <span>{{ errors[0] }}</span>
+            <span class="text-red-500">{{ errors[0] }}</span>
           </template>
         </VField>
       </div>
-      <div>
-        <label>Contenido</label>
-        <VField name="DOC_CONTENIDO" rules="required|min:10">
+      <div class="mb-6">
+        <label class="block mb-2">Contenido</label>
+        <VField name="DOC_CONTENIDO" rules="required|min:10" class="w-full">
           <template #default="{ field, errors }">
-            <textarea v-bind="field"></textarea>
-            <span>{{ errors[0] }}</span>
+            <textarea v-bind="field" class="border border-gray-300 rounded-md px-3 py-2 w-full focus:outline-none focus:border-blue-500"></textarea>
+            <span class="text-red-500">{{ errors[0] }}</span>
           </template>
         </VField>
       </div>
-      <button type="submit">Guardar</button>
+      <button type="submit" class="bg-blue-500 text-black py-2 px-4 rounded-md hover:bg-blue-600 transition-colors">Guardar</button>
     </VForm>
   </div>
 </template>
